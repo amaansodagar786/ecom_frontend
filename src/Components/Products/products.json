@@ -1,0 +1,164 @@
+{
+    "products": [
+      {
+        "id": 1,
+        "category": "Electronics",
+        "name": "Premium Wireless Headphones",
+        "price": 299.99,
+        "deletedPrice": 399.99,
+        "description": "Noise-cancelling wireless headphones with 30-hour battery life and premium sound quality.",
+        "stockQuantity": 50,
+        "image": "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+      },
+      {
+        "id": 2,
+        "category": "Electronics",
+        "name": "Ultra HD Smart TV",
+        "price": 1299.99,
+        "deletedPrice": 1499.99,
+        "description": "65-inch 4K Ultra HD Smart TV with HDR and built-in streaming apps.",
+        "stockQuantity": 25,
+        "image": "https://images.unsplash.com/photo-1542751110-97427bbecf20?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2084&q=80"
+      },
+      {
+        "id": 3,
+        "category": "Electronics",
+        "name": "Professional DSLR Camera",
+        "price": 1499.99,
+        "deletedPrice": 1799.99,
+        "description": "24.2MP DSLR camera with 4K video and 3-inch touchscreen LCD.",
+        "stockQuantity": 18,
+        "image": "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2053&q=80"
+      },
+      {
+        "id": 4,
+        "category": "Electronics",
+        "name": "Smartphone Pro Max",
+        "price": 1099.99,
+        "deletedPrice": 1199.99,
+        "description": "Latest flagship smartphone with triple camera system and all-day battery.",
+        "stockQuantity": 35,
+        "image": "https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1965&q=80"
+      },
+      {
+        "id": 5,
+        "category": "Fashion",
+        "name": "Designer Leather Jacket",
+        "price": 499.99,
+        "deletedPrice": 599.99,
+        "description": "Premium genuine leather jacket with custom stitching and lining.",
+        "stockQuantity": 15,
+        "image": "https://images.unsplash.com/photo-1551028719-00167b16eac5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+      },
+      {
+        "id": 6,
+        "category": "Fashion",
+        "name": "Luxury Silk Dress",
+        "price": 349.99,
+        "deletedPrice": 399.99,
+        "description": "Handcrafted silk evening dress with intricate embroidery details.",
+        "stockQuantity": 12,
+        "image": "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80"
+      },
+      {
+        "id": 7,
+        "category": "Fashion",
+        "name": "Swiss Automatic Watch",
+        "price": 899.99,
+        "deletedPrice": 999.99,
+        "description": "Swiss-made automatic chronograph watch with sapphire crystal.",
+        "stockQuantity": 8,
+        "image": "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2080&q=80"
+      },
+      {
+        "id": 8,
+        "category": "Fashion",
+        "name": "Premium Cashmere Sweater",
+        "price": 279.99,
+        "deletedPrice": 329.99,
+        "description": "100% pure cashmere sweater with ribbed trim and classic fit.",
+        "stockQuantity": 20,
+        "image": "https://images.unsplash.com/photo-1604176354204-9268737828e4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2080&q=80"
+      },
+      {
+        "id": 9,
+        "category": "Home & Living",
+        "name": "Italian Leather Sofa",
+        "price": 2499.99,
+        "deletedPrice": 2999.99,
+        "description": "Handcrafted Italian leather 3-seater sofa with walnut legs.",
+        "stockQuantity": 5,
+        "image": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+      },
+      {
+        "id": 10,
+        "category": "Home & Living",
+        "name": "Crystal Chandelier",
+        "price": 899.99,
+        "deletedPrice": 1099.99,
+        "description": "Hand-cut crystal chandelier with 24 lights and brass finish.",
+        "stockQuantity": 7,
+        "image": "https://images.unsplash.com/photo-1516455590571-18256e5bb9ff?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+      },
+      {
+        "id": 11,
+        "category": "Home & Living",
+        "name": "Marble Dining Table",
+        "price": 1899.99,
+        "deletedPrice": 2199.99,
+        "description": "Solid marble dining table with stainless steel base, seats 8.",
+        "stockQuantity": 3,
+        "image": "https://images.unsplash.com/photo-1565538810643-b5bdb714032a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+      },
+      {
+        "id": 12,
+        "category": "Home & Living",
+        "name": "Designer Area Rug",
+        "price": 599.99,
+        "deletedPrice": 749.99,
+        "description": "Handwoven wool area rug with modern geometric pattern (8x10).",
+        "stockQuantity": 9,
+        "image": "https://images.unsplash.com/photo-1600166898405-da9535204843?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+      },
+      {
+        "id": 13,
+        "category": "Beauty",
+        "name": "Anti-Aging Serum",
+        "price": 89.99,
+        "deletedPrice": 109.99,
+        "description": "Luxury anti-aging serum with hyaluronic acid and vitamin C.",
+        "stockQuantity": 42,
+        "image": "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2088&q=80"
+      },
+      {
+        "id": 14,
+        "category": "Beauty",
+        "name": "Premium Makeup Kit",
+        "price": 149.99,
+        "deletedPrice": 179.99,
+        "description": "Complete 12-piece professional makeup kit with vegan brushes.",
+        "stockQuantity": 28,
+        "image": "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80"
+      },
+      {
+        "id": 15,
+        "category": "Beauty",
+        "name": "Organic Hair Care Set",
+        "price": 69.99,
+        "deletedPrice": 79.99,
+        "description": "Sulfate-free shampoo and conditioner set for all hair types.",
+        "stockQuantity": 36,
+        "image": "https://images.unsplash.com/photo-1608248543803-ba9f8a133506?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+      },
+      {
+        "id": 16,
+        "category": "Beauty",
+        "name": "Luxury Perfume",
+        "price": 129.99,
+        "deletedPrice": 149.99,
+        "description": "Eau de parfum with notes of jasmine, sandalwood and vanilla.",
+        "stockQuantity": 22,
+        "image": "https://images.unsplash.com/photo-1594035910387-fea47794261f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2080&q=80"
+      }
+    ]
+  }

@@ -1,0 +1,148 @@
+// ComingSoon.scss
+@use 'sass:color';
+@use 'sass:math';
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+$primary-color: #4a6bff;
+$secondary-color: #f8f9fa;
+$text-color: #333;
+$light-text: #777;
+
+.coming-soon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color:  #e2dbda;
+  font-family: 'Poppins', sans-serif;
+  padding: 2rem;
+  text-align: center;
+
+  &__content {
+    max-width: 800px;
+    width: 100%;
+    padding: 2rem;
+    background:  #e2dbda;
+    border-radius: 15px;
+    // box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  }
+
+  &__animation {
+    width: 250px;
+    height: 250px;
+    margin: 0 auto;
+
+    @media (max-width: 768px) {
+      width: 150px;
+      height: 150px;
+    }
+  }
+
+  &__title {
+    color: #5d3434;
+    font-size: 2rem;
+    margin: 1.5rem 0;
+    font-weight: 700;
+
+    @media (max-width: 768px) {
+      font-size: 2rem;
+    }
+  }
+
+  &__message {
+    color: #5d3434;
+    font-size: 1rem;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+  }
+
+  &__form {
+    display: flex;
+    max-width: 500px;
+    margin: 2rem auto 0;
+    width: 100%;
+
+    @media (max-width: 576px) {
+      flex-direction: column;
+    }
+  }
+
+  &__input {
+    flex: 1;
+    padding: 0.8rem 1.2rem;
+    border: 1px solid #ddd;
+    border-radius: 30px 0 0 30px;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.3s;
+
+    &:focus {
+      border-color: $primary-color;
+    }
+
+    @media (max-width: 576px) {
+      border-radius: 30px;
+      margin-bottom: 1rem;
+    }
+  }
+
+  &__button {
+    padding: 0.5rem 1rem;
+    background-color: #5d3434;
+    color: white;
+    border: none;
+    border-radius: 0 30px 30px 0;
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+
+    &:hover {
+      background-color: color.adjust($primary-color, $lightness: -10%);
+      // Alternative: background-color: color.scale($primary-color, $lightness: -15%);
+    }
+
+    @media (max-width: 576px) {
+      border-radius: 30px;
+    }
+  }
+}
+
+.coming-soon__countdown {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin: 2rem 0;
+
+  @media (max-width: 576px) {
+    gap: 1rem;
+  }
+}
+
+.countdown-item {
+  display: flex;
+  flex-direction: column;
+  background: #5d3434;
+  color: white;
+  padding: 0.3rem;
+  border-radius: 10px;
+  min-width: 80px;
+
+  @media (max-width: 576px) {
+    min-width: 60px;
+    padding: 0.8rem;
+  }
+}
+
+.countdown-number {
+  font-size: 1rem;
+  font-weight: 700;
+
+  @media (max-width: 576px) {
+    font-size: 1.5rem;
+  }
+}
+
+.countdown-label {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}

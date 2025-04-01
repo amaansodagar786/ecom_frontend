@@ -1,0 +1,266 @@
+// Navbar.scss
+@use 'sass:color';
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
+
+$primary-color: #4a6bff;
+$text-color: #333;
+$white: #fff;
+$bg-color: #e2dbda;
+$mobile-breakpoint: 768px;
+
+.navbar {
+  background-color: $bg-color;
+  position: fixed;
+  width: 100%;
+  top: 0;
+  z-index: 1000;
+  padding: 1rem 2rem;
+  font-family: 'Poppins', sans-serif;
+  transition: all 0.3s ease;
+
+  &-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  &-logo {
+    cursor: pointer;
+    
+    img {
+      height: 40px;
+      width: auto;
+      transition: transform 0.3s ease;
+
+      &:hover {
+        transform: scale(1.05);
+      }
+    }
+  }
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  transition: all 0.3s ease;
+
+  ul {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: 1.5rem;
+
+    li {
+      a {
+        color: $text-color;
+        text-decoration: none;
+        font-weight: 500;
+        padding: 0.5rem 0;
+        position: relative;
+        transition: all 0.3s ease;
+        font-size: 0.95rem;
+
+        &:hover {
+          color: $primary-color;
+        }
+
+        &::after {
+          content: '';
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          width: 0;
+          height: 2px;
+          background-color: $primary-color;
+          transition: width 0.3s ease;
+        }
+
+        &:hover::after {
+          width: 100%;
+        }
+      }
+    }
+  }
+}
+
+.nav-icons {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-left: 2rem;
+
+  // Common styles for all icons
+  svg {
+    font-size: 1.5rem;
+    color: $text-color;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    
+    &:hover {
+      color: $primary-color;
+      transform: translateY(-2px);
+    }
+  }
+}
+
+// Specific icon styles
+.account-icon {
+  font-size: 1.5rem;
+  // Add any specific styles for account icon
+  &:hover {
+    color: color.adjust($primary-color, $lightness: -10%);
+  }
+}
+.login-icon {
+  font-size: 1.5rem;
+  // Add any specific styles for login icon
+  &:hover {
+    color: color.adjust(green, $lightness: -10%);
+  }
+}
+
+.logout-icon {
+  font-size: 1.5rem;
+  // Add any specific styles for logout icon
+  &:hover {
+    color: color.adjust(red, $lightness: -10%);
+  }
+}
+
+.nav-cart {
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+
+  .cart-icon {
+    font-size: 1.5rem;
+    color: $text-color;
+    transition: all 0.3s ease;
+  }
+
+  .cart-count {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background-color: black;
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: bold;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    
+    .cart-icon {
+      color: $primary-color;
+    }
+  }
+}
+
+.nav-login {
+  cursor: pointer;
+  transition: transform 0.3s ease;
+
+  svg {
+    font-size: 1.5rem;
+    transition: all 0.3s ease;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    
+    svg {
+      color: color.adjust($primary-color, $lightness: -10%);
+    }
+  }
+}
+
+.hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 24px;
+  height: 18px;
+  cursor: pointer;
+  z-index: 100;
+  position: relative;
+
+  &-line {
+    width: 100%;
+    height: 2px;
+    background-color: $text-color;
+    transition: all 0.3s ease;
+    transform-origin: left center;
+  }
+
+  &.open {
+    .hamburger-line:nth-child(1) {
+      transform: translateY(0) rotate(45deg);
+    }
+    .hamburger-line:nth-child(2) {
+      opacity: 0;
+    }
+    .hamburger-line:nth-child(3) {
+      transform: translateY(0) rotate(-45deg);
+    }
+  }
+}
+
+// Responsive styles
+@media (max-width: $mobile-breakpoint) {
+  .navbar {
+    padding: 1rem;
+  }
+
+  .nav-links {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 70%;
+    height: 100vh;
+    background-color: $bg-color;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transform: translateX(100%);
+    opacity: 0;
+    box-shadow: -5px 0 25px rgba(0, 0, 0, 0.1);
+    z-index: 99;
+    padding: 80px 0;
+
+    ul {
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 2rem;
+      gap: 1.5rem;
+
+      li {
+        margin: 0;
+      }
+    }
+
+    .nav-icons {
+      flex-direction: column;
+      margin-left: 0;
+      gap: 1.5rem;
+    }
+
+    &.active {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  .hamburger {
+    display: flex;
+  }
+}
