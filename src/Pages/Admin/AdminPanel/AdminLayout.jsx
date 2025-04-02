@@ -29,14 +29,12 @@ const AdminLayout = ({ children }) => {
 
   return (
     <div className="admin-panel">
-      {/* Mobile Header */}
+      {/* Mobile Header - Removed the Dashboard title */}
       {isMobile && (
         <div className="mobile-header">
           <button className="toggle-btn" onClick={toggleSidebar}>
             {sidebarOpen ? <FiX size={20} /> : <FiMenu size={20} />}
           </button>
-          <div className="mobile-title">Dashboard</div>
-          <div style={{ width: 40 }}></div>
         </div>
       )}
 
