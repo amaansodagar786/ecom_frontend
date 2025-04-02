@@ -10,8 +10,12 @@ import axios from 'axios';
 import 'react-toastify/dist/ReactToastify.css';
 import './Login.scss';
 import animationData from '../../../assets/Animations/login.json';
+import { useAuth } from '../../../Components/Context/AuthContext';
+
 
 const Login = () => {
+  const { login } = useAuth(); // Add this
+
   const navigate = useNavigate();
 
   const initialValues = {
@@ -34,15 +38,15 @@ const Login = () => {
         withCredentials: true
       });
       const { token, message, user } = response.data;
-
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
+  
+      // Use the AuthContext login function instead of direct localStorage
+      login(token, user); // This updates both localStorage AND React state
+      
       toast.success(message || 'Login successful!');
-
+  
       setTimeout(() => {
-        // Redirect based on user role
         if (user.role === 'admin') {
-          navigate('/admin/dashboard');
+          navigate('/addproducts');
         } else {
           navigate('/');
         }
@@ -128,9 +132,7 @@ const Login = () => {
           <p className="register-link">
             Don't have an account? <a href="/register">Register here</a>
           </p>
-          <p className="admin-login-link">
-            Admin login? <a href="/admin/login">Click here</a>
-          </p>
+          
         </div>
       </div>
       <ToastContainer

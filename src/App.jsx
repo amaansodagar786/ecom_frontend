@@ -11,8 +11,11 @@ import Profile from './Pages/Account/Profile';
 import { AuthProvider } from './Components/Context/AuthContext';
 import Home from './Pages/Home/Home';
 import MainProducts from './Pages/Mainproducts/Mainproducts';
-import Adminsignup from './Pages/Admin/Authentication/Adminsignup';
+// import Adminsignup from './Pages/Admin/Authentication/Adminsignup';
 import AddProducts from './Pages/Admin/Products/AddProducts';
+import AdminRoute from './Components/AdminRoute/AdminRoute';
+import Footer from './Components/Footer/Footer';
+
 
 function App() {
   return (
@@ -22,8 +25,6 @@ function App() {
         <Routes>
           <Route path="/coming" element={<ComingSoon />} />
           <Route path="/" element={<Home />} />
-          {/* <Route path="/" element={<ComingSoon />} /> */}
-          {/* <Route path="/" element={<ComingSoon />} /> */}
           <Route path="*" element={<Nopage />} />
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
@@ -34,16 +35,25 @@ function App() {
 
 
           {/* ADMIN PAGES  */}
-          <Route path="/adminreg" element={<Adminsignup />} />
+          {/* <Route path="/adminreg" element={<Adminsignup />} /> */}
 
 
-          <Route path="/addproducts" element={<AddProducts />} />
+          {/* <Route path="/addproducts" element={<AddProducts />} /> */}
 
+          <Route 
+            path="/addproducts" 
+            element={
+              <AdminRoute>
+                <AddProducts />
+              </AdminRoute>
+            } 
+          />
 
 
 
 
         </Routes>
+        <Footer/>
       </Router>
     </AuthProvider>
   );

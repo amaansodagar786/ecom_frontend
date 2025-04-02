@@ -7,6 +7,17 @@ const HomeProducts = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [wishlistItems, setWishlistItems] = useState([]);
+
+
+  const handleWishlistClick = (productId) => {
+    console.log('Product ID:', productId);
+    setWishlistItems(prev =>
+      prev.includes(productId)
+        ? prev.filter(id => id !== productId)
+        : [...prev, productId]
+    );
+  };
 
   const [filters, setFilters] = useState({
     priceRange: [0, 2000],
@@ -19,7 +30,7 @@ const HomeProducts = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/products');
+        const response = await axios.get('http://mtm-store.com/api/products');
         setProducts(response.data);
         setLoading(false);
       } catch (error) {
@@ -149,20 +160,40 @@ const HomeProducts = () => {
           </button>
         </div>
 
-        {/* Product Grid - Existing code remains the same */}
+        {/* Product Grid  */}
         <div className="product-grid">
           {filteredProducts.length > 0 ? (
             filteredProducts.map((product) => (
               <div className="product-card" key={product.product_id}>
                 <div className="product-badge">
-                  {product.stockQuantity > 0 ? 'In Stock' : 'Pre-Order'}
+                  {product.unit > 0 ? 'In Stock' : 'Pre-Order'}
+                </div>
+                <div className="wishlist-icon" onClick={() => handleWishlistClick(product.product_id)}>
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill={wishlistItems.includes(product.product_id) ? "#ff4757" : "none"}
+                    stroke={wishlistItems.includes(product.product_id) ? "#ff4757" : "#111"}
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                  </svg>
                 </div>
                 <div className="product-image">
-                  <img
-                    src={`http://localhost:5000${product.images[0]?.image_url}`}
-                    alt={product.name}
-                    loading="lazy"
-                  />
+                  {product.images?.length > 0 && (
+                    <img
+                      src={`http://localhost:5000/static${product.images[0].image_url}`}
+                      alt={product.name}
+                      loading="lazy"
+                      onError={(e) => {
+                        console.error('Failed to load:', e.target.src);
+                        // Add any fallback logic here if needed
+                      }}
+                    />
+                  )}
                   <button className="quick-view">Quick View</button>
                 </div>
                 <div className="product-details">

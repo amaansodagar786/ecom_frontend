@@ -10,15 +10,15 @@ const MainProducts = () => {
 
   useEffect(() => {
     const fetchProducts = async () => {
-        try {
-          const response = await axios.get(`http://localhost:5000/products/category/${category}`);
-          setProducts(response.data);
-        } catch (error) {
-          console.error('Error fetching products:', error);
-        }
-      };
-      
-      
+      try {
+        const response = await axios.get(`http://localhost:5000/products/category/${category}`);
+        setProducts(response.data);
+      } catch (error) {
+        console.error('Error fetching products:', error);
+      }
+    };
+
+
     fetchProducts();
   }, [category]);
 
@@ -29,8 +29,11 @@ const MainProducts = () => {
         {products.length > 0 ? (
           products.map((product) => (
             <div key={product.product_id} className="product-card">
-              <img src={product.images[0]?.image_url} alt={product.name} className="product-image" />
-              <div className="product-details">
+              <img
+                src={`http://localhost:5000/static/${product.images[0]?.image_url}`}
+                alt={product.name}
+                className="product-image"
+              />              <div className="product-details">
                 <h3>{product.name}</h3>
                 <p>{product.description}</p>
                 <p className="price">${product.price}</p>

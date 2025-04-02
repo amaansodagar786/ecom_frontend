@@ -79,7 +79,7 @@ const AddProducts = () => {
         formData.append('images', file);
       });
 
-      const response = await axios.post('http://127.0.0.1:5000/product/add', formData, {
+      const response = await axios.post('http://localhost:5000/product/add', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${localStorage.getItem('token')}`

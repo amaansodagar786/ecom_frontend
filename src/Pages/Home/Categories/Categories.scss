@@ -105,4 +105,17 @@
         }
       }
     }
+  
+    .loading, .error {
+      text-align: center;
+      padding: 40px;
+      font-size: 1.2rem;
+    }
+  
+    .error {
+      color: #ff4757;
+    }
+  
+  
+  
   }

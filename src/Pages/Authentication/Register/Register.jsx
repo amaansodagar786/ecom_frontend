@@ -42,7 +42,7 @@ const Register = () => {
 
   const handleSubmit = async (values, { setSubmitting, resetForm }) => {
     try {
-      const response = await axios.post('http://127.0.0.1:5000/signup', values);
+      const response = await axios.post('http://localhost:5000/signup', values);
       
       toast.success(response.data.message || 'Registration successful!');
       resetForm();
