@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import './HomeProducts.scss';
+import { useAuth } from '../../../Components/Context/AuthContext';
 
 const HomeProducts = () => {
   // State for products, filters, and loading/error handling
@@ -8,16 +9,26 @@ const HomeProducts = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [wishlistItems, setWishlistItems] = useState([]);
+  const { toggleWishlistItem } = useAuth();
 
 
-  const handleWishlistClick = (productId) => {
-    console.log('Product ID:', productId);
-    setWishlistItems(prev =>
-      prev.includes(productId)
-        ? prev.filter(id => id !== productId)
-        : [...prev, productId]
+
+  const handleWishlistClick = (product) => {
+    toggleWishlistItem({
+      product_id: product.product_id,
+      name: product.name,
+      price: product.price,
+      image: product.images?.[0]?.image_url,
+      category: product.category
+    });
+  
+    setWishlistItems((prevWishlist) =>
+      prevWishlist.includes(product.product_id)
+        ? prevWishlist.filter((id) => id !== product.product_id)
+        : [...prevWishlist, product.product_id]
     );
   };
+  
 
   const [filters, setFilters] = useState({
     priceRange: [0, 2000],
@@ -30,7 +41,7 @@ const HomeProducts = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axios.get('http://mtm-store.com/api/products');
+        const response = await axios.get('http://localhost:5000/products');
         setProducts(response.data);
         setLoading(false);
       } catch (error) {
@@ -168,7 +179,7 @@ const HomeProducts = () => {
                 <div className="product-badge">
                   {product.unit > 0 ? 'In Stock' : 'Pre-Order'}
                 </div>
-                <div className="wishlist-icon" onClick={() => handleWishlistClick(product.product_id)}>
+                <div className="wishlist-icon" onClick={() => handleWishlistClick(product)}>
                   <svg
                     width="24"
                     height="24"

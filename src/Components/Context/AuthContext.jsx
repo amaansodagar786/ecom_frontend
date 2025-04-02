@@ -67,17 +67,47 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+   // Add wishlist state
+   const [wishlistItems, setWishlistItems] = useState([]);
+
+   // Add wishlist functions
+   const toggleWishlistItem = (product) => {
+     setWishlistItems(prev => {
+       const exists = prev.some(item => item.product_id === product.product_id);
+       if (exists) {
+         return prev.filter(item => item.product_id !== product.product_id);
+       }
+       return [...prev, product];
+     });
+   };
+ 
+   // Optional: Load wishlist from localStorage on mount
+   useEffect(() => {
+     const savedWishlist = localStorage.getItem('wishlist');
+     if (savedWishlist) {
+       setWishlistItems(JSON.parse(savedWishlist));
+     }
+   }, []);
+
+
+
   return (
     <AuthContext.Provider value={{ 
       ...authState, 
       login, 
       logout,
-      isAdmin: authState.user?.role === 'admin' // Convenience property
+      isAdmin: authState.user?.role === 'admin' ,
+      wishlistItems,
+      toggleWishlistItem
     }}>
       {!authState.isLoading && children}
     </AuthContext.Provider>
   );
 };
+
+
+ 
+
 
 export const useAuth = () => {
   const context = useContext(AuthContext);

@@ -167,51 +167,35 @@ $mobile-breakpoint: 768px;
 }
 
 // Responsive styles
+// Responsive styles
 @media (max-width: $mobile-breakpoint) {
   .navbar {
     padding: 1rem;
   }
 
   .nav-links {
-    position: fixed;
-    top: 0;
-    right: 0;
-    width: 70%;
-    height: 100vh;
-    background-color: $bg-color;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    transform: translateX(100%);
-    opacity: 0;
-    box-shadow: -5px 0 25px rgba(0, 0, 0, 0.1);
-    z-index: 99;
-    padding: 80px 0;
+    position: static;
+    width: auto;
+    height: auto;
+    transform: none;
+    opacity: 1;
+    box-shadow: none;
+    padding: 0;
+    flex-direction: row;
+    justify-content: flex-end;
 
     ul {
-      flex-direction: column;
-      align-items: center;
-      margin-bottom: 2rem;
-      gap: 1.5rem;
-
-      li {
-        margin: 0;
-      }
+      display: none; // Hide the regular links if you want
     }
 
     .nav-icons {
-      flex-direction: column;
-      margin-left: 0;
-      gap: 1.5rem;
-    }
-
-    &.active {
-      transform: translateX(0);
-      opacity: 1;
+      flex-direction: row;
+      margin-left: 1rem;
+      gap: 1.2rem;
     }
   }
 
   .hamburger {
-    display: flex;
+    display: none; // Hide hamburger since we're showing icons
   }
 }

@@ -15,6 +15,7 @@ import MainProducts from './Pages/Mainproducts/Mainproducts';
 import AddProducts from './Pages/Admin/Products/AddProducts';
 import AdminRoute from './Components/AdminRoute/AdminRoute';
 import Footer from './Components/Footer/Footer';
+import Wishlist from './Pages/Wishlist/Wishlist';
 
 
 function App() {
@@ -38,7 +39,7 @@ function App() {
           {/* <Route path="/adminreg" element={<Adminsignup />} /> */}
 
 
-          {/* <Route path="/addproducts" element={<AddProducts />} /> */}
+          <Route path="/wishlist" element={<Wishlist />} />
 
           <Route 
             path="/addproducts" 
