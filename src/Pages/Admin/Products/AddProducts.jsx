@@ -6,6 +6,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import axios from 'axios';
 import 'react-toastify/dist/ReactToastify.css';
 import './AddProducts.scss';
+import AdminLayout from '../AdminPanel/AdminLayout';
 
 const AddProducts = () => {
   // State for categories from MySQL
@@ -207,6 +208,7 @@ const AddProducts = () => {
   };
 
   return (
+    <AdminLayout>
     <div className="admin-panel">
       <div className="admin-container">
         <div className="admin-header">
@@ -753,6 +755,7 @@ const AddProducts = () => {
         }}
       />
     </div>
+    </AdminLayout>
   );
 };
 

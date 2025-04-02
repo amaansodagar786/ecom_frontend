@@ -12,10 +12,18 @@ import { AuthProvider } from './Components/Context/AuthContext';
 import Home from './Pages/Home/Home';
 import MainProducts from './Pages/Mainproducts/Mainproducts';
 // import Adminsignup from './Pages/Admin/Authentication/Adminsignup';
-import AddProducts from './Pages/Admin/Products/AddProducts';
+
 import AdminRoute from './Components/AdminRoute/AdminRoute';
 import Footer from './Components/Footer/Footer';
 import Wishlist from './Pages/Wishlist/Wishlist';
+
+// ADMIN PAGES 
+import AddProducts from './Pages/Admin/Products/AddProducts';
+import AdminSidebar from './Pages/Admin/Sidebar/AdminSidebar';
+import Dashboard from './Pages/Admin/AdminPanel/Dashboard';
+import Orders from './Pages/Admin/Orders/Orders';
+import Inventory from './Pages/Admin/Inventory/Inventory';
+import Payment from './Pages/Admin/Payment/Payment';
 
 
 function App() {
@@ -40,6 +48,7 @@ function App() {
 
 
           <Route path="/wishlist" element={<Wishlist />} />
+          <Route path="/sidebar" element={<AdminSidebar />} />
 
           <Route 
             path="/addproducts" 
@@ -49,6 +58,10 @@ function App() {
               </AdminRoute>
             } 
           />
+          <Route path="/admindashboard" element={<AdminRoute> <Dashboard /> </AdminRoute> } />
+          <Route path="/adminorders" element={<AdminRoute> <Orders /> </AdminRoute> } />
+          <Route path="/admininventory" element={<AdminRoute> <Inventory /> </AdminRoute> } />
+          <Route path="/admininpayment" element={<AdminRoute> <Payment /> </AdminRoute> } />
 
 
 
