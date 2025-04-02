@@ -9,26 +9,10 @@
   /* font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; */
 }
 
-.app {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
 
 
 
-.page-content {
-  flex: 1;
-  padding: 2rem;
-  text-align: center;
-}
 
-.page-content h1 {
-  margin-bottom: 1rem;
-  color: #333;
-}
 
-.page-content p {
-  color: #666;
-}
+
 

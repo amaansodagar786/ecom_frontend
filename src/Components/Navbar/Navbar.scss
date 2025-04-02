@@ -5,6 +5,7 @@ $primary-color: #4a6bff;
 $text-color: #333;
 $white: #fff;
 $bg-color: #e2dbda;
+$brown-color: #5d3434;
 $mobile-breakpoint: 768px;
 
 .navbar {
@@ -23,6 +24,7 @@ $mobile-breakpoint: 768px;
     align-items: center;
     max-width: 1200px;
     margin: 0 auto;
+    position: relative;
   }
 
   &-logo {
@@ -37,6 +39,22 @@ $mobile-breakpoint: 768px;
         transform: scale(1.05);
       }
     }
+  }
+}
+
+// Tagline (Hidden on Mobile)
+.navbar-tagline {
+  font-size: 1rem;
+  font-weight: 500;
+  color: $brown-color;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  
+  @media (max-width: $mobile-breakpoint) {
+    display: none;
   }
 }
 
@@ -63,7 +81,7 @@ $mobile-breakpoint: 768px;
         font-size: 0.95rem;
 
         &:hover {
-          color: $primary-color;
+          color: $brown-color;
         }
 
         &::after {
@@ -73,7 +91,7 @@ $mobile-breakpoint: 768px;
           left: 0;
           width: 0;
           height: 2px;
-          background-color: $primary-color;
+          background-color: $brown-color;
           transition: width 0.3s ease;
         }
 
@@ -112,17 +130,18 @@ $mobile-breakpoint: 768px;
     transform: translateY(-2px);
     
     .icon {
-      color: $primary-color;
+      color: $brown-color;
     }
   }
 }
 
+// Cart Badge
 .nav-cart {
   .cart-count {
     position: absolute;
     top: -8px;
     right: -8px;
-    background-color: $primary-color;
+    background-color: $brown-color;
     color: white;
     border-radius: 50%;
     width: 18px;
@@ -135,6 +154,38 @@ $mobile-breakpoint: 768px;
   }
 }
 
+// Login/Logout Button
+.nav-auth {
+  margin-left: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  .auth-text {
+    border: 1px solid black;
+    border-radius: 20px;
+    padding: 3px 9px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: $text-color;
+    transition: all 0.3s ease;
+  }
+
+  &:hover {
+    .auth-text {
+      color: $brown-color;
+      border: 1px solid $brown-color;
+    }
+  }
+
+  @media (max-width: $mobile-breakpoint) {
+    .auth-text {
+      display: none; // Hide text in mobile view
+    }
+  }
+}
+
+// Hamburger Menu (Mobile)
 .hamburger {
   display: none;
   flex-direction: column;
@@ -163,39 +214,5 @@ $mobile-breakpoint: 768px;
     .hamburger-line:nth-child(3) {
       transform: translateY(0) rotate(-45deg);
     }
-  }
-}
-
-// Responsive styles
-// Responsive styles
-@media (max-width: $mobile-breakpoint) {
-  .navbar {
-    padding: 1rem;
-  }
-
-  .nav-links {
-    position: static;
-    width: auto;
-    height: auto;
-    transform: none;
-    opacity: 1;
-    box-shadow: none;
-    padding: 0;
-    flex-direction: row;
-    justify-content: flex-end;
-
-    ul {
-      display: none; // Hide the regular links if you want
-    }
-
-    .nav-icons {
-      flex-direction: row;
-      margin-left: 1rem;
-      gap: 1.2rem;
-    }
-  }
-
-  .hamburger {
-    display: none; // Hide hamburger since we're showing icons
   }
 }

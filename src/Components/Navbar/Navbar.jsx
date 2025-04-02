@@ -20,7 +20,7 @@ const Navbar = () => {
   const closeMenu = () => setIsMenuOpen(false);
 
   const handleLogoClick = () => navigate('/');
-  const handleAccountClick = () => navigate(isAuthenticated ? '/profile' : '/login');
+  const handleAccountClick = () => navigate(isAuthenticated ? '/userdashboard' : '/login');
   const handleLogoutClick = () => { logout(); navigate('/'); };
   const handleCartClick = () => navigate('/cart');
   const handleWishlistClick = () => navigate('/wishlist');
@@ -28,16 +28,22 @@ const Navbar = () => {
   return (
     <nav className="navbar">
       <div className="navbar-container">
+        {/* Logo */}
         <div className="navbar-logo" onClick={handleLogoClick}>
           <img src={Logo} alt="Company Logo" />
         </div>
 
+        {/* Tagline (Only visible in desktop/laptop) */}
+        <div className="navbar-tagline">Your One-Stop For ECommerce Store</div>
+
+        {/* Hamburger Menu (For Mobile) */}
         <div className={`hamburger ${isMenuOpen ? 'open' : ''}`} onClick={toggleMenu}>
           <span className="hamburger-line"></span>
           <span className="hamburger-line"></span>
           <span className="hamburger-line"></span>
         </div>
 
+        {/* Navigation Icons */}
         <div className={`nav-links ${isMenuOpen ? 'active' : ''}`}>
           <ul>
             {/* Navigation links can be added here */}
@@ -58,13 +64,15 @@ const Navbar = () => {
                 <div className="nav-icon" onClick={handleAccountClick}>
                   <FiUser className="icon" />
                 </div>
-                <div className="nav-icon" onClick={handleLogoutClick}>
+                <div className="nav-icon nav-auth" onClick={handleLogoutClick}>
                   <FiLogOut className="icon" />
+                  <span className="auth-text">Logout</span>
                 </div>
               </>
             ) : (
-              <div className="nav-icon" onClick={handleAccountClick}>
+              <div className="nav-icon nav-auth" onClick={handleAccountClick}>
                 <FiLogIn className="icon" />
+                <span className="auth-text">Login</span>
               </div>
             )}
           </div>

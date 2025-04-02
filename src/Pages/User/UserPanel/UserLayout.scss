@@ -5,22 +5,22 @@ $primary-color: #4a6bff;
 $sidebar-width: 260px;
 $sidebar-collapsed-width: 80px;
 $header-height: 60px;
-$navbar-height: 75px; // Added navbar height variable
+$navbar-height: 75px;
 
-.admin-panel {
+.user-panel {
   position: relative;
   min-height: 100vh;
   display: flex;
 }
 
-// Mobile Header - Simplified version
+// Mobile Header
 .mobile-header {
   display: none;
   
   @media (max-width: $mobile-breakpoint) {
     display: flex;
     position: fixed;
-    top: $navbar-height; // Positioned below the navbar
+    top: $navbar-height;
     left: 0;
     width: 100%;
     height: $header-height;
@@ -40,14 +40,14 @@ $navbar-height: 75px; // Added navbar height variable
   }
 }
 
-// Sidebar Overlay - Adjusted for navbar
+// Sidebar Overlay
 .sidebar-overlay {
   display: none;
   
   @media (max-width: $mobile-breakpoint) {
     display: block;
     position: fixed;
-    top: $navbar-height + $header-height; // Starts below header
+    top: $navbar-height + $header-height;
     left: 0;
     right: 0;
     bottom: 0;
@@ -64,11 +64,12 @@ $navbar-height: 75px; // Added navbar height variable
   }
 }
 
-// Main Content - Adjusted for navbar
-.admin-content {
+// Main Content
+.user-content {
   flex: 1;
   transition: margin-left $transition-speed ease;
   min-height: 100vh;
+  margin-top: $navbar-height;
   
   &.sidebar-open {
     margin-left: $sidebar-width;
@@ -80,7 +81,7 @@ $navbar-height: 75px; // Added navbar height variable
   
   @media (max-width: $mobile-breakpoint) {
     margin-left: 0 !important;
-    padding-top: $navbar-height + $header-height; // Account for both navbar and header
+    padding-top: $header-height;
     
     &.sidebar-open, &.sidebar-closed {
       margin-left: 0;

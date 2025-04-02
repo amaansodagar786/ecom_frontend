@@ -46,7 +46,7 @@ const Login = () => {
   
       setTimeout(() => {
         if (user.role === 'admin') {
-          navigate('/addproducts');
+          navigate('/admindashboard');
         } else {
           navigate('/');
         }

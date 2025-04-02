@@ -4,14 +4,19 @@ import './HomeProducts.scss';
 import { useAuth } from '../../../Components/Context/AuthContext';
 
 const HomeProducts = () => {
-  // State for products, filters, and loading/error handling
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [wishlistItems, setWishlistItems] = useState([]);
   const { toggleWishlistItem } = useAuth();
 
-
+  const [filters, setFilters] = useState({
+    priceRange: [0, 2000],
+    colors: [],
+    sortBy: 'featured',
+    searchQuery: '',
+    activeFilterTab: null
+  });
 
   const handleWishlistClick = (product) => {
     toggleWishlistItem({
@@ -28,14 +33,6 @@ const HomeProducts = () => {
         : [...prevWishlist, product.product_id]
     );
   };
-  
-
-  const [filters, setFilters] = useState({
-    priceRange: [0, 2000],
-    colors: [],
-    sortBy: 'featured',
-    activeFilterTab: null
-  });
 
   // Fetch products from the API
   useEffect(() => {
@@ -53,13 +50,15 @@ const HomeProducts = () => {
     fetchProducts();
   }, []);
 
-  // Color Options (you may add more if needed)
+  // Color Options
   const colorOptions = [
     { name: 'Black', value: 'black', hex: '#000000' },
     { name: 'White', value: 'white', hex: '#FFFFFF' },
     { name: 'Gold', value: 'gold', hex: '#FFD700' },
     { name: 'Silver', value: 'silver', hex: '#C0C0C0' },
     { name: 'Blue', value: 'blue', hex: '#0000FF' },
+    { name: 'Red', value: 'red', hex: '#FF0000' },
+    { name: 'Green', value: 'green', hex: '#008000' },
   ];
 
   // Sort Options
@@ -74,11 +73,13 @@ const HomeProducts = () => {
   // Filtering and Sorting Logic
   const filteredProducts = products
     .filter(product => {
+      const matchesSearch = product.name.toLowerCase().includes(filters.searchQuery.toLowerCase()) || 
+                          product.description.toLowerCase().includes(filters.searchQuery.toLowerCase());
       const priceInRange = product.price >= filters.priceRange[0] &&
-        product.price <= filters.priceRange[1];
+                          product.price <= filters.priceRange[1];
       const colorMatch = filters.colors.length === 0 ||
-        filters.colors.some(color => product.colors?.includes(color));
-      return priceInRange && colorMatch;
+                        filters.colors.some(color => product.colors?.includes(color));
+      return matchesSearch && priceInRange && colorMatch;
     })
     .sort((a, b) => {
       switch (filters.sortBy) {
@@ -91,8 +92,23 @@ const HomeProducts = () => {
     });
 
   // Error & Loading States
-  if (loading) return <p>Loading products...</p>;
-  if (error) return <p>Error: {error}</p>;
+  if (loading) return (
+    <div className="loading-state">
+      <div className="spinner"></div>
+      <p>Loading premium products...</p>
+    </div>
+  );
+  
+  if (error) return (
+    <div className="error-state">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+      <p>Error loading products: {error}</p>
+    </div>
+  );
 
   return (
     <section className="home-products">
@@ -102,8 +118,35 @@ const HomeProducts = () => {
           <p className="section-subtitle">Curated luxury for the discerning customer</p>
         </div>
 
-        {/* Filter Navbar - Added this section */}
+        {/* Premium Filter Navbar */}
         <div className="filters-navbar">
+          {/* Search Bar */}
+          <div className="search-filter">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input
+              type="text"
+              placeholder="Search products..."
+              value={filters.searchQuery}
+              onChange={(e) => setFilters({...filters, searchQuery: e.target.value})}
+              className="search-input"
+            />
+            {filters.searchQuery && (
+              <button 
+                className="clear-search" 
+                onClick={() => setFilters({...filters, searchQuery: ''})}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            )}
+          </div>
+
+          {/* Price Range Filter */}
           <div className="filter-group">
             <label>Price Range</label>
             <div className="price-range-container">
@@ -124,26 +167,52 @@ const HomeProducts = () => {
             </div>
           </div>
 
+          {/* Color Dropdown Filter */}
           <div className="filter-group">
             <label>Colors</label>
-            <div className="color-options">
-              {colorOptions.map(color => (
-                <button
-                  key={color.value}
-                  className={`color-swatch ${filters.colors.includes(color.value) ? 'active' : ''}`}
-                  style={{ backgroundColor: color.hex }}
-                  onClick={() => {
-                    const newColors = filters.colors.includes(color.value)
-                      ? filters.colors.filter(c => c !== color.value)
-                      : [...filters.colors, color.value];
-                    setFilters({ ...filters, colors: newColors });
-                  }}
-                  aria-label={color.name}
-                />
-              ))}
+            <div className="custom-select">
+              <select
+                value={filters.colors[0] || ''}
+                onChange={(e) => {
+                  const color = e.target.value;
+                  if (color) {
+                    setFilters({
+                      ...filters,
+                      colors: filters.colors.includes(color) 
+                        ? filters.colors.filter(c => c !== color)
+                        : [color]
+                    });
+                  }
+                }}
+                className="color-select"
+              >
+                <option value="">Select Color</option>
+                {colorOptions.map(color => (
+                  <option key={color.value} value={color.value}>
+                    {color.name}
+                  </option>
+                ))}
+              </select>
+              <div className="selected-colors">
+                {filters.colors.map(color => {
+                  const colorData = colorOptions.find(c => c.value === color);
+                  return colorData ? (
+                    <span 
+                      key={color} 
+                      className="color-chip"
+                      style={{ backgroundColor: colorData.hex }}
+                      onClick={() => setFilters({
+                        ...filters,
+                        colors: filters.colors.filter(c => c !== color)
+                      })}
+                    />
+                  ) : null;
+                })}
+              </div>
             </div>
           </div>
 
+          {/* Sort Dropdown */}
           <div className="filter-group">
             <label>Sort By</label>
             <select
@@ -159,19 +228,21 @@ const HomeProducts = () => {
             </select>
           </div>
 
+          {/* Reset Button */}
           <button
             className="reset-filters"
             onClick={() => setFilters({
               priceRange: [0, 2000],
               colors: [],
-              sortBy: 'featured'
+              sortBy: 'featured',
+              searchQuery: ''
             })}
           >
             Reset All
           </button>
         </div>
 
-        {/* Product Grid  */}
+        {/* Product Grid */}
         <div className="product-grid">
           {filteredProducts.length > 0 ? (
             filteredProducts.map((product) => (
@@ -201,7 +272,7 @@ const HomeProducts = () => {
                       loading="lazy"
                       onError={(e) => {
                         console.error('Failed to load:', e.target.src);
-                        // Add any fallback logic here if needed
+                        // e.target.src = '/path-to-fallback-image.jpg';
                       }}
                     />
                   )}
@@ -217,12 +288,30 @@ const HomeProducts = () => {
                       <span className="original-price">${product.deleted_price?.toFixed(2)}</span>
                     )}
                   </div>
-                  <button className="add-to-cart">Add to Cart</button>
+                  <button className="add-to-cart">View Product</button>
                 </div>
               </div>
             ))
           ) : (
-            <p>No products match your filters</p>
+            <div className="no-products">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <h3>No products match your filters</h3>
+              <button 
+                className="reset-filters-btn"
+                onClick={() => setFilters({
+                  priceRange: [0, 2000],
+                  colors: [],
+                  sortBy: 'featured',
+                  searchQuery: ''
+                })}
+              >
+                Reset Filters
+              </button>
+            </div>
           )}
         </div>
       </div>

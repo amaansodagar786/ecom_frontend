@@ -1,12 +1,14 @@
-// src/components/MainProducts.jsx
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { FiArrowLeft } from 'react-icons/fi';
 import './MainProducts.scss';
 
 const MainProducts = () => {
   const { category } = useParams();
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -17,23 +19,39 @@ const MainProducts = () => {
         console.error('Error fetching products:', error);
       }
     };
-
-
     fetchProducts();
   }, [category]);
 
+  const filteredProducts = products.filter((product) =>
+    product.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="home-products">
+      <div className="top-bar">
+        <button className="back-button" onClick={() => navigate(-1)}>
+          <FiArrowLeft /> Back
+        </button>
+        <input
+          type="text"
+          placeholder="Search products..."
+          className="search-input"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
+
       <h2 className="section-title">{category} Products</h2>
       <div className="product-grid">
-        {products.length > 0 ? (
-          products.map((product) => (
+        {filteredProducts.length > 0 ? (
+          filteredProducts.map((product) => (
             <div key={product.product_id} className="product-card">
               <img
                 src={`http://localhost:5000/static/${product.images[0]?.image_url}`}
                 alt={product.name}
                 className="product-image"
-              />              <div className="product-details">
+              />
+              <div className="product-details">
                 <h3>{product.name}</h3>
                 <p>{product.description}</p>
                 <p className="price">${product.price}</p>
@@ -41,7 +59,7 @@ const MainProducts = () => {
             </div>
           ))
         ) : (
-          <p>No products found for this category.</p>
+          <p className="no-products">No products found.</p>
         )}
       </div>
     </div>

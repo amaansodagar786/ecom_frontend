@@ -11,7 +11,8 @@ import Profile from './Pages/Account/Profile';
 import { AuthProvider } from './Components/Context/AuthContext';
 import Home from './Pages/Home/Home';
 import MainProducts from './Pages/Mainproducts/Mainproducts';
-// import Adminsignup from './Pages/Admin/Authentication/Adminsignup';
+
+import ScrollToTop from './Components/ScrolltoTop/ScrollToTop';
 
 import AdminRoute from './Components/AdminRoute/AdminRoute';
 import Footer from './Components/Footer/Footer';
@@ -19,17 +20,28 @@ import Wishlist from './Pages/Wishlist/Wishlist';
 
 // ADMIN PAGES 
 import AddProducts from './Pages/Admin/Products/AddProducts';
-import AdminSidebar from './Pages/Admin/Sidebar/AdminSidebar';
+// import AdminSidebar from './Pages/Admin/Sidebar/AdminSidebar';
 import Dashboard from './Pages/Admin/AdminPanel/Dashboard';
 import Orders from './Pages/Admin/Orders/Orders';
 import Inventory from './Pages/Admin/Inventory/Inventory';
 import Payment from './Pages/Admin/Payment/Payment';
+// import Adminsignup from './Pages/Admin/Authentication/Adminsignup';
+
+// USER PAGES 
+import UserDashboard from './Pages/User/UserPanel/Dashboard';
+import Address from './Pages/User/Address/Address';
+import Userorder from './Pages/User/Orders/Userorder';
+import ReviewandRating from './Pages/User/ReviewandRating/ReviewandRating';
+import Support from './Pages/User/Support/Support';
+import Cart from './Pages/Cart/Cart';
+
 
 
 function App() {
   return (
     <AuthProvider>
       <Router>
+      <ScrollToTop />
         <Navbar />
         <Routes>
           <Route path="/coming" element={<ComingSoon />} />
@@ -42,13 +54,23 @@ function App() {
 
           <Route path="/products/:category" element={<MainProducts />} />
 
+          {/* USER PAGES  */}
+
+          <Route path="/userdashboard" element={<UserDashboard />} />
+          <Route path="/address" element={<Address />} />
+          <Route path="/userorders" element={< Userorder/>} />
+          <Route path="/wishlist" element={<Wishlist />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/randr" element={<ReviewandRating />} />
+          <Route path="/support" element={<Support />} />
+
 
           {/* ADMIN PAGES  */}
           {/* <Route path="/adminreg" element={<Adminsignup />} /> */}
 
 
           <Route path="/wishlist" element={<Wishlist />} />
-          <Route path="/sidebar" element={<AdminSidebar />} />
+          {/* <Route path="/sidebar" element={<AdminSidebar />} /> */}
 
           <Route 
             path="/addproducts" 
