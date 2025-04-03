@@ -10,9 +10,9 @@ const Wishlist = () => {
     console.log("Wishlist Items:", wishlistItems);
   }, [wishlistItems]);
 
-  const handleMoveToCart = (item) => {
-    // Implement move to cart functionality
-    console.log("Moving to cart:", item);
+  const handleAddAllToCart = () => {
+    // Implement add all to cart functionality
+    console.log("Adding all items to cart");
   };
 
   return (
@@ -30,7 +30,7 @@ const Wishlist = () => {
                 <div className="product-image">
                   {item.image && (
                     <img 
-                      src={`http://localhost:5000/static${item.image}`} 
+                      src={`${import.meta.env.VITE_SERVER_API}/static${item.image}`} 
                       alt={item.name} 
                       loading="lazy"
                     />
@@ -46,26 +46,16 @@ const Wishlist = () => {
                 <div className="product-details">
                   <h3 className="product-name">{item.name}</h3>
                   <p className="product-category">{item.category}</p>
-                  <div className="product-price">
-                    ${item.price?.toFixed(2)}
+                  <div className="product-pricing">
+                    <span className="current-price">${item.price?.toFixed(2)}</span>
                     {item.deleted_price && (
                       <span className="original-price">${item.deleted_price?.toFixed(2)}</span>
                     )}
                   </div>
-                  
-                  <div className="product-actions">
-                    <button 
-                      className="move-to-cart"
-                      onClick={() => handleMoveToCart(item)}
-                    >
-                      <FiShoppingCart size={16} />
-                      Move to Cart
-                    </button>
-                    <button className="view-product">
-                      View Product
-                      <FiChevronRight size={18} />
-                    </button>
-                  </div>
+                  <button className="view-product-btn">
+                    View Product
+                    <FiChevronRight size={18} />
+                  </button>
                 </div>
               </div>
             ))}
@@ -78,7 +68,10 @@ const Wishlist = () => {
                 <span>Items</span>
                 <span>{wishlistItems.length}</span>
               </div>
-              <button className="add-all-to-cart">
+              <button 
+                className="add-all-to-cart"
+                onClick={handleAddAllToCart}
+              >
                 <FiShoppingCart size={18} />
                 Add All to Cart
               </button>

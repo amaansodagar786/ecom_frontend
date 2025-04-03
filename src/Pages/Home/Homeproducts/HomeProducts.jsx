@@ -2,21 +2,16 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import './HomeProducts.scss';
 import { useAuth } from '../../../Components/Context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const HomeProducts = () => {
   const [products, setProducts] = useState([]);
+  const [displayedProducts, setDisplayedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [wishlistItems, setWishlistItems] = useState([]);
   const { toggleWishlistItem } = useAuth();
-
-  const [filters, setFilters] = useState({
-    priceRange: [0, 2000],
-    colors: [],
-    sortBy: 'featured',
-    searchQuery: '',
-    activeFilterTab: null
-  });
+  const navigate = useNavigate();
 
   const handleWishlistClick = (product) => {
     toggleWishlistItem({
@@ -24,7 +19,8 @@ const HomeProducts = () => {
       name: product.name,
       price: product.price,
       image: product.images?.[0]?.image_url,
-      category: product.category
+      category: product.category,
+      deleted_price: product.deleted_price
     });
   
     setWishlistItems((prevWishlist) =>
@@ -50,46 +46,13 @@ const HomeProducts = () => {
     fetchProducts();
   }, []);
 
-  // Color Options
-  const colorOptions = [
-    { name: 'Black', value: 'black', hex: '#000000' },
-    { name: 'White', value: 'white', hex: '#FFFFFF' },
-    { name: 'Gold', value: 'gold', hex: '#FFD700' },
-    { name: 'Silver', value: 'silver', hex: '#C0C0C0' },
-    { name: 'Blue', value: 'blue', hex: '#0000FF' },
-    { name: 'Red', value: 'red', hex: '#FF0000' },
-    { name: 'Green', value: 'green', hex: '#008000' },
-  ];
-
-  // Sort Options
-  const sortOptions = [
-    { value: 'featured', label: 'Featured' },
-    { value: 'newest', label: 'Newest Arrivals' },
-    { value: 'price-low', label: 'Price: Low to High' },
-    { value: 'price-high', label: 'Price: High to Low' },
-    { value: 'rating', label: 'Highest Rated' },
-  ];
-
-  // Filtering and Sorting Logic
-  const filteredProducts = products
-    .filter(product => {
-      const matchesSearch = product.name.toLowerCase().includes(filters.searchQuery.toLowerCase()) || 
-                          product.description.toLowerCase().includes(filters.searchQuery.toLowerCase());
-      const priceInRange = product.price >= filters.priceRange[0] &&
-                          product.price <= filters.priceRange[1];
-      const colorMatch = filters.colors.length === 0 ||
-                        filters.colors.some(color => product.colors?.includes(color));
-      return matchesSearch && priceInRange && colorMatch;
-    })
-    .sort((a, b) => {
-      switch (filters.sortBy) {
-        case 'price-low': return a.price - b.price;
-        case 'price-high': return b.price - a.price;
-        case 'newest': return new Date(b.createdAt) - new Date(a.createdAt);
-        case 'rating': return (b.rating || 0) - (a.rating || 0);
-        default: return 0;
-      }
-    });
+  // Select 12 random products when products are loaded
+  useEffect(() => {
+    if (products.length > 0) {
+      const shuffled = [...products].sort(() => 0.5 - Math.random());
+      setDisplayedProducts(shuffled.slice(0, 12));
+    }
+  }, [products]);
 
   // Error & Loading States
   if (loading) return (
@@ -118,134 +81,10 @@ const HomeProducts = () => {
           <p className="section-subtitle">Curated luxury for the discerning customer</p>
         </div>
 
-        {/* Premium Filter Navbar */}
-        <div className="filters-navbar">
-          {/* Search Bar */}
-          <div className="search-filter">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-            <input
-              type="text"
-              placeholder="Search products..."
-              value={filters.searchQuery}
-              onChange={(e) => setFilters({...filters, searchQuery: e.target.value})}
-              className="search-input"
-            />
-            {filters.searchQuery && (
-              <button 
-                className="clear-search" 
-                onClick={() => setFilters({...filters, searchQuery: ''})}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
-            )}
-          </div>
-
-          {/* Price Range Filter */}
-          <div className="filter-group">
-            <label>Price Range</label>
-            <div className="price-range-container">
-              <input
-                type="range"
-                min="0"
-                max="2000"
-                step="50"
-                value={filters.priceRange[1]}
-                onChange={(e) => setFilters({
-                  ...filters,
-                  priceRange: [0, parseInt(e.target.value)]
-                })}
-              />
-              <span className="price-display">
-                $0 - ${filters.priceRange[1]}
-              </span>
-            </div>
-          </div>
-
-          {/* Color Dropdown Filter */}
-          <div className="filter-group">
-            <label>Colors</label>
-            <div className="custom-select">
-              <select
-                value={filters.colors[0] || ''}
-                onChange={(e) => {
-                  const color = e.target.value;
-                  if (color) {
-                    setFilters({
-                      ...filters,
-                      colors: filters.colors.includes(color) 
-                        ? filters.colors.filter(c => c !== color)
-                        : [color]
-                    });
-                  }
-                }}
-                className="color-select"
-              >
-                <option value="">Select Color</option>
-                {colorOptions.map(color => (
-                  <option key={color.value} value={color.value}>
-                    {color.name}
-                  </option>
-                ))}
-              </select>
-              <div className="selected-colors">
-                {filters.colors.map(color => {
-                  const colorData = colorOptions.find(c => c.value === color);
-                  return colorData ? (
-                    <span 
-                      key={color} 
-                      className="color-chip"
-                      style={{ backgroundColor: colorData.hex }}
-                      onClick={() => setFilters({
-                        ...filters,
-                        colors: filters.colors.filter(c => c !== color)
-                      })}
-                    />
-                  ) : null;
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* Sort Dropdown */}
-          <div className="filter-group">
-            <label>Sort By</label>
-            <select
-              value={filters.sortBy}
-              onChange={(e) => setFilters({ ...filters, sortBy: e.target.value })}
-              className="sort-select"
-            >
-              {sortOptions.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Reset Button */}
-          <button
-            className="reset-filters"
-            onClick={() => setFilters({
-              priceRange: [0, 2000],
-              colors: [],
-              sortBy: 'featured',
-              searchQuery: ''
-            })}
-          >
-            Reset All
-          </button>
-        </div>
-
         {/* Product Grid */}
         <div className="product-grid">
-          {filteredProducts.length > 0 ? (
-            filteredProducts.map((product) => (
+          {displayedProducts.length > 0 ? (
+            displayedProducts.map((product) => (
               <div className="product-card" key={product.product_id}>
                 <div className="product-badge">
                   {product.unit > 0 ? 'In Stock' : 'Pre-Order'}
@@ -267,8 +106,8 @@ const HomeProducts = () => {
                 <div className="product-image">
                   {product.images?.length > 0 && (
                     <img
-                    src={`${import.meta.env.VITE_SERVER_API}/static/${product.images[0].image_url}`}
-                    alt={product.name}
+                      src={`${import.meta.env.VITE_SERVER_API}/static/${product.images[0].image_url}`}
+                      alt={product.name}
                       loading="lazy"
                       onError={(e) => {
                         console.error('Failed to load:', e.target.src);
@@ -299,21 +138,25 @@ const HomeProducts = () => {
                 <line x1="12" y1="8" x2="12" y2="12"></line>
                 <line x1="12" y1="16" x2="12.01" y2="16"></line>
               </svg>
-              <h3>No products match your filters</h3>
-              <button 
-                className="reset-filters-btn"
-                onClick={() => setFilters({
-                  priceRange: [0, 2000],
-                  colors: [],
-                  sortBy: 'featured',
-                  searchQuery: ''
-                })}
-              >
-                Reset Filters
-              </button>
+              <h3>No products available</h3>
             </div>
           )}
         </div>
+
+        {/* View More Button */}
+        {products.length > 0 && (
+          <div className="view-more-container">
+            <button 
+              className="view-more-btn"
+              onClick={() => navigate('/allproducts')}
+            >
+              View All Products
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14M12 5l7 7-7 7"></path>
+              </svg>
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );
