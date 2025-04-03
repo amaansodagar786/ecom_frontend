@@ -33,14 +33,18 @@ const Login = () => {
   });
 
   const handleSubmit = async (values, { setSubmitting, resetForm }) => {
+    console.log("API URL:", import.meta.env.VITE_SERVER_API);
+  
     try {
-      const response = await axios.post('http://localhost:5000/login', values, {
-        withCredentials: true
-      });
+      const response = await axios.post(
+        `${import.meta.env.VITE_SERVER_API}/login`, 
+        values, 
+        { withCredentials: true }
+      );
+      
       const { token, message, user } = response.data;
   
-      // Use the AuthContext login function instead of direct localStorage
-      login(token, user); // This updates both localStorage AND React state
+      login(token, user); // Updates AuthContext state
       
       toast.success(message || 'Login successful!');
   
@@ -52,12 +56,14 @@ const Login = () => {
         }
       }, 1500);
     } catch (error) {
+      console.error("Login error:", error.response?.data || error); // Log full error response
       const errorMsg = error.response?.data?.message || 'Login failed. Please try again.';
       toast.error(errorMsg);
     } finally {
       setSubmitting(false);
     }
   };
+  
 
   return (
     <div className="login-container">

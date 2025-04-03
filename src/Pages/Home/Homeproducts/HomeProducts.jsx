@@ -38,7 +38,7 @@ const HomeProducts = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/products');
+        const response = await axios.get(`${import.meta.env.VITE_SERVER_API}/products`);
         setProducts(response.data);
         setLoading(false);
       } catch (error) {
@@ -267,8 +267,8 @@ const HomeProducts = () => {
                 <div className="product-image">
                   {product.images?.length > 0 && (
                     <img
-                      src={`http://localhost:5000/static${product.images[0].image_url}`}
-                      alt={product.name}
+                    src={`${import.meta.env.VITE_SERVER_API}/static/${product.images[0].image_url}`}
+                    alt={product.name}
                       loading="lazy"
                       onError={(e) => {
                         console.error('Failed to load:', e.target.src);

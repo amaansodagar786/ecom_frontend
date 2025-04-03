@@ -10,8 +10,13 @@ import {
   FiLogOut 
 } from 'react-icons/fi';
 import { useAuth } from '../Context/AuthContext';
+import Cart from '../../Pages/Cart/Cart';
+
+
+
 
 const Navbar = () => {
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
   const { isAuthenticated, logout } = useAuth();
@@ -22,10 +27,11 @@ const Navbar = () => {
   const handleLogoClick = () => navigate('/');
   const handleAccountClick = () => navigate(isAuthenticated ? '/userdashboard' : '/login');
   const handleLogoutClick = () => { logout(); navigate('/'); };
-  const handleCartClick = () => navigate('/cart');
+  const handleCartClick = () => setIsCartOpen(true); // Change this line
   const handleWishlistClick = () => navigate('/wishlist');
 
   return (
+    <>
     <nav className="navbar">
       <div className="navbar-container">
         {/* Logo */}
@@ -79,6 +85,8 @@ const Navbar = () => {
         </div>
       </div>
     </nav>
+          <Cart isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+</>
   );
 };
 

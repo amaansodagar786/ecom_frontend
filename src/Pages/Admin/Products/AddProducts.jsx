@@ -22,7 +22,7 @@ const AddProducts = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await axios.get('/api/categories');
+        const response = await axios.get('http://mtm-store.com/api/api/categories');
         console.log('API Response:', response.data); // Add this line
         setCategories(response.data);
         setLoadingCategories(false);
@@ -102,7 +102,7 @@ const AddProducts = () => {
     if (!newCategory.trim()) return;
 
     try {
-      const response = await axios.post('/api/categories', {
+      const response = await axios.post('http://mtm-store.com/api/api/categories', {
         category_name: newCategory,
         parent_id: null
       });
@@ -120,7 +120,7 @@ const AddProducts = () => {
     if (!newSubcategory.trim() || !selectedMainCategory) return;
 
     try {
-      const response = await axios.post('/api/categories', {
+      const response = await axios.post('http://mtm-store.com/api/api/categories', {
         category_name: newSubcategory,
         parent_id: selectedMainCategory
       });
