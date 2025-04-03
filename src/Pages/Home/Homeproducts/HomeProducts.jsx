@@ -13,14 +13,93 @@ const HomeProducts = () => {
   const { toggleWishlistItem } = useAuth();
   const navigate = useNavigate();
 
+
+  const handleProductClick = (product, e) => {
+    if (e) e.stopPropagation();
+    console.log('Full Product Details:', product);
+    navigate(`/product/${product.product_id}`, { state: { product } });
+
+    // navigate(`/product/${product.product_id}`);
+  };
+
+
+  // Helper function to get product price and stock info
+  const getProductInfo = (product) => {
+    let price = 0;
+    let deleted_price = null;
+    let inStock = false;
+    let mainImage = product.images?.[0]?.image_url;
+
+    if (product.product_type === 'single') {
+      if (product.colors?.length > 0) {
+        const prices = product.colors.map(c => parseFloat(c.price));
+        const originalPrices = product.colors
+          .map(c => c.original_price ? parseFloat(c.original_price) : null)
+          .filter(p => p !== null);
+        
+        price = Math.min(...prices);
+        if (originalPrices.length > 0) {
+          deleted_price = Math.max(...originalPrices);
+        }
+        inStock = product.colors.some(c => c.stock_quantity > 0);
+        
+        // Get first available color image if no main product image
+        if (!mainImage) {
+          const firstColorWithImage = product.colors.find(c => c.images?.length > 0);
+          mainImage = firstColorWithImage?.images?.[0]?.image_url;
+        }
+      }
+    } else { // variable product
+      if (product.models?.length > 0) {
+        const allPrices = product.models.flatMap(m => 
+          m.colors?.map(c => parseFloat(c.price)) || []
+        );
+        const allOriginalPrices = product.models.flatMap(m => 
+          m.colors?.map(c => c.original_price ? parseFloat(c.original_price) : null).filter(p => p !== null) || []
+        );
+        
+        if (allPrices.length > 0) {
+          price = Math.min(...allPrices);
+        }
+        if (allOriginalPrices.length > 0) {
+          deleted_price = Math.max(...allOriginalPrices);
+        }
+        inStock = product.models.some(m => 
+          m.colors?.some(c => c.stock_quantity > 0)
+        );
+        
+        // Get first available model/color image if no main product image
+        if (!mainImage) {
+          const firstModelWithImage = product.models.find(m => 
+            m.colors?.some(c => c.images?.length > 0)
+          );
+          if (firstModelWithImage) {
+            const firstColorWithImage = firstModelWithImage.colors.find(c => c.images?.length > 0);
+            mainImage = firstColorWithImage?.images?.[0]?.image_url;
+          }
+        }
+      }
+    }
+
+    return {
+      price,
+      deleted_price,
+      inStock,
+      mainImage: mainImage ? `${import.meta.env.VITE_SERVER_API}/static/${mainImage}` : null
+    };
+  };
+
   const handleWishlistClick = (product) => {
+    const { price, deleted_price, mainImage } = getProductInfo(product);
+    
     toggleWishlistItem({
       product_id: product.product_id,
       name: product.name,
-      price: product.price,
-      image: product.images?.[0]?.image_url,
+      price: price,
+      image: mainImage,
       category: product.category,
-      deleted_price: product.deleted_price
+      deleted_price: deleted_price,
+     
     });
   
     setWishlistItems((prevWishlist) =>
@@ -84,53 +163,69 @@ const HomeProducts = () => {
         {/* Product Grid */}
         <div className="product-grid">
           {displayedProducts.length > 0 ? (
-            displayedProducts.map((product) => (
-              <div className="product-card" key={product.product_id}>
-                <div className="product-badge">
-                  {product.unit > 0 ? 'In Stock' : 'Pre-Order'}
-                </div>
-                <div className="wishlist-icon" onClick={() => handleWishlistClick(product)}>
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill={wishlistItems.includes(product.product_id) ? "#ff4757" : "none"}
-                    stroke={wishlistItems.includes(product.product_id) ? "#ff4757" : "#111"}
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                  </svg>
-                </div>
-                <div className="product-image">
-                  {product.images?.length > 0 && (
-                    <img
-                      src={`${import.meta.env.VITE_SERVER_API}/static/${product.images[0].image_url}`}
-                      alt={product.name}
-                      loading="lazy"
-                      onError={(e) => {
-                        console.error('Failed to load:', e.target.src);
-                        // e.target.src = '/path-to-fallback-image.jpg';
-                      }}
-                    />
-                  )}
-                  <button className="quick-view">Quick View</button>
-                </div>
-                <div className="product-details">
-                  <span className="product-category">{product.category}</span>
-                  <h3 className="product-name">{product.name}</h3>
-                  <p className="product-description">{product.description}</p>
-                  <div className="product-pricing">
-                    <span className="current-price">${product.price?.toFixed(2)}</span>
-                    {product.deleted_price && (
-                      <span className="original-price">${product.deleted_price?.toFixed(2)}</span>
-                    )}
+            displayedProducts.map((product) => {
+              const { price, deleted_price, inStock, mainImage } = getProductInfo(product);
+              
+              return (
+                <div className="product-card" key={product.product_id}>
+                  <div className="product-badge">
+                    {inStock ? 'In Stock' : 'Pre-Order'}
                   </div>
-                  <button className="add-to-cart">View Product</button>
+                  <div className="wishlist-icon" onClick={() => handleWishlistClick(product)}>
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill={wishlistItems.includes(product.product_id) ? "#ff4757" : "none"}
+                      stroke={wishlistItems.includes(product.product_id) ? "#ff4757" : "#111"}
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
+                  </div>
+                  <div className="product-image">
+                    {mainImage && (
+                      <img
+                        src={mainImage}
+                        alt={product.name}
+                        loading="lazy"
+                        onError={(e) => {
+                          console.error('Failed to load:', e.target.src);
+                          e.target.src = '/path-to-fallback-image.jpg';
+                        }}
+                      />
+                    )}
+                    <button 
+                      className="quick-view"
+                      onClick={(e) => handleProductClick(product, e)}                    >
+                      Quick View
+                    </button>
+                  </div>
+                  <div className="product-details">
+                    <span className="product-category">{product.category || 'Uncategorized'}</span>
+                    <h3 className="product-name">{product.name}</h3>
+                    <p className="product-description">
+                      {product.description || 'No description available'}
+                    </p>
+                    <div className="product-pricing">
+                      <span className="current-price">${price.toFixed(2)}</span>
+                      {deleted_price && (
+                        <span className="original-price">${deleted_price.toFixed(2)}</span>
+                      )}
+                    </div>
+                    <button 
+                      className="add-to-cart"
+                      // onClick={() => navigate(`/product/${product.product_id}`)}
+                      onClick={(e) => handleProductClick(product, e)} 
+                    >
+                      View Product
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           ) : (
             <div className="no-products">
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

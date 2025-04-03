@@ -69,18 +69,16 @@ export const AuthProvider = ({ children }) => {
 
    // Add wishlist state
    const [wishlistItems, setWishlistItems] = useState(() => {
-    // Initialize from localStorage if available
     const saved = localStorage.getItem('wishlist');
     return saved ? JSON.parse(saved) : [];
   });
-
+  
   const toggleWishlistItem = (product) => {
     setWishlistItems(prev => {
-      const newWishlist = prev.some(item => item.product_id === product.product_id)
-        ? prev.filter(item => item.product_id !== product.product_id)
-        : [...prev, product];
-      
-      // Save to localStorage whenever wishlist changes
+      const productId = product.product_id;
+      const newWishlist = prev.includes(productId)
+        ? prev.filter(id => id !== productId)
+        : [...prev, productId];
       localStorage.setItem('wishlist', JSON.stringify(newWishlist));
       return newWishlist;
     });

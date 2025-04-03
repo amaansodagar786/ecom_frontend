@@ -35,6 +35,7 @@ import ReviewandRating from './Pages/User/ReviewandRating/ReviewandRating';
 import Support from './Pages/User/Support/Support';
 import Cart from './Pages/Cart/Cart';
 import AllProducts from './Pages/AllProducts/AllProducts';
+import ProductPage from './Pages/Product/ProductPage';
 
 
 
@@ -52,6 +53,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/allproducts" element={<AllProducts />} />
+          <Route path="/product/:id" element={<ProductPage />} />
 
 
           <Route path="/products/:category" element={<MainProducts />} />
