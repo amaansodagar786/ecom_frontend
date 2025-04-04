@@ -296,3 +296,24 @@ $small-mobile-breakpoint: 576px;
   align-items: center;
   justify-content: center;
 }
+
+
+
+// Add to your Login.scss
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 20px 0;
+  
+  .divider-line {
+    flex: 1;
+    height: 1px;
+    background-color: #e0e0e0;
+  }
+  
+  .divider-text {
+    padding: 0 10px;
+    color: #757575;
+    font-size: 14px;
+  }
+}

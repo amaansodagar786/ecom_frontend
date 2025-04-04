@@ -206,9 +206,9 @@ const HomeProducts = () => {
                   <div className="product-details">
                     <span className="product-category">{product.category || 'Uncategorized'}</span>
                     <h3 className="product-name">{product.name}</h3>
-                    <p className="product-description">
+                    {/* <p className="product-description">
                       {product.description || 'No description available'}
-                    </p>
+                    </p> */}
                     <div className="product-pricing">
                       <span className="current-price">${price.toFixed(2)}</span>
                       {deleted_price && (

@@ -1,44 +1,98 @@
-// src/components/Categories.jsx
-import React from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Categories.scss';
+import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
 const Categories = () => {
   const navigate = useNavigate();
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const sliderRef = useRef(null);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
-  const categories = [
-    { id: 1, name: 'Electronics', imageUrl: 'https://images.unsplash.com/photo-1550009158-9ebf69173e03' },
-    { id: 2, name: 'Fashion', imageUrl: 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f' },
-    {
-      id: 3,
-      name: "Home Appliances",
-      imageUrl: "https://images.unsplash.com/photo-1513694203232-719a280e022f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1200&q=80"
-    },
-    {
-      id: 4,
-      name: "Footwear",
-      imageUrl: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1200&q=80"
-    }
-  ];
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_SERVER_API}/categories`);
+        if (!response.ok) throw new Error('Failed to fetch categories');
+        const data = await response.json();
+        setCategories(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const handleCategoryClick = (categoryName) => {
     navigate(`/products/${categoryName}`);
   };
 
+  const slide = (direction) => {
+    const slider = sliderRef.current;
+    const categoryWidth = windowWidth <= 768 ? 
+      (slider.firstChild?.offsetWidth || 120) + 10 : 
+      (slider.firstChild?.offsetWidth || 200) + 20;
+    const scrollAmount = categoryWidth * (windowWidth <= 768 ? 1 : 1);
+    
+    slider.scrollBy({ 
+      left: direction === 'left' ? -scrollAmount : scrollAmount, 
+      behavior: 'smooth' 
+    });
+  };
+
+  if (loading) return <div className="loading">Loading categories...</div>;
+  if (error) return <div className="error">Error: {error}</div>;
+
   return (
     <div className="shop-by-category">
       <h2 className="sec-heading">Shop By Categories</h2>
-      <div className="categories">
-        {categories.map((category) => (
-          <div
-            className="category"
-            key={category.id}
-            onClick={() => handleCategoryClick(category.name)}
-          >
-            <img src={category.imageUrl} alt={category.name} />
-            <div className="category-name">{category.name}</div>
-          </div>
-        ))}
+      
+      <div className="categories-container">
+        <button 
+          className="slider-button left" 
+          onClick={() => slide('left')}
+          aria-label="Slide left"
+        >
+          <FaChevronLeft />
+        </button>
+        
+        <div className="categories" ref={sliderRef}>
+          {categories.map((category) => (
+            <div
+              className="category"
+              key={category.category_id}
+              onClick={() => handleCategoryClick(category.name)}
+            >
+              <img
+                src={`${import.meta.env.VITE_SERVER_API}${category.image_url}`} 
+                alt={category.name}
+                onError={(e) => {
+                  e.target.src = 'https://via.placeholder.com/300.png?text=No+Image';
+                  e.target.style.objectFit = 'contain';
+                }}
+              />
+              <div className="category-name">{category.name}</div>
+            </div>
+          ))}
+        </div>
+        
+        <button 
+          className="slider-button right" 
+          onClick={() => slide('right')}
+          aria-label="Slide right"
+        >
+          <FaChevronRight />
+        </button>
       </div>
     </div>
   );

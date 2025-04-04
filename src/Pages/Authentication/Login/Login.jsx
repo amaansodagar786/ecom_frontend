@@ -1,3 +1,4 @@
+// Update your Login.jsx
 import React from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
@@ -11,12 +12,12 @@ import 'react-toastify/dist/ReactToastify.css';
 import './Login.scss';
 import animationData from '../../../assets/Animations/login.json';
 import { useAuth } from '../../../Components/Context/AuthContext';
-
+import GoogleLoginButton from './GoogleLoginButton';
 
 const Login = () => {
-  const { login } = useAuth(); // Add this
-
+  const { login } = useAuth();
   const navigate = useNavigate();
+  const [isGoogleLoading, setIsGoogleLoading] = React.useState(false);
 
   const initialValues = {
     email: '',
@@ -32,9 +33,50 @@ const Login = () => {
       .required('Password is required')
   });
 
+  const handleGoogleLogin = async () => {
+    setIsGoogleLoading(true);
+    try {
+      // Open Google auth in a new window
+      const googleAuthWindow = window.open(
+        `${import.meta.env.VITE_SERVER_API}/login/google`,
+        'GoogleAuth',
+        'width=500,height=600'
+      );
+
+      // Listen for messages from the popup
+      const handleMessage = (event) => {
+        if (event.origin !== new URL(import.meta.env.VITE_SERVER_API).origin) {
+          return;
+        }
+
+        if (event.data.token && event.data.user) {
+          login(event.data.token, event.data.user);
+          toast.success('Google login successful!');
+          
+          setTimeout(() => {
+            if (event.data.user.role === 'admin') {
+              navigate('/admindashboard');
+            } else {
+              navigate('/');
+            }
+          }, 1500);
+          
+          // Clean up
+          window.removeEventListener('message', handleMessage);
+          googleAuthWindow.close();
+        }
+      };
+
+      window.addEventListener('message', handleMessage);
+    } catch (error) {
+      console.error("Google login error:", error);
+      toast.error('Google login failed. Please try again.');
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
+
   const handleSubmit = async (values, { setSubmitting, resetForm }) => {
-    console.log("API URL:", import.meta.env.VITE_SERVER_API);
-  
     try {
       const response = await axios.post(
         `${import.meta.env.VITE_SERVER_API}/login`, 
@@ -43,11 +85,9 @@ const Login = () => {
       );
       
       const { token, message, user } = response.data;
-  
-      login(token, user); // Updates AuthContext state
-      
+      login(token, user);
       toast.success(message || 'Login successful!');
-  
+
       setTimeout(() => {
         if (user.role === 'admin') {
           navigate('/admindashboard');
@@ -56,14 +96,13 @@ const Login = () => {
         }
       }, 1500);
     } catch (error) {
-      console.error("Login error:", error.response?.data || error); // Log full error response
+      console.error("Login error:", error.response?.data || error);
       const errorMsg = error.response?.data?.message || 'Login failed. Please try again.';
       toast.error(errorMsg);
     } finally {
       setSubmitting(false);
     }
   };
-  
 
   return (
     <div className="login-container">
@@ -79,6 +118,8 @@ const Login = () => {
       <div className="login-card">
         <h2 className="login-title">Welcome Back</h2>
         <p className="login-subtitle">Please enter your credentials to login</p>
+        
+        
         
         <Formik
           initialValues={initialValues}
@@ -138,8 +179,19 @@ const Login = () => {
           <p className="register-link">
             Don't have an account? <a href="/register">Register here</a>
           </p>
-          
         </div>
+        <div className="divider">
+          <span className="divider-line"></span>
+          <span className="divider-text">OR</span>
+          <span className="divider-line"></span>
+        </div>
+        {/* Add Google Login Button */}
+        <GoogleLoginButton 
+          onClick={handleGoogleLogin}
+          disabled={isGoogleLoading}
+        />
+        
+        
       </div>
       <ToastContainer
         position="top-center"

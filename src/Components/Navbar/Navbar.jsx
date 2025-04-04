@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Navbar.scss';
 import Logo from '../../assets/Logo/logo.png';
-import { 
-  FiShoppingCart, 
-  FiHeart, 
+import {
+  FiShoppingCart,
+  FiHeart,
   FiUser,
   FiLogIn,
   FiLogOut,
@@ -17,13 +17,19 @@ const Navbar = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout, isAdmin } = useAuth();
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const closeMenu = () => setIsMenuOpen(false);
 
   const handleLogoClick = () => navigate('/');
-  const handleAccountClick = () => navigate(isAuthenticated ? '/userdashboard' : '/login');
+  const handleAccountClick = () => {
+    if (isAuthenticated) {
+      navigate(isAdmin ? '/admindashboard' : '/userdashboard');
+    } else {
+      navigate('/login');
+    }
+  };
   const handleLogoutClick = () => { logout(); navigate('/'); };
   const handleCartClick = () => setIsCartOpen(true);
   const handleWishlistClick = () => navigate('/wishlist');
@@ -62,7 +68,7 @@ const Navbar = () => {
               <div className="nav-icon" onClick={handleWishlistClick}>
                 <FiHeart className="icon" />
               </div>
-              
+
               <div className="nav-icon nav-cart" onClick={handleCartClick}>
                 <FiShoppingCart className="icon" />
                 <span className="cart-count">0</span>

@@ -455,6 +455,26 @@ $font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       color: $gray-color;
       margin-top: 0.75rem;
     }
+
+    .upload-button {
+      @include primary-button;
+      padding: 0.65rem 1.25rem;
+      font-size: 0.9rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+  
+    .file-hint {
+      font-size: 0.8rem;
+      color: $gray-color;
+      margin-top: 0.25rem;
+    }
+
+
+
+
   }
 
   .image-previews {
@@ -607,6 +627,11 @@ $font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .modal {
+
+
+
+
+
   background: white;
   border-radius: $border-radius;
   width: 100%;
@@ -614,6 +639,23 @@ $font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   padding: 2rem;
   box-shadow: $box-shadow-lg;
   animation: modalSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+
+  .image-upload-container {
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .image-previews {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    
+    .image-preview {
+      img {
+        max-height: 120px;
+      }
+    }
+  }
+
 
   h3 {
     margin-top: 0;

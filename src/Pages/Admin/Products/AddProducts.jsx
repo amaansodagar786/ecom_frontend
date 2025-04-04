@@ -18,6 +18,7 @@ const AddProducts = () => {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showSubcategoryModal, setShowSubcategoryModal] = useState(false);
   const [selectedMainCategory, setSelectedMainCategory] = useState(null);
+  const [categoryImage, setCategoryImage] = useState(null);
 
   // Fetch categories from backend
   useEffect(() => {
@@ -150,26 +151,34 @@ const AddProducts = () => {
   // Add new main category
   const handleAddMainCategory = async () => {
     if (!newCategory.trim()) return;
-
+  
     try {
-      const token = localStorage.getItem("token"); // Get token from local storage
+      const token = localStorage.getItem("token");
       if (!token) {
         toast.error("User is not authenticated");
         return;
       }
-
+  
+      const formData = new FormData();
+      formData.append('name', newCategory);
+      if (categoryImage) {
+        formData.append('image', categoryImage);
+      }
+  
       const response = await axios.post(
         `${import.meta.env.VITE_SERVER_API}/category/add`,
-        { name: newCategory },
+        formData,
         {
           headers: {
-            Authorization: `Bearer ${token}`, // Add Authorization header
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
           },
         }
       );
-
+  
       setCategories([...categories, response.data]);
       setNewCategory("");
+      setCategoryImage(null);  // Reset image state
       setShowCategoryModal(false);
       toast.success("Category added successfully");
     } catch (error) {
@@ -387,27 +396,27 @@ const AddProducts = () => {
                     <div className="form-group">
                       <label className="form-label">Main Category *</label>
                       <div className="select-with-button">
-                        <Field
-                          as="select"
-                          name="main_category_id"
-                          className="form-input"
-                          onChange={(e) => {
-                            setFieldValue('main_category_id', e.target.value);
-                            setSelectedMainCategory(e.target.value);
-                            setFieldValue('sub_category_id', '');
-                          }}
-                        >
-                          <option value="">Select main category</option>
-                          {loadingCategories ? (
-                            <option disabled>Loading categories...</option>
-                          ) : (
-                            categories.map(category => (
-                              <option key={category.category_id} value={category.category_id}>
-                                {category.name}
-                              </option>
-                            ))
-                          )}
-                        </Field>
+                      <Field
+  as="select"
+  name="main_category_id"
+  className="form-input"
+  onChange={(e) => {
+    setFieldValue('main_category_id', e.target.value);
+    setSelectedMainCategory(e.target.value);
+    setFieldValue('sub_category_id', '');
+  }}
+>
+  <option value="">Select main category</option>
+  {loadingCategories ? (
+    <option disabled>Loading categories...</option>
+  ) : (
+    categories.map(category => (
+      <option key={category.category_id} value={category.category_id}>
+        {category.name}
+      </option>
+    ))
+  )}
+</Field>
                         <button
                           type="button"
                           className="add-button"
@@ -1066,35 +1075,80 @@ const AddProducts = () => {
 
         {/* Category Modals */}
         {showCategoryModal && (
-          <div className="modal-overlay">
-            <div className="modal">
-              <h3>Add New Main Category</h3>
-              <input
-                type="text"
-                value={newCategory}
-                onChange={(e) => setNewCategory(e.target.value)}
-                placeholder="Enter category name"
-                className="form-input"
+  <div className="modal-overlay">
+    <div className="modal">
+      <h3>Add New Main Category</h3>
+      <input
+        type="text"
+        value={newCategory}
+        onChange={(e) => setNewCategory(e.target.value)}
+        placeholder="Enter category name"
+        className="form-input"
+      />
+      
+      {/* Image Upload Section */}
+      <div className="form-group" style={{ marginTop: '1rem' }}>
+        <label className="form-label">Category Image *</label>
+        <div className="image-upload-container">
+          <input
+            type="file"
+            id="category-image"
+            accept="image/*"
+            className="file-input"
+            onChange={(e) => {
+              const file = e.target.files[0];
+              setCategoryImage(file);
+            }}
+          />
+          <label htmlFor="category-image" className="upload-button">
+            <FaUpload /> Upload Image
+          </label>
+          <p className="file-hint">Supports: JPG, PNG, WEBP</p>
+        </div>
+        
+        {/* Image Preview */}
+        {categoryImage && (
+          <div className="image-previews" style={{ marginTop: '1rem' }}>
+            <div className="image-preview">
+              <img 
+                src={URL.createObjectURL(categoryImage)} 
+                alt="Category preview" 
               />
-              <div className="modal-actions">
-                <button
-                  type="button"
-                  className="cancel-button"
-                  onClick={() => setShowCategoryModal(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="confirm-button"
-                  onClick={handleAddMainCategory}
-                >
-                  Add Category
-                </button>
-              </div>
+              <button
+                type="button"
+                className="remove-image"
+                onClick={() => setCategoryImage(null)}
+              >
+                <FaTrash />
+              </button>
             </div>
           </div>
         )}
+      </div>
+      
+      <div className="modal-actions">
+        <button
+          type="button"
+          className="cancel-button"
+          onClick={() => {
+            setShowCategoryModal(false);
+            setCategoryImage(null);
+          }}
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          className="confirm-button"
+          onClick={handleAddMainCategory}
+          disabled={!newCategory.trim() || !categoryImage}
+        >
+          Add Category
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
         {showSubcategoryModal && (
           <div className="modal-overlay">

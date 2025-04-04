@@ -10,8 +10,8 @@ const AllProducts = () => {
   const [error, setError] = useState(null);
   const [wishlistItems, setWishlistItems] = useState([]);
   const { toggleWishlistItem } = useAuth();
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const navigate = useNavigate();
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   const [filters, setFilters] = useState({
     priceRange: [0, 2000],
@@ -21,8 +21,16 @@ const AllProducts = () => {
     searchQuery: '',
   });
 
-  // Helper function to get product price and stock info
+  const [dropdownOpen, setDropdownOpen] = useState({
+    categories: false,
+    colors: false,
+    price: false
+  });
+
+  // Helper function to get product info
   const getProductInfo = (product) => {
+    if (!product) return { price: 0, deleted_price: null, inStock: false, mainImage: null, availableColors: [] };
+
     let price = 0;
     let deleted_price = null;
     let inStock = false;
@@ -43,20 +51,17 @@ const AllProducts = () => {
         inStock = product.colors.some(c => c.stock_quantity > 0);
         availableColors = product.colors.map(c => c.name);
         
-        // Get first available color image if no main product image
         if (!mainImage) {
           const firstColorWithImage = product.colors.find(c => c.images?.length > 0);
           mainImage = firstColorWithImage?.images?.[0]?.image_url;
         }
       }
-    } else { // variable product
+    } else {
       if (product.models?.length > 0) {
         const allPrices = product.models.flatMap(m => 
-          m.colors?.map(c => parseFloat(c.price)) || []
-        );
+          m.colors?.map(c => parseFloat(c.price)) || []);
         const allOriginalPrices = product.models.flatMap(m => 
-          m.colors?.map(c => c.original_price ? parseFloat(c.original_price) : null).filter(p => p !== null) || []
-        );
+          m.colors?.map(c => c.original_price ? parseFloat(c.original_price) : null).filter(p => p !== null)) || [];
         
         if (allPrices.length > 0) {
           price = Math.min(...allPrices);
@@ -71,7 +76,6 @@ const AllProducts = () => {
           m.colors?.map(c => c.name) || []
         );
         
-        // Get first available model/color image if no main product image
         if (!mainImage) {
           const firstModelWithImage = product.models.find(m => 
             m.colors?.some(c => c.images?.length > 0)
@@ -176,13 +180,16 @@ const AllProducts = () => {
       switch (filters.sortBy) {
         case 'price-low': return aInfo.price - bInfo.price;
         case 'price-high': return bInfo.price - aInfo.price;
-        case 'newest': return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+        case 'newest': 
+          // Fallback to product_id if created_at is not available
+          const aDate = a.created_at ? new Date(a.created_at) : a.product_id;
+          const bDate = b.created_at ? new Date(b.created_at) : b.product_id;
+          return bDate - aDate;
         case 'rating': return (b.rating || 0) - (a.rating || 0);
-        default: return 0;
+        default: return 0; // Featured keeps original order
       }
     });
 
-  // Toggle color selection
   const toggleColor = (color) => {
     setFilters({
       ...filters,
@@ -192,7 +199,6 @@ const AllProducts = () => {
     });
   };
 
-  // Toggle category selection
   const toggleCategory = (category) => {
     setFilters({
       ...filters,
@@ -202,7 +208,6 @@ const AllProducts = () => {
     });
   };
 
-  // Reset all filters
   const resetFilters = () => {
     setFilters({
       priceRange: [0, 2000],
@@ -213,7 +218,13 @@ const AllProducts = () => {
     });
   };
 
-  // Error & Loading States
+  const toggleDropdown = (dropdown) => {
+    setDropdownOpen(prev => ({
+      ...prev,
+      [dropdown]: !prev[dropdown]
+    }));
+  };
+
   if (loading) return (
     <div className="loading-state">
       <div className="spinner"></div>
@@ -241,38 +252,10 @@ const AllProducts = () => {
         </div>
 
         <div className="content-wrapper">
-          {/* Mobile Filter Toggle */}
-          <button 
-            className="mobile-filter-toggle"
-            onClick={() => setIsFilterOpen(!isFilterOpen)}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="4" y1="21" x2="4" y2="14"></line>
-              <line x1="4" y1="10" x2="4" y2="3"></line>
-              <line x1="12" y1="21" x2="12" y2="12"></line>
-              <line x1="12" y1="8" x2="12" y2="3"></line>
-              <line x1="20" y1="21" x2="20" y2="16"></line>
-              <line x1="20" y1="12" x2="20" y2="3"></line>
-              <line x1="1" y1="14" x2="7" y2="14"></line>
-              <line x1="9" y1="8" x2="15" y2="8"></line>
-              <line x1="17" y1="16" x2="23" y2="16"></line>
-            </svg>
-            Filters
-          </button>
-
-          {/* Premium Filter Sidebar */}
-          <aside className={`filter-sidebar ${isFilterOpen ? 'open' : ''}`}>
+          {/* Desktop Filter Sidebar */}
+          <aside className="filter-sidebar">
             <div className="sidebar-header">
               <h3>Filter Products</h3>
-              <button 
-                className="close-sidebar"
-                onClick={() => setIsFilterOpen(false)}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
             </div>
 
             {/* Search Filter */}
@@ -283,13 +266,13 @@ const AllProducts = () => {
                   type="text"
                   placeholder="Search products..."
                   value={filters.searchQuery}
-                  onChange={(e) => setFilters({...filters, searchQuery: e.target.value})}
+                  onChange={(e) => setFilters({ ...filters, searchQuery: e.target.value })}
                   className="search-input"
                 />
                 {filters.searchQuery && (
                   <button 
                     className="clear-search" 
-                    onClick={() => setFilters({...filters, searchQuery: ''})}
+                    onClick={() => setFilters({ ...filters, searchQuery: '' })}
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -302,68 +285,98 @@ const AllProducts = () => {
 
             {/* Price Range Filter */}
             <div className="filter-group">
-              <h4 className="filter-title">Price Range</h4>
-              <div className="price-range-container">
-                <input
-                  type="range"
-                  min="0"
-                  max="2000"
-                  step="50"
-                  value={filters.priceRange[1]}
-                  onChange={(e) => setFilters({
-                    ...filters,
-                    priceRange: [0, parseInt(e.target.value)]
-                  })}
-                />
-                <div className="price-display">
-                  $0 - ${filters.priceRange[1]}
-                </div>
+              <div 
+                className="filter-title dropdown-header"
+                onClick={() => toggleDropdown('price')}
+              >
+                <h4>Price Range</h4>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points={dropdownOpen.price ? "18 15 12 9 6 15" : "6 9 12 15 18 9"}></polyline>
+                </svg>
               </div>
+              {dropdownOpen.price && (
+                <div className="price-range-container">
+                  <input
+                    type="range"
+                    min="0"
+                    max="2000"
+                    step="50"
+                    value={filters.priceRange[1]}
+                    onChange={(e) => setFilters({
+                      ...filters,
+                      priceRange: [0, parseInt(e.target.value)]
+                    })}
+                  />
+                  <div className="price-display">
+                    $0 - ${filters.priceRange[1]}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Color Filter */}
             <div className="filter-group">
-              <h4 className="filter-title">Colors</h4>
-              <div className="color-options">
-                {colorOptions.map(color => (
-                  <button
-                    key={color.value}
-                    className={`color-option ${filters.colors.includes(color.value) ? 'selected' : ''}`}
-                    onClick={() => toggleColor(color.value)}
-                    style={{ backgroundColor: color.hex }}
-                    aria-label={color.name}
-                  >
-                    {filters.colors.includes(color.value) && (
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                      </svg>
-                    )}
-                  </button>
-                ))}
+              <div 
+                className="filter-title dropdown-header"
+                onClick={() => toggleDropdown('colors')}
+              >
+                <h4>Colors</h4>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points={dropdownOpen.colors ? "18 15 12 9 6 15" : "6 9 12 15 18 9"}></polyline>
+                </svg>
               </div>
+              {dropdownOpen.colors && (
+                <div className="color-options">
+                  {colorOptions.map(color => (
+                    <button
+                      key={color.value}
+                      className={`color-option ${filters.colors.includes(color.value) ? 'selected' : ''}`}
+                      onClick={() => toggleColor(color.value)}
+                      style={{ backgroundColor: color.hex }}
+                      aria-label={color.name}
+                    >
+                      {filters.colors.includes(color.value) && (
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Category Filter */}
             <div className="filter-group">
-              <h4 className="filter-title">Categories</h4>
-              <div className="category-options">
-                {categoryOptions.map(category => (
-                  <button
-                    key={category.value}
-                    className={`category-option ${filters.categories.includes(category.value) ? 'selected' : ''}`}
-                    onClick={() => toggleCategory(category.value)}
-                  >
-                    {category.label}
-                    <span className="checkmark">
-                      {filters.categories.includes(category.value) && (
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                      )}
-                    </span>
-                  </button>
-                ))}
+              <div 
+                className="filter-title dropdown-header"
+                onClick={() => toggleDropdown('categories')}
+              >
+                <h4>Categories</h4>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points={dropdownOpen.categories ? "18 15 12 9 6 15" : "6 9 12 15 18 9"}></polyline>
+                </svg>
               </div>
+              {dropdownOpen.categories && (
+                <div className="category-options">
+                  {categoryOptions.map(category => (
+                    <button
+                      key={category.value}
+                      className={`category-option ${filters.categories.includes(category.value) ? 'selected' : ''}`}
+                      onClick={() => toggleCategory(category.value)}
+                    >
+                      {category.label}
+                      <span className="checkmark">
+                        {filters.categories.includes(category.value) && (
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
+                        )}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Reset Button */}
@@ -383,18 +396,37 @@ const AllProducts = () => {
                 Showing {filteredProducts.length} of {products.length} products
               </div>
               <div className="sort-options">
-                <label>Sort By:</label>
-                <select
-                  value={filters.sortBy}
-                  onChange={(e) => setFilters({ ...filters, sortBy: e.target.value })}
-                  className="sort-select"
+                <button 
+                  className="mobile-filter-btn"
+                  onClick={() => setShowMobileFilters(true)}
                 >
-                  {sortOptions.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                  Filters
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="4" y1="21" x2="4" y2="14"></line>
+                    <line x1="4" y1="10" x2="4" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12" y2="3"></line>
+                    <line x1="20" y1="21" x2="20" y2="16"></line>
+                    <line x1="20" y1="12" x2="20" y2="3"></line>
+                    <line x1="1" y1="14" x2="7" y2="14"></line>
+                    <line x1="9" y1="8" x2="15" y2="8"></line>
+                    <line x1="17" y1="16" x2="23" y2="16"></line>
+                  </svg>
+                </button>
+                <div className="sort-select-wrapper">
+                  <label>Sort By:</label>
+                  <select
+                    value={filters.sortBy}
+                    onChange={(e) => setFilters({ ...filters, sortBy: e.target.value })}
+                    className="sort-select"
+                  >
+                    {sortOptions.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -457,7 +489,7 @@ const AllProducts = () => {
                         <button 
                           className="add-to-cart"
                           onClick={() => navigate(`/product/${product.product_id}`, { state: { product } })}
-                          >
+                        >
                           View Product
                         </button>
                       </div>
@@ -484,6 +516,162 @@ const AllProducts = () => {
           </main>
         </div>
       </div>
+
+      {/* Mobile Filter Modal */}
+      {showMobileFilters && (
+        <div className="mobile-filter-modal">
+          <div className="mobile-filter-header">
+            <h3>Filters</h3>
+            <button 
+              className="close-mobile-filters"
+              onClick={() => setShowMobileFilters(false)}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+          
+          <div className="mobile-filter-content">
+            {/* Search Filter */}
+            <div className="filter-group">
+              <h4 className="filter-title">Search</h4>
+              <div className="search-filter">
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={filters.searchQuery}
+                  onChange={(e) => setFilters({ ...filters, searchQuery: e.target.value })}
+                  className="search-input"
+                />
+                {filters.searchQuery && (
+                  <button 
+                    className="clear-search" 
+                    onClick={() => setFilters({ ...filters, searchQuery: '' })}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Price Range Filter */}
+            <div className="filter-group">
+              <div 
+                className="filter-title dropdown-header"
+                onClick={() => toggleDropdown('price')}
+              >
+                <h4>Price Range</h4>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points={dropdownOpen.price ? "18 15 12 9 6 15" : "6 9 12 15 18 9"}></polyline>
+                </svg>
+              </div>
+              {dropdownOpen.price && (
+                <div className="price-range-container">
+                  <input
+                    type="range"
+                    min="0"
+                    max="2000"
+                    step="50"
+                    value={filters.priceRange[1]}
+                    onChange={(e) => setFilters({
+                      ...filters,
+                      priceRange: [0, parseInt(e.target.value)]
+                    })}
+                  />
+                  <div className="price-display">
+                    $0 - ${filters.priceRange[1]}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Color Filter */}
+            <div className="filter-group">
+              <div 
+                className="filter-title dropdown-header"
+                onClick={() => toggleDropdown('colors')}
+              >
+                <h4>Colors</h4>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points={dropdownOpen.colors ? "18 15 12 9 6 15" : "6 9 12 15 18 9"}></polyline>
+                </svg>
+              </div>
+              {dropdownOpen.colors && (
+                <div className="color-options">
+                  {colorOptions.map(color => (
+                    <button
+                      key={color.value}
+                      className={`color-option ${filters.colors.includes(color.value) ? 'selected' : ''}`}
+                      onClick={() => toggleColor(color.value)}
+                      style={{ backgroundColor: color.hex }}
+                      aria-label={color.name}
+                    >
+                      {filters.colors.includes(color.value) && (
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Category Filter */}
+            <div className="filter-group">
+              <div 
+                className="filter-title dropdown-header"
+                onClick={() => toggleDropdown('categories')}
+              >
+                <h4>Categories</h4>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points={dropdownOpen.categories ? "18 15 12 9 6 15" : "6 9 12 15 18 9"}></polyline>
+                </svg>
+              </div>
+              {dropdownOpen.categories && (
+                <div className="category-options">
+                  {categoryOptions.map(category => (
+                    <button
+                      key={category.value}
+                      className={`category-option ${filters.categories.includes(category.value) ? 'selected' : ''}`}
+                      onClick={() => toggleCategory(category.value)}
+                    >
+                      {category.label}
+                      <span className="checkmark">
+                        {filters.categories.includes(category.value) && (
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
+                        )}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="mobile-filter-footer">
+            <button 
+              className="reset-filters-btn"
+              onClick={resetFilters}
+            >
+              Reset
+            </button>
+            <button 
+              className="apply-filters-btn"
+              onClick={() => setShowMobileFilters(false)}
+            >
+              Apply Filters
+            </button>
+          </div>
+        </div>
+      )}
     </section>
   );
 };
