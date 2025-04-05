@@ -1,19 +1,16 @@
 import React, { useEffect } from 'react';
 import {
-    FaReact, FaPython, FaNodeJs, FaPhp, FaHtml5,
-    FaJava, FaCss3Alt, FaFacebookF, FaLinkedinIn,
-    FaInstagram, FaTwitter, FaMapMarkerAlt, FaPhoneAlt,
-    FaEnvelope, FaShoppingBag, FaUser, FaSearch, FaHeart, FaWhatsapp
+    FaReact, FaNodeJs, FaShoppingBag, FaUser, FaSearch, FaHeart,
+    FaFacebookF, FaInstagram, FaTwitter, FaWhatsapp,
+    FaMapMarkerAlt, FaPhoneAlt, FaEnvelope,
+    FaCcVisa, FaCcAmazonPay, FaCcMastercard
 } from 'react-icons/fa';
 import { SiRazorpay } from "react-icons/si";
-import { FaCcVisa , FaCcAmazonPay , FaCcMastercard  } from "react-icons/fa";
-// import { SvgIcon } from '@mui/material';
 import './Footer.scss';
 
 const Footer = () => {
     useEffect(() => {
         const socialBubbles = document.querySelectorAll('.social-bubble');
-
         socialBubbles.forEach(bubble => {
             const duration = 10 + Math.random() * 10;
             bubble.style.animationDuration = `${duration}s`;
@@ -41,7 +38,7 @@ const Footer = () => {
             <div className="footer-content">
                 <div className="footer-about">
                     <a href="#" className="footer-logo">MTM Store</a>
-                    <p>Your premium destination for quality products and exceptional shopping experiences. We bring you the best from around the world.</p>
+                    <p>Your premium destination for quality products and exceptional shopping experiences.</p>
                     <div className="footer-newsletter">
                         <h4>Subscribe to Newsletter</h4>
                         <div className="newsletter-form">
@@ -51,7 +48,7 @@ const Footer = () => {
                     </div>
                 </div>
 
-                <div className="footer-links">
+                <div className="footer-links hide-on-mobile">
                     <h4>Shop</h4>
                     <ul>
                         <li><a href="#">New Arrivals</a></li>
@@ -62,7 +59,7 @@ const Footer = () => {
                     </ul>
                 </div>
 
-                <div className="footer-links">
+                <div className="footer-links hide-on-mobile">
                     <h4>Customer Service</h4>
                     <ul>
                         <li><a href="#">Contact Us</a></li>
@@ -77,8 +74,7 @@ const Footer = () => {
                     <h4>Contact Us</h4>
                     <div className="contact-info-item">
                         <FaMapMarkerAlt />
-                        <p>722B, 7th Floor, Hemkunt Chambers, Nehru Place, New Delhi, Delhi - 110019 
-                        </p>
+                        <p>722B, 7th Floor, Hemkunt Chambers, Nehru Place, New Delhi, Delhi - 110019</p>
                     </div>
                     <div className="contact-info-item">
                         <FaPhoneAlt />
@@ -98,24 +94,13 @@ const Footer = () => {
             </div>
 
             <div className="footer-bottom">
-      <div className="payment-methods">
-        {/* Visa Icon */}
-        {/* <SvgIcon xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-          <path d="M22 12c0-5.5-4.5-10-10-10S2 6.5 2 12s4.5 10 10 10 10-4.5 10-10zM12 19.4c-4.1 0-7.4-3.3-7.4-7.4S7.9 4.6 12 4.6s7.4 3.3 7.4 7.4-3.3 7.4-7.4 7.4z" />
-        </SvgIcon> */}
-        <span><FaCcVisa /></span>
-
-        {/* Mastercard Icon */}
-        <span><FaCcMastercard /> </span>
-
-        {/* PayPal Icon */}
-       <span> < SiRazorpay/> </span> 
-
-        {/* Amazon Pay Icon */}
-        <span> <FaCcAmazonPay /> </span>
-      </div>
-    
-                <p>&copy; {new Date().getFullYear()}by Maseehum Task Manager Pvt. Ltd. All Rights Reserved. | Designed with ❤ by Aesa Solutions</p>
+                <div className="payment-methods">
+                    <span><FaCcVisa /></span>
+                    <span><FaCcMastercard /></span>
+                    <span><SiRazorpay /></span>
+                    <span><FaCcAmazonPay /></span>
+                </div>
+                <p>&copy; {new Date().getFullYear()} by Maseehum Task Manager Pvt. Ltd. All Rights Reserved. | Designed with ❤ by Aesa Solutions</p>
             </div>
         </footer>
     );

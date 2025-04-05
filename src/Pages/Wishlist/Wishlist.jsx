@@ -6,97 +6,133 @@ import axios from 'axios';
 import "./Wishlist.scss";
 
 const Wishlist = () => {
-  const { wishlistItems, toggleWishlistItem } = useAuth();
+  const {
+    wishlistItems,
+    toggleWishlistItem,
+    isAuthenticated,
+    getToken
+  } = useAuth();
   const [wishlistProducts, setWishlistProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  // Helper function to get product price info
-  const getProductPriceInfo = (product) => {
-    if (product.product_type === 'single') {
-      if (product.colors?.length > 0) {
-        const prices = product.colors.map(c => parseFloat(c.price));
-        const originalPrices = product.colors
-          .map(c => c.original_price ? parseFloat(c.original_price) : null)
-          .filter(p => p !== null);
-        
-        return {
-          price: Math.min(...prices),
-          deleted_price: originalPrices.length > 0 ? Math.max(...originalPrices) : null
-        };
-      }
-      return {
-        price: product.price || 0,
-        deleted_price: product.deleted_price || null
-      };
-    } else {
-      // For variable products
-      if (product.models?.length > 0) {
-        const allPrices = product.models.flatMap(m => 
-          m.colors?.map(c => parseFloat(c.price)) || []
-        );
-        const allOriginalPrices = product.models.flatMap(m => 
-          m.colors?.map(c => c.original_price ? parseFloat(c.original_price) : null).filter(p => p !== null) || []
-        );
-        
-        return {
-          price: allPrices.length > 0 ? Math.min(...allPrices) : 0,
-          deleted_price: allOriginalPrices.length > 0 ? Math.max(...allOriginalPrices) : null
-        };
-      }
-      return {
-        price: 0,
-        deleted_price: null
-      };
-    }
-  };
-
-  // Fetch product details for all wishlist items
   useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+
     const fetchWishlistProducts = async () => {
       try {
-        const products = await Promise.all(
-          wishlistItems.map(item => 
-            axios.get(`${import.meta.env.VITE_SERVER_API}/product/${item.product_id}`)
-              .then(res => {
-                const product = res.data;
-                const { price, deleted_price } = getProductPriceInfo(product);
-                return {
-                  ...product,
-                  displayPrice: price,
-                  displayDeletedPrice: deleted_price
-                };
-              })
-              .catch(err => {
-                console.error(`Error fetching product ${item.product_id}:`, err);
-                return null;
-              })
-          )
+        const token = getToken();
+        const response = await axios.get(
+          `${import.meta.env.VITE_SERVER_API}/wishlist/getbycustid`,
+          { headers: { Authorization: `Bearer ${token}` } }
         );
-        setWishlistProducts(products.filter(Boolean));
+
+        if (response.data.success) {
+          setWishlistProducts(response.data.wishlist.items || []);
+          console.log("Fetched wishlist items:", response.data.wishlist.items);
+        } else {
+          setWishlistProducts([]);
+        }
         setLoading(false);
       } catch (err) {
+        console.error('Error fetching wishlist:', err);
         setError(err.message);
         setLoading(false);
       }
     };
 
-    if (wishlistItems.length > 0) {
-      fetchWishlistProducts();
-    } else {
-      setWishlistProducts([]);
-      setLoading(false);
+    fetchWishlistProducts();
+  }, [isAuthenticated, getToken, navigate, wishlistItems]);
+
+  const getWishlistItemPrice = (item) => {
+    // 1. Check if we have a selected color price
+    if (item.color?.price) {
+      return {
+        currentPrice: parseFloat(item.color.price),
+        originalPrice: item.color.original_price ? parseFloat(item.color.original_price) : null
+      };
     }
-  }, [wishlistItems]);
 
-  const handleAddAllToCart = () => {
-    console.log("Adding all items to cart");
+    // 2. Check if product has colors (single product type)
+    if (item.product?.colors?.length > 0) {
+      return {
+        currentPrice: parseFloat(item.product.colors[0].price),
+        originalPrice: item.product.colors[0].original_price
+          ? parseFloat(item.product.colors[0].original_price)
+          : null
+      };
+    }
+
+    // 3. Check if product has models with colors (variable product type)
+    if (item.product?.models?.length > 0 && item.product.models[0].colors?.length > 0) {
+      return {
+        currentPrice: parseFloat(item.product.models[0].colors[0].price),
+        originalPrice: item.product.models[0].colors[0].original_price
+          ? parseFloat(item.product.models[0].colors[0].original_price)
+          : null
+      };
+    }
+
+    // 4. Fallback to product price if exists
+    return {
+      currentPrice: item.product?.price ? parseFloat(item.product.price) : 0,
+      originalPrice: item.product?.original_price ? parseFloat(item.product.original_price) : null
+    };
   };
 
-  const handleViewProduct = (product) => {
-    navigate(`/product/${product.product_id}`, { state: { product } });
+  const handleRemoveItem = async (item) => {
+    try {
+      const token = getToken();
+      await axios.post(
+        `${import.meta.env.VITE_SERVER_API}/wishlist/deleteitem`,
+        { product_id: item.product.product_id },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      toggleWishlistItem({
+        product_id: item.product.product_id,
+        name: item.product.name,
+        price: item.product.price,
+        image: item.product.image_url,
+        category: item.product.category
+      });
+    } catch (error) {
+      console.error('Error removing item:', error);
+    }
   };
+
+  const handleViewProduct = async (item) => {
+    try {
+        // Fetch full product details first
+        const response = await axios.get(
+            `${import.meta.env.VITE_SERVER_API}/product/${item.product.product_id}`
+        );
+        
+        const fullProduct = response.data;
+        
+        navigate(`/product/${item.product.product_id}`, {
+            state: {
+                product: fullProduct,
+                selectedModel: item.model || null,
+                selectedColor: item.color || null
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching product details:', error);
+        // Fallback to existing data if API call fails
+        navigate(`/product/${item.product.product_id}`, {
+            state: {
+                product: item.product,
+                selectedModel: item.model || null,
+                selectedColor: item.color || null
+            }
+        });
+    }
+};
 
   if (loading) return (
     <div className="loading-state">
@@ -107,7 +143,7 @@ const Wishlist = () => {
 
   if (error) return (
     <div className="error-state">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <circle cx="12" cy="12" r="10"></circle>
         <line x1="12" y1="8" x2="12" y2="12"></line>
         <line x1="12" y1="16" x2="12.01" y2="16"></line>
@@ -126,72 +162,58 @@ const Wishlist = () => {
       {wishlistProducts.length > 0 ? (
         <div className="wishlist-container">
           <div className="wishlist-items">
-            {wishlistProducts.map(product => (
-              <div key={product.product_id} className="wishlist-item">
-                <div className="product-image">
-                  {product.images?.[0]?.image_url && (
+            {wishlistProducts.map(item => {
+              const { currentPrice, originalPrice } = getWishlistItemPrice(item);
+              const imageUrl =
+                item.color?.images?.[0]?.image_url ||
+                item.product?.images?.[0]?.image_url ||
+                item.product?.image_url ||
+                (item.product?.models?.[0]?.colors?.[0]?.images?.[0]?.image_url);
+
+              return (
+                <div key={item.item_id} className="wishlist-item">
+                  <div className="product-image">
                     <img
-                      src={`${import.meta.env.VITE_SERVER_API}/static${product.images[0].image_url}`}
-                      alt={product.name}
+                      src={`${import.meta.env.VITE_SERVER_API}/static/${imageUrl}`}
+                      alt={item.product.name}
                       loading="lazy"
                       onError={(e) => {
+                        console.error("Image failed to load for:", imageUrl);
                         e.target.src = '/fallback-image.jpg';
                       }}
                     />
-                  )}
-                  <button
-                    className="remove-btn"
-                    onClick={() => toggleWishlistItem({
-                      product_id: product.product_id,
-                      name: product.name,
-                      price: product.displayPrice,
-                      image: product.images?.[0]?.image_url,
-                      category: product.category
-                    })}
-                  >
-                    <FiTrash2 size={18} />
-                  </button>
-                </div>
-
-                <div className="product-details">
-                  <h3 className="product-name">{product.name}</h3>
-                  <p className="product-category">{product.category}</p>
-                  <div className="product-pricing">
-                    <span className="current-price">${product.displayPrice?.toFixed(2)}</span>
-                    {product.displayDeletedPrice && (
-                      <span className="original-price">${product.displayDeletedPrice?.toFixed(2)}</span>
-                    )}
+                    <button
+                      className="remove-btn"
+                      onClick={() => handleRemoveItem(item)}
+                    >
+                      <FiTrash2 size={18} />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => handleViewProduct(product)}
-                    className="view-product-btn"
-                  >
-                    View Product
-                    <FiChevronRight size={18} />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
 
-          <div className="wishlist-sidebar">
-            <div className="sidebar-card">
-              <h3>Wishlist Summary</h3>
-              <div className="summary-item">
-                <span>Items</span>
-                <span>{wishlistProducts.length}</span>
-              </div>
-              <button
-                className="add-all-to-cart"
-                onClick={handleAddAllToCart}
-              >
-                <FiShoppingCart size={18} />
-                Add All to Cart
-              </button>
-              <p className="hint-text">
-                Items remain in your wishlist until you remove them or add to cart
-              </p>
-            </div>
+                  <div className="product-details">
+                    <h3 className="product-name">{item.product.name}</h3>
+                    <p className="product-category">{item.product.category}</p>
+                    <div className="product-pricing">
+                      <span className="current-price">
+                        ${currentPrice.toFixed(2)}
+                      </span>
+                      {originalPrice && originalPrice > currentPrice && (
+                        <span className="original-price">
+                          ${originalPrice.toFixed(2)}
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleViewProduct(item)}
+                      className="view-product-btn"
+                    >
+                      View Product
+                      <FiChevronRight size={18} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       ) : (
@@ -201,7 +223,7 @@ const Wishlist = () => {
           </div>
           <h2>Your Wishlist is Empty</h2>
           <p>Save your favorite items here for later</p>
-          <button 
+          <button
             className="continue-shopping"
             onClick={() => navigate('/')}
           >

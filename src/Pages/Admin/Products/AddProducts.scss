@@ -1,5 +1,7 @@
+// AddProducts.scss
+
 // =============================================
-// Variables
+// Design Variables
 // =============================================
 $primary-color: #4361ee;
 $primary-light: #e0e7ff;
@@ -12,108 +14,49 @@ $light-color: #f8f9fa;
 $dark-color: #1e293b;
 $gray-color: #64748b;
 $border-color: #e2e8f0;
-$border-radius: 10px;
-$border-radius-sm: 6px;
+$border-radius: 12px;
+$border-radius-sm: 8px;
 $box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 $box-shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.1);
 $transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 $font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 
+$breakpoint-md: 768px;
+$breakpoint-lg: 1024px;
+$form-max-width: 1200px;
+$input-height: 3rem;
+
 // =============================================
 // Mixins
 // =============================================
-@mixin remove-button-style {
-  background: none;
-  border: none;
-  color: $danger-color;
-  cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: $transition;
-  width: 36px;
-  height: 36px;
-
-  &:hover {
-    background: rgba($danger-color, 0.1);
-    transform: scale(1.1);
-  }
-
-  &:disabled {
-    color: lighten($danger-color, 30%);
-    cursor: not-allowed;
-    transform: none;
-  }
-}
-
-@mixin primary-button {
-  background: $primary-color;
-  color: white;
-  border: none;
-  border-radius: $border-radius;
-  padding: 0.75rem 1.75rem;
-  font-size: 0.95rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: $transition;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  box-shadow: 0 2px 5px rgba($primary-color, 0.2);
-
-  &:hover {
-    background: $secondary-color;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba($primary-color, 0.3);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-
-  &:disabled {
-    background: lighten($primary-color, 30%);
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-  }
-}
-
 @mixin card-style {
   background: white;
   border-radius: $border-radius;
   padding: 1.75rem;
   margin-bottom: 1.5rem;
   box-shadow: $box-shadow;
-  border: 1px solid $border-color;
+  border: 1px solid rgba($primary-color, 0.1);
   transition: $transition;
-
-  &:hover {
-    box-shadow: $box-shadow-lg;
-  }
 }
 
-@mixin input-style {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  border: 1px solid $border-color;
-  border-radius: $border-radius-sm;
-  font-size: 0.95rem;
-  font-family: $font-family;
+@mixin primary-button {
+  background: linear-gradient(135deg, $primary-color, $secondary-color);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 0.75rem 1.75rem;
+  font-weight: 500;
+  cursor: pointer;
   transition: $transition;
-  background: white;
-  color: $dark-color;
-
-  &:focus {
-    outline: none;
-    border-color: $primary-color;
-    box-shadow: 0 0 0 3px rgba($primary-color, 0.1);
-  }
-
-  &::placeholder {
-    color: lighten($gray-color, 20%);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  position: relative;
+  overflow: hidden;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba($primary-color, 0.3);
   }
 }
 
@@ -121,18 +64,18 @@ $font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 // Base Styles
 // =============================================
 .admin-panel {
-  margin-top: 75px;
+  // margin-top: 75px;
   font-family: $font-family;
   background-color: #f8fafc;
   min-height: 100vh;
-  padding: 2rem;
+  padding: 2rem 1rem;
 
-  * {
-    box-sizing: border-box;
+  @media (min-width: $breakpoint-md) {
+    padding: 2rem;
   }
 
   .admin-container {
-    max-width: 1200px;
+    max-width: $form-max-width;
     margin: 0 auto;
     background: white;
     border-radius: $border-radius;
@@ -142,20 +85,21 @@ $font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   }
 
   .admin-header {
-    padding: 1.75rem 2.5rem;
+    padding: 2rem;
     border-bottom: 1px solid $border-color;
     background: linear-gradient(135deg, $primary-color, $secondary-color);
     color: white;
+    text-align: center;
 
     .admin-title {
-      font-size: 1.8rem;
+      font-size: 2rem;
       font-weight: 700;
       margin: 0;
       letter-spacing: -0.5px;
     }
 
     .admin-subtitle {
-      font-size: 0.95rem;
+      font-size: 1rem;
       opacity: 0.9;
       margin: 0.5rem 0 0;
       font-weight: 400;
@@ -169,331 +113,153 @@ $font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 // =============================================
-// Form Styles
+// Form Layout
 // =============================================
 .product-form {
-  padding: 2rem 2.5rem;
+  padding: 1.5rem;
+
+  @media (min-width: $breakpoint-md) {
+    padding: 2.5rem;
+  }
 
   .form-section {
     margin-bottom: 2.5rem;
-    padding-bottom: 1.75rem;
-    border-bottom: 1px solid $border-color;
-
-    &:last-child {
-      border-bottom: none;
-      margin-bottom: 0;
-      padding-bottom: 0;
-    }
+    padding: 2rem;
+    background: rgba($primary-light, 0.05);
+    border-radius: $border-radius;
+    border: 1px solid rgba($primary-color, 0.1);
 
     .section-title {
-      font-size: 1.3rem;
+      font-size: 1.4rem;
       font-weight: 600;
       color: $dark-color;
-      margin-bottom: 1.75rem;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid $primary-light;
       display: flex;
       align-items: center;
-      position: relative;
-      padding-left: 1.25rem;
+      gap: 1rem;
 
       &::before {
         content: '';
-        position: absolute;
-        left: 0;
-        width: 4px;
-        height: 1.5rem;
+        width: 6px;
+        height: 1.8rem;
         background: $primary-color;
-        border-radius: 2px;
-      }
-    }
-
-    .section-subtitle {
-      font-size: 1rem;
-      font-weight: 500;
-      color: $gray-color;
-      margin: 1rem 0 1.5rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-
-      &::before {
-        content: '';
-        display: block;
-        width: 12px;
-        height: 2px;
-        background: $border-color;
+        border-radius: 3px;
       }
     }
   }
 
   .form-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1.75rem;
-    margin-bottom: 1.5rem;
+    gap: 1.5rem;
+    grid-template-columns: 1fr;
+
+    @media (min-width: $breakpoint-md) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (min-width: $breakpoint-lg) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .full-width {
+      grid-column: 1 / -1;
+    }
   }
 
   .form-group {
     margin-bottom: 1.5rem;
-    position: relative;
 
     .form-label {
       display: block;
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       font-weight: 500;
       color: $dark-color;
       margin-bottom: 0.75rem;
-
-      .required {
-        color: $danger-color;
-        margin-left: 0.25rem;
-      }
     }
 
     .form-input {
-      @include input-style;
-      
+      width: 100%;
+      height: $input-height;
+      padding: 0 1.25rem;
+      border: 2px solid $border-color;
+      border-radius: $border-radius-sm;
+      font-size: 0.95rem;
+      transition: $transition;
+
+      &:focus {
+        border-color: $primary-color;
+        box-shadow: 0 0 0 3px rgba($primary-color, 0.1);
+        outline: none;
+      }
+
       &.textarea {
+        height: auto;
+        padding: 1rem 1.25rem;
         min-height: 120px;
         resize: vertical;
-        line-height: 1.5;
       }
     }
 
     .error-message {
       color: $danger-color;
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       margin-top: 0.5rem;
-      display: flex;
-      align-items: center;
-      gap: 0.25rem;
-    }
-  }
-
-  .select-with-button {
-    display: flex;
-    gap: 0.75rem;
-
-    .form-input {
-      flex: 1;
-    }
-
-    .add-button {
-      @include primary-button;
-      padding: 0 1.25rem;
-      font-size: 0.9rem;
-    }
-  }
-
-  .radio-group {
-    display: flex;
-    gap: 1.5rem;
-    margin-top: 0.75rem;
-
-    .radio-label {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      cursor: pointer;
-      font-size: 0.95rem;
-      color: $dark-color;
-      transition: $transition;
-
-      &:hover {
-        color: $primary-color;
-      }
-    }
-
-    .radio-input {
-      appearance: none;
-      width: 20px;
-      height: 20px;
-      border: 2px solid $border-color;
-      border-radius: 50%;
-      position: relative;
-      cursor: pointer;
-      transition: $transition;
-
-      &:checked {
-        border-color: $primary-color;
-        background-color: $primary-light;
-
-        &::after {
-          content: '';
-          position: absolute;
-          width: 10px;
-          height: 10px;
-          background: $primary-color;
-          border-radius: 50%;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-        }
-      }
-    }
-  }
-}
-
-// =============================================
-// Cards & Sections
-// =============================================
-.variation-card {
-  @include card-style;
-  position: relative;
-  overflow: hidden;
-
-  .variation-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-
-    h4 {
-      margin: 0;
-      font-size: 1.15rem;
-      font-weight: 600;
-      color: $dark-color;
+      padding: 0.5rem;
+      background: rgba($danger-color, 0.05);
+      border-radius: $border-radius-sm;
       display: flex;
       align-items: center;
       gap: 0.5rem;
 
-      .model-badge {
-        background: $primary-light;
-        color: $primary-color;
-        font-size: 0.75rem;
-        padding: 0.25rem 0.5rem;
-        border-radius: 4px;
-        font-weight: 600;
+      &::before {
+        content: '⚠';
+        font-size: 1.1rem;
       }
-    }
-
-    .remove-button {
-      @include remove-button-style;
-    }
-  }
-}
-
-.color-card {
-  @include card-style;
-  padding: 1.5rem;
-  margin-bottom: 1.75rem;
-
-  .color-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-
-    h5 {
-      margin: 0;
-      font-size: 1rem;
-      font-weight: 500;
-      color: $dark-color;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-
-      .color-badge {
-        width: 16px;
-        height: 16px;
-        border-radius: 50%;
-        display: inline-block;
-        border: 2px solid white;
-        box-shadow: 0 0 0 1px $border-color;
-      }
-    }
-
-    .remove-button {
-      @include remove-button-style;
     }
   }
 }
 
 // =============================================
-// Image Upload
+// Image Upload Section
 // =============================================
 .image-upload-container {
-  margin-top: 1.5rem;
+  margin: 1.5rem 0;
 
   .file-input {
     display: none;
   }
 
-  .upload-area {
-    border: 2px dashed $border-color;
-    border-radius: $border-radius;
-    padding: 1.5rem;
-    text-align: center;
-    cursor: pointer;
-    transition: $transition;
-    background: rgba($primary-light, 0.2);
+  .upload-button {
+    @include primary-button;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.95rem;
+  }
 
-    &:hover {
-      border-color: $primary-color;
-      background: rgba($primary-light, 0.3);
-    }
-
-    .upload-icon {
-      font-size: 1.75rem;
-      color: $primary-color;
-      margin-bottom: 0.75rem;
-    }
-
-    .upload-text {
-      font-weight: 500;
-      color: $dark-color;
-      margin-bottom: 0.25rem;
-    }
-
-    .browse-text {
-      color: $primary-color;
-      text-decoration: underline;
-      font-weight: 500;
-    }
-
-    .file-hint {
-      font-size: 0.8rem;
-      color: $gray-color;
-      margin-top: 0.75rem;
-    }
-
-    .upload-button {
-      @include primary-button;
-      padding: 0.65rem 1.25rem;
-      font-size: 0.9rem;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 0.5rem;
-    }
-  
-    .file-hint {
-      font-size: 0.8rem;
-      color: $gray-color;
-      margin-top: 0.25rem;
-    }
-
-
-
-
+  .file-hint {
+    font-size: 0.85rem;
+    color: $gray-color;
+    margin-top: 0.5rem;
   }
 
   .image-previews {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 1.25rem;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 1rem;
     margin-top: 1.5rem;
 
     .image-preview {
       position: relative;
       border-radius: $border-radius-sm;
       overflow: hidden;
-      border: 1px solid $border-color;
       aspect-ratio: 1/1;
+      border: 2px solid $border-color;
       transition: $transition;
 
       &:hover {
         transform: translateY(-3px);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        box-shadow: $box-shadow;
       }
 
       img {
@@ -518,10 +284,9 @@ $font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         cursor: pointer;
         opacity: 0;
         transition: $transition;
-        transform: scale(0.9);
 
         &:hover {
-          transform: scale(1);
+          transform: scale(1.1);
         }
       }
 
@@ -533,45 +298,63 @@ $font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 // =============================================
-// Specifications
+// Color & Model Cards
 // =============================================
-.specs-section {
-  margin-top: 1.75rem;
+.color-card,
+.model-card {
+  @include card-style;
+  margin: 1.5rem 0;
+  background: rgba($primary-light, 0.05);
 
-  .section-header {
+  .color-header,
+  .model-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.25rem;
+    margin-bottom: 1.5rem;
 
     h4 {
       margin: 0;
-      font-size: 1.05rem;
-      font-weight: 500;
+      font-size: 1.1rem;
+      font-weight: 600;
       color: $dark-color;
     }
 
-    .add-button {
-      @include primary-button;
-      padding: 0.5rem 1rem;
-      font-size: 0.85rem;
+    .remove-button {
+      background: none;
+      border: none;
+      color: $danger-color;
+      cursor: pointer;
+      padding: 0.5rem;
+      border-radius: 50%;
+      transition: $transition;
+
+      &:hover {
+        background: rgba($danger-color, 0.1);
+      }
     }
   }
+}
 
+// =============================================
+// Specifications Section
+// =============================================
+.specs-section {
   .spec-row {
     display: flex;
     gap: 1rem;
     margin-bottom: 1rem;
-    align-items: flex-start;
 
     .form-group {
       flex: 1;
-      margin-bottom: 0;
     }
 
     .remove-button {
-      @include remove-button-style;
-      margin-top: 1.9rem;
+      @include primary-button;
+      background: $danger-color;
+      padding: 0.5rem;
+      height: $input-height;
+      width: $input-height;
     }
   }
 }
@@ -580,31 +363,15 @@ $font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 // Form Actions
 // =============================================
 .form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
   margin-top: 2.5rem;
-  padding-top: 1.5rem;
+  padding-top: 2rem;
   border-top: 1px solid $border-color;
+  text-align: right;
 
   .submit-button {
     @include primary-button;
-    padding: 0.85rem 2.25rem;
+    padding: 1rem 2.5rem;
     font-size: 1rem;
-  }
-
-  .cancel-button {
-    @include primary-button;
-    background: white;
-    color: $gray-color;
-    border: 1px solid $border-color;
-    box-shadow: none;
-
-    &:hover {
-      background: $light-color;
-      color: $dark-color;
-      transform: translateY(-2px);
-    }
   }
 }
 
@@ -623,149 +390,85 @@ $font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   justify-content: center;
   z-index: 1000;
   backdrop-filter: blur(4px);
-  animation: fadeIn 0.3s ease-out;
 }
 
 .modal {
-
-
-
-
-
   background: white;
   border-radius: $border-radius;
-  width: 100%;
-  max-width: 480px;
   padding: 2rem;
+  width: 90%;
+  max-width: 500px;
   box-shadow: $box-shadow-lg;
-  animation: modalSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
-
-  .image-upload-container {
-    margin-top: 0.5rem;
-    margin-bottom: 1rem;
-  }
-
-  .image-previews {
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    
-    .image-preview {
-      img {
-        max-height: 120px;
-      }
-    }
-  }
-
 
   h3 {
     margin-top: 0;
     margin-bottom: 1.5rem;
-    color: $dark-color;
-    font-size: 1.4rem;
-    font-weight: 600;
-  }
-
-  .form-input {
-    @include input-style;
-    width: 100%;
-    margin: 0.5rem 0 1.5rem;
   }
 
   .modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 1rem;
     margin-top: 1.5rem;
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
 
-    .cancel-button {
+    button {
       @include primary-button;
-      background: white;
-      color: $gray-color;
-      border: 1px solid $border-color;
-      box-shadow: none;
+      padding: 0.75rem 1.5rem;
 
-      &:hover {
-        background: $light-color;
-        color: $dark-color;
+      &.cancel-button {
+        background: $gray-color;
       }
     }
-
-    .confirm-button {
-      @include primary-button;
-    }
   }
-}
-
-@keyframes modalSlideIn {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
 }
 
 // =============================================
 // Responsive Adjustments
 // =============================================
-@media (max-width: 768px) {
+@media (max-width: $breakpoint-md) {
   .admin-panel {
+    margin-top: 60px;
     padding: 1rem;
   }
 
   .product-form {
-    padding: 1.5rem;
-  }
+    padding: 1rem;
 
-  .form-grid {
-    grid-template-columns: 1fr !important;
+    .form-section {
+      padding: 1.5rem;
+    }
+
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
   }
 
   .spec-row {
     flex-direction: column;
-    gap: 0.75rem !important;
+  }
 
-    .remove-button {
-      margin-top: 0 !important;
-      align-self: flex-end;
-    }
+  .image-previews {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
-// =============================================
-// Utility Classes
-// =============================================
+
 .add-button {
-  @include primary-button;
-  padding: 0.65rem 1.25rem !important;
-  font-size: 0.9rem !important;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
+  background: $primary-color;
+  color: white;
+  border: none;
+  border-radius: $border-radius;
+  padding: 0.50rem 1rem;
+  // font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: $transition;
+  display: inline-flex;
   align-items: center;
-  margin-bottom: 1.75rem;
-}
-
-// =============================================
-// Toast Notifications
-// =============================================
-.Toastify__toast-container {
-  font-family: $font-family;
-  
-  .Toastify__toast {
-    border-radius: $border-radius-sm !important;
-    box-shadow: $box-shadow !important;
-    padding: 1rem !important;
-    font-size: 0.9rem !important;
-
-    &--success {
-      background: $success-color !important;
-    }
-
-    &--error {
-      background: $danger-color !important;
-    }
-
-    .Toastify__close-button {
-      align-self: center !important;
-    }
-  }
+  gap: 0.5rem;
+  box-shadow: 0 2px 5px rgba($primary-color, 0.2);
+  // padding: 0 1.25rem;
+  font-size: 0.7rem;
+  margin-top: 5px;
+  margin-bottom: 5px;
 }

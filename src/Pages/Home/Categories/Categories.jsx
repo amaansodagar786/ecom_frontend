@@ -55,7 +55,7 @@ const Categories = () => {
 
   return (
     <div className="shop-by-category">
-      <h2 className="sec-heading">Shop By Categories</h2>
+      <h2 className="sec-heading">Shop by Categories</h2>
       
       <div className="categories-container">
         <button 
@@ -74,12 +74,12 @@ const Categories = () => {
               onClick={() => handleCategoryClick(category.name)}
             >
               <img
-                src={`${import.meta.env.VITE_SERVER_API}${category.image_url}`} 
+                src={`${import.meta.env.VITE_SERVER_API}/static/${category.image_url}`} 
                 alt={category.name}
-                onError={(e) => {
-                  e.target.src = 'https://via.placeholder.com/300.png?text=No+Image';
-                  e.target.style.objectFit = 'contain';
-                }}
+                // onError={(e) => {
+                //   e.target.src = 'https://via.placeholder.com/300.png?text=No+Image';
+                //   e.target.style.objectFit = 'contain';
+                // }}
               />
               <div className="category-name">{category.name}</div>
             </div>

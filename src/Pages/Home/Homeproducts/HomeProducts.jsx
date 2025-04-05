@@ -9,21 +9,19 @@ const HomeProducts = () => {
   const [displayedProducts, setDisplayedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [wishlistItems, setWishlistItems] = useState([]);
-  const { toggleWishlistItem } = useAuth();
+  const { 
+    wishlistItems, 
+    toggleWishlistItem, 
+    isAuthenticated,
+    getToken
+  } = useAuth();
   const navigate = useNavigate();
-
 
   const handleProductClick = (product, e) => {
     if (e) e.stopPropagation();
-    console.log('Full Product Details:', product);
     navigate(`/product/${product.product_id}`, { state: { product } });
-
-    // navigate(`/product/${product.product_id}`);
   };
 
-
-  // Helper function to get product price and stock info
   const getProductInfo = (product) => {
     let price = 0;
     let deleted_price = null;
@@ -43,13 +41,12 @@ const HomeProducts = () => {
         }
         inStock = product.colors.some(c => c.stock_quantity > 0);
         
-        // Get first available color image if no main product image
         if (!mainImage) {
           const firstColorWithImage = product.colors.find(c => c.images?.length > 0);
           mainImage = firstColorWithImage?.images?.[0]?.image_url;
         }
       }
-    } else { // variable product
+    } else {
       if (product.models?.length > 0) {
         const allPrices = product.models.flatMap(m => 
           m.colors?.map(c => parseFloat(c.price)) || []
@@ -68,7 +65,6 @@ const HomeProducts = () => {
           m.colors?.some(c => c.stock_quantity > 0)
         );
         
-        // Get first available model/color image if no main product image
         if (!mainImage) {
           const firstModelWithImage = product.models.find(m => 
             m.colors?.some(c => c.images?.length > 0)
@@ -89,9 +85,17 @@ const HomeProducts = () => {
     };
   };
 
-  const handleWishlistClick = (product) => {
+  const handleWishlistClick = async (product, e) => {
+    if (e) e.stopPropagation();
+    
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+
     const { price, deleted_price, mainImage } = getProductInfo(product);
     
+    // Update local state immediately for better UX
     toggleWishlistItem({
       product_id: product.product_id,
       name: product.name,
@@ -99,17 +103,41 @@ const HomeProducts = () => {
       image: mainImage,
       category: product.category,
       deleted_price: deleted_price,
-     
     });
-  
-    setWishlistItems((prevWishlist) =>
-      prevWishlist.includes(product.product_id)
-        ? prevWishlist.filter((id) => id !== product.product_id)
-        : [...prevWishlist, product.product_id]
-    );
+
+    try {
+      const token = getToken();
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      if (wishlistItems.includes(product.product_id)) {
+        await axios.post(
+          `${import.meta.env.VITE_SERVER_API}/wishlist/deleteitem`,
+          { product_id: product.product_id },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      } else {
+        await axios.post(
+          `${import.meta.env.VITE_SERVER_API}/wishlist/additem`,
+          { product_id: product.product_id },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
+    } catch (error) {
+      console.error('Error updating wishlist:', error);
+      // Revert local state if API call fails
+      toggleWishlistItem({
+        product_id: product.product_id,
+        name: product.name,
+        price: price,
+        image: mainImage,
+        category: product.category,
+        deleted_price: deleted_price,
+      });
+    }
   };
 
-  // Fetch products from the API
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -125,7 +153,6 @@ const HomeProducts = () => {
     fetchProducts();
   }, []);
 
-  // Select 12 random products when products are loaded
   useEffect(() => {
     if (products.length > 0) {
       const shuffled = [...products].sort(() => 0.5 - Math.random());
@@ -133,7 +160,6 @@ const HomeProducts = () => {
     }
   }, [products]);
 
-  // Error & Loading States
   if (loading) return (
     <div className="loading-state">
       <div className="spinner"></div>
@@ -143,7 +169,7 @@ const HomeProducts = () => {
   
   if (error) return (
     <div className="error-state">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <circle cx="12" cy="12" r="10"></circle>
         <line x1="12" y1="8" x2="12" y2="12"></line>
         <line x1="12" y1="16" x2="12.01" y2="16"></line>
@@ -160,7 +186,6 @@ const HomeProducts = () => {
           <p className="section-subtitle">Curated luxury for the discerning customer</p>
         </div>
 
-        {/* Product Grid */}
         <div className="product-grid">
           {displayedProducts.length > 0 ? (
             displayedProducts.map((product) => {
@@ -171,7 +196,10 @@ const HomeProducts = () => {
                   <div className="product-badge">
                     {inStock ? 'In Stock' : 'Pre-Order'}
                   </div>
-                  <div className="wishlist-icon" onClick={() => handleWishlistClick(product)}>
+                  <div 
+                    className="wishlist-icon" 
+                    onClick={(e) => handleWishlistClick(product, e)}
+                  >
                     <svg
                       width="24"
                       height="24"
@@ -179,36 +207,25 @@ const HomeProducts = () => {
                       fill={wishlistItems.includes(product.product_id) ? "#ff4757" : "none"}
                       stroke={wishlistItems.includes(product.product_id) ? "#ff4757" : "#111"}
                       strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
                     >
                       <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                     </svg>
                   </div>
-                  <div className="product-image">
+                  <div className="product-image" onClick={(e) => handleProductClick(product, e)}>
                     {mainImage && (
                       <img
                         src={mainImage}
                         alt={product.name}
                         loading="lazy"
-                        onError={(e) => {
-                          console.error('Failed to load:', e.target.src);
-                          e.target.src = '/path-to-fallback-image.jpg';
-                        }}
                       />
                     )}
-                    <button 
-                      className="quick-view"
-                      onClick={(e) => handleProductClick(product, e)}                    >
+                    <button className="quick-view" onClick={(e) => handleProductClick(product, e)}>
                       Quick View
                     </button>
                   </div>
                   <div className="product-details">
                     <span className="product-category">{product.category || 'Uncategorized'}</span>
                     <h3 className="product-name">{product.name}</h3>
-                    {/* <p className="product-description">
-                      {product.description || 'No description available'}
-                    </p> */}
                     <div className="product-pricing">
                       <span className="current-price">${price.toFixed(2)}</span>
                       {deleted_price && (
@@ -217,7 +234,6 @@ const HomeProducts = () => {
                     </div>
                     <button 
                       className="add-to-cart"
-                      // onClick={() => navigate(`/product/${product.product_id}`)}
                       onClick={(e) => handleProductClick(product, e)} 
                     >
                       View Product
@@ -228,7 +244,7 @@ const HomeProducts = () => {
             })
           ) : (
             <div className="no-products">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <circle cx="12" cy="12" r="10"></circle>
                 <line x1="12" y1="8" x2="12" y2="12"></line>
                 <line x1="12" y1="16" x2="12.01" y2="16"></line>
@@ -238,7 +254,6 @@ const HomeProducts = () => {
           )}
         </div>
 
-        {/* View More Button */}
         {products.length > 0 && (
           <div className="view-more-container">
             <button 
@@ -246,7 +261,7 @@ const HomeProducts = () => {
               onClick={() => navigate('/allproducts')}
             >
               View All Products
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path d="M5 12h14M12 5l7 7-7 7"></path>
               </svg>
             </button>

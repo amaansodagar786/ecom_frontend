@@ -273,6 +273,12 @@ $highlight-color: #6e8efb;
   }
 
   @media (max-width: 768px) {
+
+    
+      .hide-on-mobile {
+          display: none;
+      }
+  
     .footer-content {
       grid-template-columns: 1fr 1fr;
     }
@@ -285,6 +291,11 @@ $highlight-color: #6e8efb;
   }
 
   @media (max-width: 576px) {
+
+    .hide-on-mobile {
+      display: none;
+  }
+  
     .footer-content {
       grid-template-columns: 1fr;
     }

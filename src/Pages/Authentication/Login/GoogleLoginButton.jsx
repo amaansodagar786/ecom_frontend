@@ -1,17 +1,22 @@
-// src/components/Auth/GoogleLoginButton.jsx
 import React from 'react';
 import { FcGoogle } from 'react-icons/fc';
-import './GoogleLoginButton.scss';
+import { BeatLoader } from 'react-spinners';
 
 const GoogleLoginButton = ({ onClick, disabled }) => {
   return (
-    <button 
+    <button
       className="google-login-button"
       onClick={onClick}
       disabled={disabled}
     >
-      <FcGoogle className="google-icon" />
-      Continue with Google
+      {disabled ? (
+        <BeatLoader color="#000" size={8} />
+      ) : (
+        <>
+          <FcGoogle className="google-icon" />
+          Continue with Google
+        </>
+      )}
     </button>
   );
 };

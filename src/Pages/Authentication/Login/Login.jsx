@@ -33,48 +33,50 @@ const Login = () => {
       .required('Password is required')
   });
 
-  const handleGoogleLogin = async () => {
-    setIsGoogleLoading(true);
-    try {
-      // Open Google auth in a new window
-      const googleAuthWindow = window.open(
-        `${import.meta.env.VITE_SERVER_API}/login/google`,
-        'GoogleAuth',
-        'width=500,height=600'
-      );
+ // Update the handleGoogleLogin function
+const handleGoogleLogin = async () => {
+  setIsGoogleLoading(true);
+  try {
+    const width = 500;
+    const height = 600;
+    const left = (window.innerWidth - width) / 2;
+    const top = (window.innerHeight - height) / 2;
 
-      // Listen for messages from the popup
-      const handleMessage = (event) => {
-        if (event.origin !== new URL(import.meta.env.VITE_SERVER_API).origin) {
-          return;
-        }
+    const googleAuthWindow = window.open(
+      `${import.meta.env.VITE_SERVER_API}/login/google`,
+      'GoogleAuth',
+      `width=${width},height=${height},top=${top},left=${left}`
+    );
 
-        if (event.data.token && event.data.user) {
-          login(event.data.token, event.data.user);
-          toast.success('Google login successful!');
-          
-          setTimeout(() => {
-            if (event.data.user.role === 'admin') {
-              navigate('/admindashboard');
-            } else {
-              navigate('/');
-            }
-          }, 1500);
-          
-          // Clean up
-          window.removeEventListener('message', handleMessage);
-          googleAuthWindow.close();
-        }
-      };
+    const handleMessage = (event) => {
+      if (event.origin !== window.location.origin) return;
 
-      window.addEventListener('message', handleMessage);
-    } catch (error) {
-      console.error("Google login error:", error);
-      toast.error('Google login failed. Please try again.');
-    } finally {
-      setIsGoogleLoading(false);
-    }
-  };
+      if (event.data.error) {
+        toast.error(event.data.error);
+        googleAuthWindow?.close();
+        return;
+      }
+
+      if (event.data.token && event.data.user) {
+        login(event.data.token, event.data.user);
+        toast.success('Google login successful!');
+        
+        setTimeout(() => {
+          navigate(event.data.user.role === 'admin' ? '/admindashboard' : '/');
+        }, 1500);
+      }
+
+      window.removeEventListener('message', handleMessage);
+      googleAuthWindow?.close();
+    };
+
+    window.addEventListener('message', handleMessage);
+  } catch (error) {
+    toast.error('Google login failed. Please try again.');
+  } finally {
+    setIsGoogleLoading(false);
+  }
+};
 
   const handleSubmit = async (values, { setSubmitting, resetForm }) => {
     try {

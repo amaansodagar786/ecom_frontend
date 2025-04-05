@@ -36,6 +36,7 @@ import Support from './Pages/User/Support/Support';
 import Cart from './Pages/Cart/Cart';
 import AllProducts from './Pages/AllProducts/AllProducts';
 import ProductPage from './Pages/Product/ProductPage';
+import AuthCallback from './Pages/Authentication/Auth/AuthCallback';
 
 
 
@@ -67,6 +68,7 @@ function App() {
           <Route path="/cart" element={<Cart />} />
           <Route path="/randr" element={<ReviewandRating />} />
           <Route path="/support" element={<Support />} />
+          <Route path="/auth-callback" element={<AuthCallback />} />
 
 
           {/* ADMIN PAGES  */}
