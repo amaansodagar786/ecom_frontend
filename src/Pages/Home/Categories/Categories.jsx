@@ -33,20 +33,20 @@ const Categories = () => {
     fetchCategories();
   }, []);
 
-  const handleCategoryClick = (categoryName) => {
-    navigate(`/products/${categoryName}`);
+  const handleCategoryClick = (categoryId) => {
+    navigate(`/products/by-category/${categoryId}`);
   };
 
   const slide = (direction) => {
     const slider = sliderRef.current;
-    const categoryWidth = windowWidth <= 768 ? 
-      (slider.firstChild?.offsetWidth || 120) + 10 : 
+    const categoryWidth = windowWidth <= 768 ?
+      (slider.firstChild?.offsetWidth || 120) + 10 :
       (slider.firstChild?.offsetWidth || 180) + 20;
     const scrollAmount = categoryWidth * (windowWidth <= 768 ? 1 : 2);
-    
-    slider.scrollBy({ 
-      left: direction === 'left' ? -scrollAmount : scrollAmount, 
-      behavior: 'smooth' 
+
+    slider.scrollBy({
+      left: direction === 'left' ? -scrollAmount : scrollAmount,
+      behavior: 'smooth'
     });
   };
 
@@ -56,25 +56,25 @@ const Categories = () => {
   return (
     <div className="shop-by-category">
       <h2 className="sec-heading">Shop by Categories</h2>
-      
+
       <div className="categories-container">
-        <button 
-          className="slider-button left" 
+        <button
+          className="slider-button left"
           onClick={() => slide('left')}
           aria-label="Slide left"
         >
           <FaChevronLeft />
         </button>
-        
+
         <div className="categories" ref={sliderRef}>
           {categories.map((category) => (
             <div
               className="category"
               key={category.category_id}
-              onClick={() => handleCategoryClick(category.name)}
+              onClick={() => handleCategoryClick(category.category_id)}
             >
               <img
-                src={`${import.meta.env.VITE_SERVER_API}/static/${category.image_url}`} 
+                src={`${import.meta.env.VITE_SERVER_API}/static/${category.image_url}`}
                 alt={category.name}
                 onError={(e) => {
                   e.target.src = 'https://via.placeholder.com/300.png?text=No+Image';
@@ -85,9 +85,9 @@ const Categories = () => {
             </div>
           ))}
         </div>
-        
-        <button 
-          className="slider-button right" 
+
+        <button
+          className="slider-button right"
           onClick={() => slide('right')}
           aria-label="Slide right"
         >

@@ -147,9 +147,16 @@ const Cart = ({ isOpen, onClose }) => {
         <div className="cart-content">
           <div className="cart-header">
             <h2>Your Cart ({cartItems.length})</h2>
+            <div className="header-actions">
+    {cartItems.length > 0 && (
+      <button className="clear-cart-btn" onClick={handleClearCart}>
+        Clear Cart
+      </button>
+    )}
             <button className="close-cart" onClick={onClose}>
               <FiX size={24} />
             </button>
+          </div>
           </div>
 
           {loading ? (
@@ -239,9 +246,7 @@ const Cart = ({ isOpen, onClose }) => {
                   Checkout Now
                   <FiChevronRight size={18} />
                 </button>
-                <button className="clear-cart-btn" onClick={handleClearCart}>
-                  Clear Cart
-                </button>
+                
               </div>
             </>
           ) : (

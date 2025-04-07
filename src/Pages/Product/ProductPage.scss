@@ -135,12 +135,39 @@ $font-bold: 700;
             align-items: center;
             justify-content: center;
             max-height: 600px;
+            position: relative;
 
             img {
                 max-width: 100%;
                 max-height: 100%;
                 object-fit: contain;
                 mix-blend-mode: multiply;
+            }
+
+            .image-nav {
+                position: absolute;
+                width: 100%;
+                display: flex;
+                justify-content: space-between;
+                padding: 0 1rem;
+
+                .nav-arrow {
+                    background: rgba(0,0,0,0.2);
+                    color: white;
+                    border: none;
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    transition: all 0.2s;
+
+                    &:hover {
+                        background: rgba(0,0,0,0.4);
+                    }
+                }
             }
         }
     }
@@ -238,35 +265,6 @@ $font-bold: 700;
             .stock-quantity {
                 color: $error-color;
                 font-weight: $font-medium;
-            }
-        }
-
-        .section-toggle-button {
-            width: 100%;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: white;
-            border: 1px solid $border-color;
-            border-radius: $radius-md;
-            cursor: pointer;
-            font-weight: $font-semibold;
-            color: $text-dark;
-            transition: all 0.2s;
-
-            &:hover {
-                background: $bg-lighter;
-                border-color: $primary-color;
-            }
-
-            .icon {
-                transition: transform 0.3s ease;
-                
-                &.expanded {
-                    transform: rotate(180deg);
-                }
             }
         }
 
@@ -467,80 +465,84 @@ $font-bold: 700;
         }
     }
 
-    .full-width-section {
+    .tabbed-content {
         width: 100%;
-        background: $bg-lighter;
-        padding: 2rem 5%;
-        margin-top: 1rem;
-        border-top: 1px solid $border-color;
-        border-bottom: 1px solid $border-color;
-        animation: fadeIn 0.3s ease;
+        margin-top: 3rem;
 
-        .section-content {
-            max-width: 1400px;
-            margin: 0 auto;
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid $border-color;
+            margin-bottom: 1.5rem;
 
-            h2 {
-                font-size: 1.5rem;
+            .tab {
+                padding: 0.75rem 1.5rem;
+                background: none;
+                border: none;
+                border-bottom: 3px solid transparent;
                 font-weight: $font-semibold;
-                margin-bottom: 1.5rem;
-                color: $text-dark;
-            }
-
-            .description {
-                line-height: 1.6;
                 color: $text-medium;
-                margin-bottom: 1rem;
-            }
+                cursor: pointer;
+                transition: all 0.2s;
 
-            .specifications {
-                margin: 1.5rem 0;
-
-                h3 {
-                    font-size: 1.2rem;
-                    font-weight: $font-semibold;
-                    margin: 1.5rem 0 1rem;
-                    color: $text-dark;
+                &:hover {
+                    color: $primary-color;
                 }
 
-                table {
-                    width: 100%;
-                    border-collapse: collapse;
-
-                    tr {
-                        border-bottom: 1px solid $border-color;
-
-                        &:last-child {
-                            border-bottom: none;
-                        }
-                    }
-
-                    td {
-                        padding: 0.75rem 0;
-                        vertical-align: top;
-
-                        &:first-child {
-                            font-weight: $font-medium;
-                            color: $text-medium;
-                            width: 30%;
-                        }
-                    }
-                }
-            }
-
-            .model-description {
-                .description-content {
-                    line-height: 1.6;
-                    color: $text-medium;
-                    white-space: pre-line;
+                &.active {
+                    color: $primary-color;
+                    border-bottom-color: $primary-color;
                 }
             }
         }
-    }
 
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
+        .tab-content {
+            .description-content {
+                line-height: 1.6;
+                color: $text-medium;
+            }
+
+            .specifications-content {
+                .product-specs,
+                .model-specs {
+                    margin-bottom: 1.5rem;
+
+                    h3 {
+                        font-size: 1.2rem;
+                        margin-bottom: 1rem;
+                        color: $text-dark;
+                    }
+
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+
+                        tr {
+                            border-bottom: 1px solid $border-color;
+
+                            &:last-child {
+                                border-bottom: none;
+                            }
+                        }
+
+                        td {
+                            padding: 0.75rem 0;
+                            vertical-align: top;
+
+                            &:first-child {
+                                font-weight: $font-medium;
+                                color: $text-medium;
+                                width: 30%;
+                            }
+                        }
+                    }
+                }
+            }
+
+            .model-details-content {
+                line-height: 1.6;
+                color: $text-medium;
+            }
+        }
     }
 
     .loading-state,

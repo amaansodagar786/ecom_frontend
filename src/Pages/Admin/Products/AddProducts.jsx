@@ -1,4 +1,4 @@
-import React, { useState, useEffect ,  useRef  } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Formik, Form, Field, FieldArray, ErrorMessage } from 'formik';
 import * as yup from 'yup';
 import { FaPlus, FaTrash, FaUpload } from 'react-icons/fa';
@@ -7,6 +7,35 @@ import axios from 'axios';
 import 'react-toastify/dist/ReactToastify.css';
 import './AddProducts.scss';
 import AdminLayout from '../AdminPanel/AdminLayout';
+
+// Define initialValues outside the component to avoid reference error
+const initialValues = {
+  name: '',
+  description: '',
+  main_category_id: '',
+  sub_category_id: '',
+  product_type: 'single',
+  unit: 1,
+  models: [
+    {
+      name: '',
+      description: '',
+      colors: [
+        {
+          name: '',
+          stock_quantity: 0,
+          price: 0,
+          original_price: 0,
+          images: []
+        }
+      ],
+      specifications: [
+        { key: '', value: '' }
+      ]
+    }
+  ],
+  product_images: []
+};
 
 const AddProducts = () => {
   const [categories, setCategories] = useState([]);
@@ -17,10 +46,8 @@ const AddProducts = () => {
   const [showSubcategoryModal, setShowSubcategoryModal] = useState(false);
   const [selectedMainCategory, setSelectedMainCategory] = useState(null);
   const [categoryImage, setCategoryImage] = useState(null);
-  const [formikSetFieldValue, setFormikSetFieldValue] = useState(() => () => { });
-  const setFieldValueRef = useRef(() => { }); // Create a ref to store setFieldValue
-
-
+  const setFieldValueRef = useRef(() => { });
+  const formValuesRef = useRef(initialValues);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -36,36 +63,6 @@ const AddProducts = () => {
     };
     fetchCategories();
   }, []);
-
-
-
-  const initialValues = {
-    name: '',
-    description: '',
-    main_category_id: '',
-    sub_category_id: '',
-    product_type: 'single',
-    unit: 1,
-    models: [
-      {
-        name: '',
-        description: '',
-        colors: [
-          {
-            name: '',
-            stock_quantity: 0,
-            price: 0,
-            original_price: 0,
-            images: []
-          }
-        ],
-        specifications: [
-          { key: '', value: '' }
-        ]
-      }
-    ],
-    product_images: []
-  };
 
   const validationSchema = yup.object().shape({
     name: yup.string().required('Product name is required'),
@@ -155,14 +152,14 @@ const AddProducts = () => {
 
   const handleAddSubcategory = async (setFieldValue) => {
     if (!newSubcategory.trim() || !selectedMainCategory) return;
-  
+
     try {
       const token = localStorage.getItem("token");
       if (!token) {
         toast.error("User is not authenticated");
         return;
       }
-  
+
       const response = await axios.post(
         `${import.meta.env.VITE_SERVER_API}/subcategory/add`,
         {
@@ -175,28 +172,18 @@ const AddProducts = () => {
           },
         }
       );
-  
-      // Get current form values to preserve them
-      const currentFormValues = { ...values }; // This needs to be passed from the modal
-  
-      // Re-fetch categories
+
+      // Re-fetch categories to get the latest data
       const categoriesResponse = await axios.get(`${import.meta.env.VITE_SERVER_API}/categories`);
       setCategories(categoriesResponse.data);
-  
+
       setNewSubcategory("");
       setShowSubcategoryModal(false);
-  
-      // Update the form's sub_category_id with the new subcategory's ID
+
       if (setFieldValue) {
         setFieldValue('sub_category_id', response.data.subcategory_id);
       }
-  
-      // Restore all other form values
-      setFieldValueRef.current((prevValues) => ({
-        ...prevValues,
-        sub_category_id: response.data.subcategory_id
-      }));
-  
+
       toast.success("Subcategory added successfully");
       return response.data;
     } catch (error) {
@@ -205,7 +192,6 @@ const AddProducts = () => {
       throw error;
     }
   };
-
 
   const handleSubmit = async (values, { setSubmitting, resetForm }) => {
     try {
@@ -286,12 +272,6 @@ const AddProducts = () => {
     }
   };
 
-  // const getSubcategories = () => {
-  //   if (!values.main_category_id) return [];
-  //   const mainCategory = categories.find(cat => cat.category_id == values.main_category_id);
-  //   return mainCategory ? mainCategory.subcategories || [] : [];
-  // }; 
-
   return (
     <AdminLayout>
       <div className="admin-panel">
@@ -326,12 +306,11 @@ const AddProducts = () => {
             }}
           >
             {({ values, setFieldValue, isSubmitting, errors }) => {
-
-
+              // Update both refs
               useEffect(() => {
                 setFieldValueRef.current = setFieldValue;
-              }, [setFieldValue]);
-
+                formValuesRef.current = values;
+              }, [setFieldValue, values]);
 
               useEffect(() => {
                 if (Object.keys(errors).length > 0) {
@@ -347,8 +326,6 @@ const AddProducts = () => {
                 }
               }, [errors]);
 
-
-              // Moved inside Formik render function
               const getSubcategories = () => {
                 if (!values.main_category_id) return [];
                 const mainCategory = categories.find(cat => cat.category_id == values.main_category_id);
@@ -393,7 +370,8 @@ const AddProducts = () => {
                           component="div"
                           className="error-message"
                           data-fieldname="description"
-                        />                  </div>
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -444,7 +422,7 @@ const AddProducts = () => {
                             name="sub_category_id"
                             className="form-input"
                             disabled={!values.main_category_id}
-                            key={values.main_category_id} // This forces re-render when main category changes
+                            key={values.main_category_id}
                           >
                             <option value="">Select subcategory</option>
                             {getSubcategories().map(subcategory => (
@@ -461,7 +439,6 @@ const AddProducts = () => {
                           >
                             <FaPlus /> Add
                           </button>
-
                         </div>
                         <ErrorMessage name="sub_category_id" component="div" className="error-message" />
                       </div>
@@ -960,46 +937,46 @@ const AddProducts = () => {
           </div>
         )}
 
-
         {showSubcategoryModal && (
-  <div className="modal-overlay">
-    <div className="modal">
-      <h3>Add New Subcategory</h3>
-      <p>For category: {categories.find(c => c.category_id == selectedMainCategory)?.name}</p>
-      <input
-        type="text"
-        value={newSubcategory}
-        onChange={(e) => setNewSubcategory(e.target.value)}
-        placeholder="Enter subcategory name"
-        className="form-input"
-      />
-      <div className="modal-actions">
-        <button
-          type="button"
-          className="cancel-button"
-          onClick={() => setShowSubcategoryModal(false)}
-        >
-          Cancel
-        </button>
-        <button
-          type="button"
-          className="confirm-button"
-          onClick={async () => {
-            try {
-              await handleAddSubcategory(setFieldValueRef.current);
-              // Force a re-render by updating state
-              setCategories([...categories]); // This will trigger a re-render
-            } catch (error) {
-              console.error(error);
-            }
-          }}
-        >
-          Add Subcategory
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+          <div className="modal-overlay">
+            <div className="modal">
+              <h3>Add New Subcategory</h3>
+              <p>For category: {categories.find(c => c.category_id == selectedMainCategory)?.name}</p>
+              <input
+                type="text"
+                value={newSubcategory}
+                onChange={(e) => setNewSubcategory(e.target.value)}
+                placeholder="Enter subcategory name"
+                className="form-input"
+              />
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="cancel-button"
+                  onClick={() => setShowSubcategoryModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="confirm-button"
+                  onClick={async () => {
+                    try {
+                      await handleAddSubcategory(setFieldValueRef.current);
+                      // Force update categories list
+                      const refreshed = await axios.get(`${import.meta.env.VITE_SERVER_API}/categories`);
+                      setCategories(refreshed.data);
+                    } catch (error) {
+                      console.error(error);
+                    }
+                  }}
+                >
+                  Add Subcategory
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <ToastContainer
           position="top-center"

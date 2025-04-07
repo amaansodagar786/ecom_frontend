@@ -19,9 +19,9 @@ const Banner = () => {
         style={{ backgroundImage: `url(${isMobile ? mobilebanner : banner})` }}
       >
         <div className="banner-content center">
-          <h3 className="banner-subtitle">Luxury Redefined</h3>
-          <h2 className="banner-title">Summer Collection 2023</h2>
-          <button className="banner-cta">Shop Now</button>
+          {/* <h3 className="banner-subtitle">Luxury Redefined</h3> */}
+          {/* <h2 className="banner-title">Power Up Your Life with the Best in Tech!</h2> */}
+          {/* <button className="banner-cta">Shop Now</button> */}
         </div>
         <div className="banner-overlay"></div>
       </div>

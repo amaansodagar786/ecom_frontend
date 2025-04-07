@@ -30,20 +30,20 @@ const AllProducts = () => {
   // Helper function to get product info
   const getProductInfo = (product) => {
     if (!product) return { price: 0, deleted_price: null, inStock: false, mainImage: null, availableColors: [] };
-  
+
     let price = 0;
     let deleted_price = null;
     let inStock = false;
     let mainImage = product.images?.[0]?.image_url;
     let availableColors = [];
-  
+
     const findMinPriceEntry = (entries) => {
       if (!entries.length) return null;
-      return entries.reduce((minEntry, current) => 
+      return entries.reduce((minEntry, current) =>
         current.price < minEntry.price ? current : minEntry, entries[0]
       );
     };
-  
+
     if (product.product_type === 'single') {
       if (product.colors?.length > 0) {
         const colorEntries = product.colors.map(c => ({
@@ -52,7 +52,7 @@ const AllProducts = () => {
           stock: c.stock_quantity > 0,
           images: c.images
         }));
-  
+
         const minEntry = findMinPriceEntry(colorEntries);
         if (minEntry) {
           price = minEntry.price;
@@ -60,17 +60,17 @@ const AllProducts = () => {
             deleted_price = minEntry.original;
           }
         }
-  
+
         inStock = product.colors.some(c => c.stock_quantity > 0);
         availableColors = product.colors.map(c => c.name);
-  
+
         // Find main image from the color with lowest price or first available
         const firstColorWithImage = (minEntry?.images?.length ? minEntry : product.colors.find(c => c.images?.length))?.images?.[0];
         mainImage = firstColorWithImage?.image_url || mainImage;
       }
     } else {
       if (product.models?.length > 0) {
-        const allColorEntries = product.models.flatMap(m => 
+        const allColorEntries = product.models.flatMap(m =>
           m.colors?.map(c => ({
             price: parseFloat(c.price),
             original: c.original_price ? parseFloat(c.original_price) : null,
@@ -79,7 +79,7 @@ const AllProducts = () => {
             model: m
           })) || []
         );
-  
+
         const minEntry = findMinPriceEntry(allColorEntries);
         if (minEntry) {
           price = minEntry.price;
@@ -87,16 +87,16 @@ const AllProducts = () => {
             deleted_price = minEntry.original;
           }
         }
-  
+
         inStock = allColorEntries.some(c => c.stock);
         availableColors = [...new Set(allColorEntries.map(c => c.name))];
-  
+
         // Find main image from the color with lowest price or first available
         const firstColorWithImage = (minEntry?.images?.length ? minEntry : allColorEntries.find(c => c.images?.length))?.images?.[0];
         mainImage = firstColorWithImage?.image_url || mainImage;
       }
     }
-  
+
     return {
       price,
       deleted_price,
@@ -108,7 +108,7 @@ const AllProducts = () => {
 
   const handleWishlistClick = (product) => {
     const { price, deleted_price, mainImage } = getProductInfo(product);
-    
+
     toggleWishlistItem({
       product_id: product.product_id,
       name: product.name,
@@ -117,7 +117,7 @@ const AllProducts = () => {
       category: product.category,
       deleted_price: deleted_price
     });
-  
+
     setWishlistItems((prevWishlist) =>
       prevWishlist.includes(product.product_id)
         ? prevWishlist.filter((id) => id !== product.product_id)
@@ -170,26 +170,26 @@ const AllProducts = () => {
   const filteredProducts = products
     .filter(product => {
       const { price, availableColors } = getProductInfo(product);
-      const matchesSearch = product.name?.toLowerCase().includes(filters.searchQuery.toLowerCase()) || 
-                          product.description?.toLowerCase().includes(filters.searchQuery.toLowerCase());
+      const matchesSearch = product.name?.toLowerCase().includes(filters.searchQuery.toLowerCase()) ||
+        product.description?.toLowerCase().includes(filters.searchQuery.toLowerCase());
       const priceInRange = price >= filters.priceRange[0] &&
-                          price <= filters.priceRange[1];
+        price <= filters.priceRange[1];
       const colorMatch = filters.colors.length === 0 ||
-                        filters.colors.some(color => 
-                          availableColors.some(c => c.toLowerCase().includes(color.toLowerCase()))
-                        );
+        filters.colors.some(color =>
+          availableColors.some(c => c.toLowerCase().includes(color.toLowerCase()))
+        );
       const categoryMatch = filters.categories.length === 0 ||
-                          (product.category && filters.categories.includes(product.category));
+        (product.category && filters.categories.includes(product.category));
       return matchesSearch && priceInRange && colorMatch && categoryMatch;
     })
     .sort((a, b) => {
       const aInfo = getProductInfo(a);
       const bInfo = getProductInfo(b);
-      
+
       switch (filters.sortBy) {
         case 'price-low': return aInfo.price - bInfo.price;
         case 'price-high': return bInfo.price - aInfo.price;
-        case 'newest': 
+        case 'newest':
           // Fallback to product_id if created_at is not available
           const aDate = a.created_at ? new Date(a.created_at) : a.product_id;
           const bDate = b.created_at ? new Date(b.created_at) : b.product_id;
@@ -240,7 +240,7 @@ const AllProducts = () => {
       <p>Loading premium products...</p>
     </div>
   );
-  
+
   if (error) return (
     <div className="error-state">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -279,8 +279,8 @@ const AllProducts = () => {
                   className="search-input"
                 />
                 {filters.searchQuery && (
-                  <button 
-                    className="clear-search" 
+                  <button
+                    className="clear-search"
                     onClick={() => setFilters({ ...filters, searchQuery: '' })}
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -294,7 +294,7 @@ const AllProducts = () => {
 
             {/* Price Range Filter */}
             <div className="filter-group">
-              <div 
+              <div
                 className="filter-title dropdown-header"
                 onClick={() => toggleDropdown('price')}
               >
@@ -325,7 +325,7 @@ const AllProducts = () => {
 
             {/* Color Filter */}
             <div className="filter-group">
-              <div 
+              <div
                 className="filter-title dropdown-header"
                 onClick={() => toggleDropdown('colors')}
               >
@@ -357,7 +357,7 @@ const AllProducts = () => {
 
             {/* Category Filter */}
             <div className="filter-group">
-              <div 
+              <div
                 className="filter-title dropdown-header"
                 onClick={() => toggleDropdown('categories')}
               >
@@ -400,12 +400,14 @@ const AllProducts = () => {
           {/* Main Content Area */}
           <main className="main-content">
             {/* Sort Bar */}
+            {/* Sort Bar */}
             <div className="sort-bar">
               <div className="results-count">
                 Showing {filteredProducts.length} of {products.length} products
               </div>
               <div className="sort-options">
-                <button 
+                {/* Mobile Filter Button - Only shown on mobile */}
+                <button
                   className="mobile-filter-btn"
                   onClick={() => setShowMobileFilters(true)}
                 >
@@ -422,6 +424,7 @@ const AllProducts = () => {
                     <line x1="17" y1="16" x2="23" y2="16"></line>
                   </svg>
                 </button>
+
                 <div className="sort-select-wrapper">
                   <label>Sort By:</label>
                   <select
@@ -444,7 +447,7 @@ const AllProducts = () => {
               {filteredProducts.length > 0 ? (
                 filteredProducts.map((product) => {
                   const { price, deleted_price, inStock, mainImage } = getProductInfo(product);
-                  
+
                   return (
                     <div className="product-card" key={product.product_id}>
                       <div className="product-badge">
@@ -476,7 +479,7 @@ const AllProducts = () => {
                             }}
                           />
                         )}
-                        <button 
+                        <button
                           className="quick-view"
                           onClick={() => navigate(`/product/${product.product_id}`)}
                         >
@@ -495,7 +498,7 @@ const AllProducts = () => {
                             <span className="original-price">${deleted_price.toFixed(2)}</span>
                           )}
                         </div>
-                        <button 
+                        <button
                           className="add-to-cart"
                           onClick={() => navigate(`/product/${product.product_id}`, { state: { product } })}
                         >
@@ -513,7 +516,7 @@ const AllProducts = () => {
                     <line x1="12" y1="16" x2="12.01" y2="16"></line>
                   </svg>
                   <h3>No products match your filters</h3>
-                  <button 
+                  <button
                     className="reset-filters-btn"
                     onClick={resetFilters}
                   >
@@ -531,7 +534,7 @@ const AllProducts = () => {
         <div className="mobile-filter-modal">
           <div className="mobile-filter-header">
             <h3>Filters</h3>
-            <button 
+            <button
               className="close-mobile-filters"
               onClick={() => setShowMobileFilters(false)}
             >
@@ -541,7 +544,7 @@ const AllProducts = () => {
               </svg>
             </button>
           </div>
-          
+
           <div className="mobile-filter-content">
             {/* Search Filter */}
             <div className="filter-group">
@@ -555,8 +558,8 @@ const AllProducts = () => {
                   className="search-input"
                 />
                 {filters.searchQuery && (
-                  <button 
-                    className="clear-search" 
+                  <button
+                    className="clear-search"
                     onClick={() => setFilters({ ...filters, searchQuery: '' })}
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -570,7 +573,7 @@ const AllProducts = () => {
 
             {/* Price Range Filter */}
             <div className="filter-group">
-              <div 
+              <div
                 className="filter-title dropdown-header"
                 onClick={() => toggleDropdown('price')}
               >
@@ -601,7 +604,7 @@ const AllProducts = () => {
 
             {/* Color Filter */}
             <div className="filter-group">
-              <div 
+              <div
                 className="filter-title dropdown-header"
                 onClick={() => toggleDropdown('colors')}
               >
@@ -633,7 +636,7 @@ const AllProducts = () => {
 
             {/* Category Filter */}
             <div className="filter-group">
-              <div 
+              <div
                 className="filter-title dropdown-header"
                 onClick={() => toggleDropdown('categories')}
               >
@@ -666,13 +669,13 @@ const AllProducts = () => {
           </div>
 
           <div className="mobile-filter-footer">
-            <button 
+            <button
               className="reset-filters-btn"
               onClick={resetFilters}
             >
               Reset
             </button>
-            <button 
+            <button
               className="apply-filters-btn"
               onClick={() => setShowMobileFilters(false)}
             >

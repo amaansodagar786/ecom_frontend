@@ -57,7 +57,7 @@ function App() {
           <Route path="/product/:id" element={<ProductPage />} />
 
 
-          <Route path="/products/:category" element={<MainProducts />} />
+          <Route path="/products/by-category/:categoryId" element={<MainProducts />} />
 
           {/* USER PAGES  */}
 

@@ -5,22 +5,33 @@ import { FiArrowLeft } from 'react-icons/fi';
 import './MainProducts.scss';
 
 const MainProducts = () => {
-  const { category } = useParams();
+  const { categoryId } = useParams();
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
 
+
+  
   useEffect(() => {
+
+    if (!categoryId) {
+      console.error("No category ID provided");
+      return;
+    }
+    
     const fetchProducts = async () => {
+      console.log('Fetching products for category:', categoryId); // Debugging line
       try {
-        const response = await axios.get(`${import.meta.env.VITE_SERVER_API}/products/category/${category}`);
+        const response = await axios.get(
+          `${import.meta.env.VITE_SERVER_API}/products/by-category/${categoryId}`
+        );
         setProducts(response.data);
       } catch (error) {
         console.error('Error fetching products:', error);
       }
     };
     fetchProducts();
-  }, [category]);
+  }, [categoryId]); // Ensure categoryId is a dependency
 
   const filteredProducts = products.filter((product) =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -41,26 +52,46 @@ const MainProducts = () => {
         />
       </div>
 
-      <h2 className="section-title">{category} Products</h2>
+      <h2 className="section-title">{categoryId} Products</h2>
       <div className="product-grid">
-        {filteredProducts.length > 0 ? (
-          filteredProducts.map((product) => (
-            <div key={product.product_id} className="product-card">
-              <img
-                src={`${import.meta.env.VITE_SERVER_API}/static/${product.images[0]?.image_url}`}
-              alt={product.name}
-              className="product-image"
-              />
-              <div className="product-details">
-                <h3>{product.name}</h3>
-                <p>{product.description}</p>
-                <p className="price">${product.price}</p>
-              </div>
-            </div>
-          ))
+      {filteredProducts.length > 0 ? (
+  filteredProducts.map((product) => {
+    const hasImages = product.images && product.images.length > 0;
+    const imageUrl = hasImages
+  ? `${import.meta.env.VITE_SERVER_API}/static/${product.images[0]}`
+  : null;
+
+
+    console.log('Product:', product.name, '| Image URL:', imageUrl);
+
+    return (
+      <div key={product.product_id} className="product-card">
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={product.name}
+            className="product-image"
+          />
         ) : (
-          <p className="no-products">No products found.</p>
+          <div className="no-image">No Image Available</div>
         )}
+        <div className="product-details">
+          <h3>{product.name}</h3>
+          <p>{product.description}</p>
+          <p className="price">
+            {product.colors.length > 0
+              ? `$${product.colors[0].price}`
+              : 'Price unavailable'}
+          </p>
+        </div>
+      </div>
+    );
+  })
+) : (
+  <p className="no-products">No products found.</p>
+)}
+
+
       </div>
     </div>
   );
