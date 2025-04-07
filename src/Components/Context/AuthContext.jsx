@@ -1,4 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import axios from 'axios';
+
 
 const AuthContext = createContext();
 
@@ -78,36 +80,94 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const toggleWishlistItem = (product) => {
-    setWishlistItems(prev => {
-      const productId = product.product_id;
-      const newWishlist = prev.includes(productId)
-        ? prev.filter(id => id !== productId)
-        : [...prev, productId];
-      localStorage.setItem('wishlist', JSON.stringify(newWishlist));
-      return newWishlist;
-    });
+// In AuthProvider component
+const toggleWishlistItem = (product, selectedModel = null, selectedColor = null) => {
+  const wishlistItem = {
+    product_id: product.product_id,
+    model_id: selectedModel?.model_id || null,
+    color_id: selectedColor?.color_id || null,
+    name: product.name,
+    price: selectedColor?.price || 
+          selectedModel?.colors?.[0]?.price || 
+          product.price,
+    image: selectedColor?.images?.[0]?.image_url || 
+           product.images?.[0]?.image_url,
+    category: product.category
   };
+
+  // Check existence before updating state
+  const exists = wishlistItems.some(item => 
+    item.product_id === wishlistItem.product_id &&
+    (item.model_id === wishlistItem.model_id || (!item.model_id && !wishlistItem.model_id)) &&
+    (item.color_id === wishlistItem.color_id || (!item.color_id && !wishlistItem.color_id))
+  );
+
+  setWishlistItems(prev => {
+    const newWishlist = exists
+      ? prev.filter(item => !(
+          item.product_id === wishlistItem.product_id &&
+          (item.model_id === wishlistItem.model_id || (!item.model_id && !wishlistItem.model_id)) &&
+          (item.color_id === wishlistItem.color_id || (!item.color_id && !wishlistItem.color_id))
+        ))
+      : [...prev, wishlistItem];
+
+    localStorage.setItem('wishlist', JSON.stringify(newWishlist));
+    return newWishlist;
+  });
+
+  // Sync with server
+  if (authState.isAuthenticated) {
+    syncWishlistWithServer(wishlistItem, exists);
+  }
+};
+
+
+const syncWishlistWithServer = async (item, shouldRemove) => {
+  try {
+    const token = getToken();
+    const endpoint = shouldRemove 
+      ? `${import.meta.env.VITE_SERVER_API}/wishlist/deleteitem`
+      : `${import.meta.env.VITE_SERVER_API}/wishlist/additem`;
+
+    await axios.post(
+      endpoint,
+      { 
+        product_id: item.product_id,
+        model_id: item.model_id,
+        color_id: item.color_id
+      },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+  } catch (err) {
+    console.error('Error syncing wishlist:', err);
+  }
+};
+
+
 
   const addToCart = (item) => {
     setCartItems(prevItems => {
       const existingItem = prevItems.find(i => 
         i.product_id === item.product_id && 
-        i.color === item.color && 
-        i.model === item.model
+        i.color === (item.color || '') && 
+        i.model === (item.model || '')
       );
       
       let newItems;
       if (existingItem) {
         newItems = prevItems.map(i => 
           i.product_id === item.product_id && 
-          i.color === item.color && 
-          i.model === item.model
+          i.color === (item.color || '') && 
+          i.model === (item.model || '')
             ? { ...i, quantity: i.quantity + item.quantity }
             : i
         );
       } else {
-        newItems = [...prevItems, item];
+        newItems = [...prevItems, {
+          ...item,
+          color: item.color || '',
+          model: item.model || ''
+        }];
       }
       
       localStorage.setItem('cart', JSON.stringify(newItems));
@@ -115,9 +175,49 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
-  // Add this function to get the token
+  const removeFromCart = (productId, color, model) => {
+    setCartItems(prevItems => {
+      const newItems = prevItems.filter(item => 
+        !(item.product_id === productId && 
+          item.color === color && 
+          item.model === model)
+      );
+      localStorage.setItem('cart', JSON.stringify(newItems));
+      return newItems;
+    });
+  };
+
+  const updateCartItemQuantity = (productId, color, model, newQuantity) => {
+    setCartItems(prevItems => {
+      const newItems = prevItems.map(item => 
+        item.product_id === productId && 
+        item.color === color && 
+        item.model === model
+          ? { ...item, quantity: newQuantity }
+          : item
+      );
+      localStorage.setItem('cart', JSON.stringify(newItems));
+      return newItems;
+    });
+  };
+
+  const clearCart = () => {
+    setCartItems([]);
+    localStorage.removeItem('cart');
+  };
+
   const getToken = () => {
     return localStorage.getItem('token');
+  };
+
+  const updateWishlistCount = (productIds) => {
+    setWishlistItems(productIds);
+    localStorage.setItem('wishlist', JSON.stringify(productIds));
+  };
+
+  const updateCartGlobally = (items) => {
+    setCartItems(items);
+    localStorage.setItem("cart", JSON.stringify(items));
   };
 
   return (
@@ -129,9 +229,14 @@ export const AuthProvider = ({ children }) => {
       isAdmin: authState.user?.role === 'admin',
       wishlistItems,
       toggleWishlistItem,
+      updateWishlistCount ,
       cartItems,
       addToCart,
-      getToken // Make sure to include this in the context value
+      updateCartGlobally,
+      removeFromCart,
+      updateCartItemQuantity,
+      clearCart,
+      getToken
     }}>
       {!authState.isLoading && children}
     </AuthContext.Provider>

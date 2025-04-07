@@ -10,7 +10,8 @@ const Wishlist = () => {
     wishlistItems,
     toggleWishlistItem,
     isAuthenticated,
-    getToken
+    getToken, 
+    updateWishlistCount
   } = useAuth();
   const [wishlistProducts, setWishlistProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,12 +31,22 @@ const Wishlist = () => {
           `${import.meta.env.VITE_SERVER_API}/wishlist/getbycustid`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-
+  
         if (response.data.success) {
-          setWishlistProducts(response.data.wishlist.items || []);
-          console.log("Fetched wishlist items:", response.data.wishlist.items);
+          const items = response.data.wishlist.items || [];
+          setWishlistProducts(items);
+          
+          // Convert to format compatible with AuthContext
+          const simplifiedItems = items.map(item => ({
+            product_id: item.product.product_id,
+            model_id: item.model?.model_id || null,
+            color_id: item.color?.color_id || null
+          }));
+          
+          updateWishlistCount(simplifiedItems);
         } else {
           setWishlistProducts([]);
+          updateWishlistCount([]);
         }
         setLoading(false);
       } catch (err) {
@@ -44,12 +55,12 @@ const Wishlist = () => {
         setLoading(false);
       }
     };
-
+  
     fetchWishlistProducts();
-  }, [isAuthenticated, getToken, navigate, wishlistItems]);
+  }, [isAuthenticated, getToken, navigate, updateWishlistCount]);
 
   const getWishlistItemPrice = (item) => {
-    // 1. Check if we have a selected color price
+    // Check if we have a selected color price
     if (item.color?.price) {
       return {
         currentPrice: parseFloat(item.color.price),
@@ -57,7 +68,7 @@ const Wishlist = () => {
       };
     }
 
-    // 2. Check if product has colors (single product type)
+    // Check if product has colors (single product type)
     if (item.product?.colors?.length > 0) {
       return {
         currentPrice: parseFloat(item.product.colors[0].price),
@@ -67,7 +78,7 @@ const Wishlist = () => {
       };
     }
 
-    // 3. Check if product has models with colors (variable product type)
+    // Check if product has models with colors (variable product type)
     if (item.product?.models?.length > 0 && item.product.models[0].colors?.length > 0) {
       return {
         currentPrice: parseFloat(item.product.models[0].colors[0].price),
@@ -77,7 +88,7 @@ const Wishlist = () => {
       };
     }
 
-    // 4. Fallback to product price if exists
+    // Fallback to product price if exists
     return {
       currentPrice: item.product?.price ? parseFloat(item.product.price) : 0,
       originalPrice: item.product?.original_price ? parseFloat(item.product.original_price) : null
@@ -89,17 +100,16 @@ const Wishlist = () => {
       const token = getToken();
       await axios.post(
         `${import.meta.env.VITE_SERVER_API}/wishlist/deleteitem`,
-        { product_id: item.product.product_id },
+        { 
+          product_id: item.product.product_id,
+          model_id: item.model?.model_id || null,
+          color_id: item.color?.color_id || null
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      toggleWishlistItem({
-        product_id: item.product.product_id,
-        name: item.product.name,
-        price: item.product.price,
-        image: item.product.image_url,
-        category: item.product.category
-      });
+      // Update both local state and AuthContext
+      toggleWishlistItem(item.product, item.model, item.color);
     } catch (error) {
       console.error('Error removing item:', error);
     }
@@ -107,32 +117,55 @@ const Wishlist = () => {
 
   const handleViewProduct = async (item) => {
     try {
-        // Fetch full product details first
-        const response = await axios.get(
-            `${import.meta.env.VITE_SERVER_API}/product/${item.product.product_id}`
-        );
-        
-        const fullProduct = response.data;
-        
-        navigate(`/product/${item.product.product_id}`, {
-            state: {
-                product: fullProduct,
-                selectedModel: item.model || null,
-                selectedColor: item.color || null
-            }
-        });
+      // Fetch full product details first
+      const response = await axios.get(
+        `${import.meta.env.VITE_SERVER_API}/product/${item.product.product_id}`
+      );
+  
+      const fullProduct = response.data;
+  
+      // Prepare navigation state with all necessary details
+      const navigationState = {
+        product: fullProduct,
+        // Preserve the exact model/color objects from wishlist
+        selectedModel: item.model || null,
+        selectedColor: item.color || null,
+        // Also pass IDs for easier matching in ProductPage
+        preselected: {
+          modelId: item.model?.model_id || null,
+          colorId: item.color?.color_id || null
+        }
+      };
+  
+      navigate(`/product/${item.product.product_id}`, {
+        state: navigationState
+      });
     } catch (error) {
-        console.error('Error fetching product details:', error);
-        // Fallback to existing data if API call fails
-        navigate(`/product/${item.product.product_id}`, {
-            state: {
-                product: item.product,
-                selectedModel: item.model || null,
-                selectedColor: item.color || null
-            }
-        });
+      console.error('Error fetching product details:', error);
+      // Fallback to existing data if API call fails
+      navigate(`/product/${item.product.product_id}`, {
+        state: {
+          product: item.product,
+          selectedModel: item.model || null,
+          selectedColor: item.color || null,
+          preselected: {
+            modelId: item.model?.model_id || null,
+            colorId: item.color?.color_id || null
+          }
+        }
+      });
     }
-};
+  };
+
+  const getVariantDetails = (item) => {
+    if (!item.model && !item.color) return null;
+    
+    let details = [];
+    if (item.model) details.push(`Model: ${item.model.name}`);
+    if (item.color) details.push(`Color: ${item.color.name}`);
+    
+    return details.join(' • ');
+  };
 
   if (loading) return (
     <div className="loading-state">
@@ -192,6 +225,9 @@ const Wishlist = () => {
 
                   <div className="product-details">
                     <h3 className="product-name">{item.product.name}</h3>
+                    {getVariantDetails(item) && (
+                      <p className="product-variant">{getVariantDetails(item)}</p>
+                    )}
                     <p className="product-category">{item.product.category}</p>
                     <div className="product-pricing">
                       <span className="current-price">

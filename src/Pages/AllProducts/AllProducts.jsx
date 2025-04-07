@@ -14,7 +14,7 @@ const AllProducts = () => {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   const [filters, setFilters] = useState({
-    priceRange: [0, 2000],
+    priceRange: [0, 200000],
     colors: [],
     categories: [],
     sortBy: 'featured',
@@ -30,64 +30,73 @@ const AllProducts = () => {
   // Helper function to get product info
   const getProductInfo = (product) => {
     if (!product) return { price: 0, deleted_price: null, inStock: false, mainImage: null, availableColors: [] };
-
+  
     let price = 0;
     let deleted_price = null;
     let inStock = false;
     let mainImage = product.images?.[0]?.image_url;
     let availableColors = [];
-
+  
+    const findMinPriceEntry = (entries) => {
+      if (!entries.length) return null;
+      return entries.reduce((minEntry, current) => 
+        current.price < minEntry.price ? current : minEntry, entries[0]
+      );
+    };
+  
     if (product.product_type === 'single') {
       if (product.colors?.length > 0) {
-        const prices = product.colors.map(c => parseFloat(c.price));
-        const originalPrices = product.colors
-          .map(c => c.original_price ? parseFloat(c.original_price) : null)
-          .filter(p => p !== null);
-        
-        price = Math.min(...prices);
-        if (originalPrices.length > 0) {
-          deleted_price = Math.max(...originalPrices);
+        const colorEntries = product.colors.map(c => ({
+          price: parseFloat(c.price),
+          original: c.original_price ? parseFloat(c.original_price) : null,
+          stock: c.stock_quantity > 0,
+          images: c.images
+        }));
+  
+        const minEntry = findMinPriceEntry(colorEntries);
+        if (minEntry) {
+          price = minEntry.price;
+          if (minEntry.original && minEntry.original > price) {
+            deleted_price = minEntry.original;
+          }
         }
+  
         inStock = product.colors.some(c => c.stock_quantity > 0);
         availableColors = product.colors.map(c => c.name);
-        
-        if (!mainImage) {
-          const firstColorWithImage = product.colors.find(c => c.images?.length > 0);
-          mainImage = firstColorWithImage?.images?.[0]?.image_url;
-        }
+  
+        // Find main image from the color with lowest price or first available
+        const firstColorWithImage = (minEntry?.images?.length ? minEntry : product.colors.find(c => c.images?.length))?.images?.[0];
+        mainImage = firstColorWithImage?.image_url || mainImage;
       }
     } else {
       if (product.models?.length > 0) {
-        const allPrices = product.models.flatMap(m => 
-          m.colors?.map(c => parseFloat(c.price)) || []);
-        const allOriginalPrices = product.models.flatMap(m => 
-          m.colors?.map(c => c.original_price ? parseFloat(c.original_price) : null).filter(p => p !== null)) || [];
-        
-        if (allPrices.length > 0) {
-          price = Math.min(...allPrices);
-        }
-        if (allOriginalPrices.length > 0) {
-          deleted_price = Math.max(...allOriginalPrices);
-        }
-        inStock = product.models.some(m => 
-          m.colors?.some(c => c.stock_quantity > 0)
+        const allColorEntries = product.models.flatMap(m => 
+          m.colors?.map(c => ({
+            price: parseFloat(c.price),
+            original: c.original_price ? parseFloat(c.original_price) : null,
+            stock: c.stock_quantity > 0,
+            images: c.images,
+            model: m
+          })) || []
         );
-        availableColors = product.models.flatMap(m => 
-          m.colors?.map(c => c.name) || []
-        );
-        
-        if (!mainImage) {
-          const firstModelWithImage = product.models.find(m => 
-            m.colors?.some(c => c.images?.length > 0)
-          );
-          if (firstModelWithImage) {
-            const firstColorWithImage = firstModelWithImage.colors.find(c => c.images?.length > 0);
-            mainImage = firstColorWithImage?.images?.[0]?.image_url;
+  
+        const minEntry = findMinPriceEntry(allColorEntries);
+        if (minEntry) {
+          price = minEntry.price;
+          if (minEntry.original && minEntry.original > price) {
+            deleted_price = minEntry.original;
           }
         }
+  
+        inStock = allColorEntries.some(c => c.stock);
+        availableColors = [...new Set(allColorEntries.map(c => c.name))];
+  
+        // Find main image from the color with lowest price or first available
+        const firstColorWithImage = (minEntry?.images?.length ? minEntry : allColorEntries.find(c => c.images?.length))?.images?.[0];
+        mainImage = firstColorWithImage?.image_url || mainImage;
       }
     }
-
+  
     return {
       price,
       deleted_price,
@@ -210,7 +219,7 @@ const AllProducts = () => {
 
   const resetFilters = () => {
     setFilters({
-      priceRange: [0, 2000],
+      priceRange: [0, 200000],
       colors: [],
       categories: [],
       sortBy: 'featured',
@@ -299,7 +308,7 @@ const AllProducts = () => {
                   <input
                     type="range"
                     min="0"
-                    max="2000"
+                    max="200000"
                     step="50"
                     value={filters.priceRange[1]}
                     onChange={(e) => setFilters({
@@ -575,7 +584,7 @@ const AllProducts = () => {
                   <input
                     type="range"
                     min="0"
-                    max="2000"
+                    max="200000"
                     step="50"
                     value={filters.priceRange[1]}
                     onChange={(e) => setFilters({

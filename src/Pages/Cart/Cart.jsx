@@ -13,209 +13,132 @@ import "./Cart.scss";
 import { useAuth } from "../../Components/Context/AuthContext";
 
 const Cart = ({ isOpen, onClose }) => {
-  const { currentUser } = useAuth();
+  const {
+    currentUser,
+    cartItems,
+    addToCart,
+    removeFromCart,
+    updateCartItemQuantity,
+    clearCart,
+    getToken
+  } = useAuth();
+
   const navigate = useNavigate();
-  const [cartData, setCartData] = useState({
-    cart_id: null,
-    items: [],
-    pricing: {
-      subtotal: 0,
-      discount: 0,
-      tax: 0,
-      shipping: 0,
-      total: 0
-    }
-  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [snackbar, setSnackbar] = useState({ id: null, message: "" });
 
-  const fetchCart = async () => {
-    if (!currentUser) return;
+  useEffect(() => {
+    console.log('Current cart itemss:', cartItems);
+  }, [cartItems]);
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
 
-    setLoading(true);
-    setError(null);
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [isOpen]);
+
+  const calculateTotals = (items) => {
+    const subtotal = items.reduce((sum, item) => sum + ((item.price || 0) * item.quantity), 0);
+    return {
+      subtotal,
+      discount: 0,
+      tax: subtotal * 0.1,
+      shipping: subtotal > 50 ? 0 : 5.99,
+      total: subtotal + (subtotal * 0.1) + (subtotal > 50 ? 0 : 5.99)
+    };
+  };
+
+  const totals = calculateTotals(cartItems);
+
+  const handleUpdateQuantity = async (item, newQuantity) => {
+    if (newQuantity < 1) return;
 
     try {
-      const response = await axios.get(
-        `${import.meta.env.VITE_SERVER_API}/cart/getbycustid`,
+      setLoading(true);
+
+      await axios.post(
+        `${import.meta.env.VITE_SERVER_API}/cart/updateitem`,
+        {
+          product_id: item.product_id,
+          quantity: newQuantity,
+          color_id: item.color_id,
+          model_id: item.model_id
+        },
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${getToken()}`
           },
         }
       );
 
-      console.log("Cart API Response:", response.data);
+      updateCartItemQuantity(
+        item.product_id,
+        item.color,
+        item.model,
+        newQuantity
+      );
 
-      // Handle both empty cart and populated cart cases
-      if (response.data.success) {
-        const cart = response.data.cart || {
-          cart_id: null,
-          customer_id: currentUser.customer_id,
-          items: [],
-          pricing: {
-            subtotal: 0,
-            discount: 0,
-            tax: 0,
-            shipping: 0,
-            total: 0
-          }
-        };
-
-        // Ensure items array exists and has proper structure
-        const items = cart.items?.map((item) => ({
-          ...item,
-          product: {
-            ...item.product,
-            name: item.product?.name || "Unnamed Product",
-            rating: item.product?.rating || 0
-          },
-          color: item.color || null,
-          model: item.model || null,
-          quantity: item.quantity || 1,
-          unit_price: item.unit_price || 0,
-          total_item_price: item.total_item_price || 0
-        })) || [];
-
-        setCartData({
-          cart_id: cart.cart_id,
-          items: items,
-          pricing: cart.pricing || {
-            subtotal: items.reduce((sum, item) => sum + item.total_item_price, 0),
-            discount: 0,
-            tax: 0,
-            shipping: 0,
-            total: items.reduce((sum, item) => sum + item.total_item_price, 0)
-          }
-        });
-      }
+      setSnackbar({ id: item.product_id, message: "Quantity updated!" });
+      setTimeout(() => setSnackbar({ id: null, message: "" }), 2000);
     } catch (err) {
-      console.error("Cart Fetch Error:", err.response?.data || err.message);
-      setError(err.response?.data?.error || "Failed to load cart");
+      console.error("Quantity Update Error:", err.response?.data || err.message);
+      setError(err.response?.data?.error || "Failed to update quantity");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchCart();
-  }, [currentUser]);
-
-  if (!isOpen) return null;
-
-  const updateQuantity = async (itemId, newQuantity) => {
-    if (!currentUser || newQuantity < 1) return;
-
+  const handleRemoveItem = async (item) => {
     try {
-      await axios.post(
-        `${import.meta.env.VITE_SERVER_API}/cart/updateitem`,
-        { 
-          product_id: itemId, 
-          quantity: newQuantity 
-        },
-        {
-          headers: { 
-            Authorization: `Bearer ${localStorage.getItem("token")}` 
-          },
-        }
-      );
+      setLoading(true);
 
-      // Update local state
-      setCartData(prev => ({
-        ...prev,
-        items: prev.items.map(item => 
-          item.product.product_id === itemId
-            ? { 
-                ...item, 
-                quantity: newQuantity,
-                total_item_price: item.unit_price * newQuantity
-              }
-            : item
-        )
-      }));
-
-      // Recalculate totals
-      setCartData(prev => {
-        const subtotal = prev.items.reduce(
-          (sum, item) => sum + (item.unit_price * (item.product.product_id === itemId ? newQuantity : item.quantity)),
-          0
-        );
-        return {
-          ...prev,
-          pricing: {
-            ...prev.pricing,
-            subtotal,
-            total: subtotal - prev.pricing.discount + prev.pricing.tax + prev.pricing.shipping
-          }
-        };
-      });
-
-      setSnackbar({ id: itemId, message: "Quantity updated!" });
-      setTimeout(() => setSnackbar({ id: null, message: "" }), 2000);
-    } catch (err) {
-      console.error("Quantity Update Error:", err.response?.data || err.message);
-      setError(err.response?.data?.error || "Failed to update quantity");
-    }
-  };
-
-  const removeItem = async (itemId) => {
-    if (!currentUser) return;
-
-    try {
       await axios.post(
         `${import.meta.env.VITE_SERVER_API}/cart/deleteitem`,
-        { product_id: itemId },
         {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+          product_id: item.product_id,
+          color_id: item.color_id,
+          model_id: item.model_id
+        },
+        {
+          headers: { Authorization: `Bearer ${getToken()}` },
         }
       );
 
-      // Update local state
-      setCartData(prev => {
-        const filteredItems = prev.items.filter(item => item.product.product_id !== itemId);
-        const subtotal = filteredItems.reduce((sum, item) => sum + item.total_item_price, 0);
-        return {
-          ...prev,
-          items: filteredItems,
-          pricing: {
-            ...prev.pricing,
-            subtotal,
-            total: subtotal - prev.pricing.discount + prev.pricing.tax + prev.pricing.shipping
-          }
-        };
-      });
+      removeFromCart(item.product_id, item.color, item.model);
     } catch (err) {
       console.error("Remove Item Error:", err.response?.data || err.message);
       setError(err.response?.data?.error || "Failed to remove item");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const clearCart = async () => {
+  const handleClearCart = async () => {
     if (!currentUser) return;
 
     try {
-      // This would require a proper endpoint on your backend
+      setLoading(true);
+
       await axios.delete(`${import.meta.env.VITE_SERVER_API}/cart/clear`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        headers: { Authorization: `Bearer ${getToken()}` },
       });
 
-      setCartData({
-        cart_id: null,
-        items: [],
-        pricing: {
-          subtotal: 0,
-          discount: 0,
-          tax: 0,
-          shipping: 0,
-          total: 0
-        }
-      });
+      clearCart();
     } catch (err) {
       console.error("Clear Cart Error:", err.response?.data || err.message);
       setError(err.response?.data?.error || "Failed to clear cart");
+    } finally {
+      setLoading(false);
     }
   };
+
+  if (!isOpen) return null;
 
   return (
     <>
@@ -223,7 +146,7 @@ const Cart = ({ isOpen, onClose }) => {
       <div className="cart-container">
         <div className="cart-content">
           <div className="cart-header">
-            <h2>Your Cart ({cartData.items.length})</h2>
+            <h2>Your Cart ({cartItems.length})</h2>
             <button className="close-cart" onClick={onClose}>
               <FiX size={24} />
             </button>
@@ -233,26 +156,28 @@ const Cart = ({ isOpen, onClose }) => {
             <div className="loading-state">Loading cart...</div>
           ) : error ? (
             <div className="error-state">{error}</div>
-          ) : cartData.items.length > 0 ? (
+          ) : cartItems.length > 0 ? (
             <>
               <div className="cart-items">
-                {cartData.items.map((item) => (
-                  <div key={`${item.product.product_id}-${item.color?.color_id || '0'}-${item.model?.model_id || '0'}`} className="cart-item">
+                {cartItems.map((item) => (
+                  <div
+                    key={`${item.product_id}-${item.color || 'none'}-${item.model || 'none'}`}
+                    className="cart-item"
+                  >
                     <img
-                      // src={item.product.image_url}
-                      src={`${import.meta.env.VITE_SERVER_API}/static/${item.product.image_url}`}
-                      alt={item.product.name}
+                      src={`${import.meta.env.VITE_SERVER_API}/static/${item.image}`}
+                      alt={item.name}
                       className="product-image"
                       // onError={(e) => (e.target.src = "/fallback-image.jpg")}
                     />
                     <div className="product-info">
-                      <h3>{item.product.name}</h3>
-                      {item.color && <p>Color: {item.color.name}</p>}
-                      {item.model && <p>Model: {item.model.name}</p>}
-                      <div className="price">${item.unit_price.toFixed(2)}</div>
+                      <h3>{item.name}</h3>
+                      {item.color && <p>Color: {item.color}</p>}
+                      {item.model && <p>Model: {item.model}</p>}
+                      <div className="price">${(item.price || 0).toFixed(2)}</div>
                       <div className="quantity-controls">
                         <button
-                          onClick={() => updateQuantity(item.product.product_id, item.quantity - 1)}
+                          onClick={() => handleUpdateQuantity(item, item.quantity - 1)}
                           className="quantity-btn"
                           disabled={item.quantity <= 1}
                         >
@@ -260,19 +185,19 @@ const Cart = ({ isOpen, onClose }) => {
                         </button>
                         <span className="quantity">{item.quantity}</span>
                         <button
-                          onClick={() => updateQuantity(item.product.product_id, item.quantity + 1)}
+                          onClick={() => handleUpdateQuantity(item, item.quantity + 1)}
                           className="quantity-btn"
                         >
                           <FiPlus size={14} />
                         </button>
                       </div>
-                      {snackbar.id === item.product.product_id && (
+                      {snackbar.id === item.product_id && (
                         <div className="item-snackbar">{snackbar.message}</div>
                       )}
                     </div>
-                    <button 
-                      className="remove-btn" 
-                      onClick={() => removeItem(item.product.product_id)}
+                    <button
+                      className="remove-btn"
+                      onClick={() => handleRemoveItem(item)}
                     >
                       <FiTrash2 size={18} />
                     </button>
@@ -283,38 +208,38 @@ const Cart = ({ isOpen, onClose }) => {
               <div className="cart-summary">
                 <div className="summary-row">
                   <span>Subtotal</span>
-                  <span>${cartData.pricing.subtotal.toFixed(2)}</span>
+                  <span>${totals.subtotal.toFixed(2)}</span>
                 </div>
-                {cartData.pricing.discount > 0 && (
+                {totals.discount > 0 && (
                   <div className="summary-row">
                     <span>Discount</span>
-                    <span>-${cartData.pricing.discount.toFixed(2)}</span>
+                    <span>-${totals.discount.toFixed(2)}</span>
                   </div>
                 )}
-                {cartData.pricing.tax > 0 && (
+                {totals.tax > 0 && (
                   <div className="summary-row">
                     <span>Tax</span>
-                    <span>${cartData.pricing.tax.toFixed(2)}</span>
+                    <span>${totals.tax.toFixed(2)}</span>
                   </div>
                 )}
-                {cartData.pricing.shipping > 0 && (
+                {totals.shipping > 0 && (
                   <div className="summary-row">
                     <span>Shipping</span>
-                    <span>${cartData.pricing.shipping.toFixed(2)}</span>
+                    <span>${totals.shipping.toFixed(2)}</span>
                   </div>
                 )}
                 <div className="summary-row total">
                   <span>Total</span>
-                  <span>${cartData.pricing.total.toFixed(2)}</span>
+                  <span>${totals.total.toFixed(2)}</span>
                 </div>
-                <button 
-                  className="checkout-btn" 
+                <button
+                  className="checkout-btn"
                   onClick={() => navigate("/checkout")}
                 >
                   Checkout Now
                   <FiChevronRight size={18} />
                 </button>
-                <button className="clear-cart-btn" onClick={clearCart}>
+                <button className="clear-cart-btn" onClick={handleClearCart}>
                   Clear Cart
                 </button>
               </div>

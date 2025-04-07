@@ -41,8 +41,8 @@ const Categories = () => {
     const slider = sliderRef.current;
     const categoryWidth = windowWidth <= 768 ? 
       (slider.firstChild?.offsetWidth || 120) + 10 : 
-      (slider.firstChild?.offsetWidth || 200) + 20;
-    const scrollAmount = categoryWidth * (windowWidth <= 768 ? 1 : 1);
+      (slider.firstChild?.offsetWidth || 180) + 20;
+    const scrollAmount = categoryWidth * (windowWidth <= 768 ? 1 : 2);
     
     slider.scrollBy({ 
       left: direction === 'left' ? -scrollAmount : scrollAmount, 
@@ -76,10 +76,10 @@ const Categories = () => {
               <img
                 src={`${import.meta.env.VITE_SERVER_API}/static/${category.image_url}`} 
                 alt={category.name}
-                // onError={(e) => {
-                //   e.target.src = 'https://via.placeholder.com/300.png?text=No+Image';
-                //   e.target.style.objectFit = 'contain';
-                // }}
+                onError={(e) => {
+                  e.target.src = 'https://via.placeholder.com/300.png?text=No+Image';
+                  e.target.style.objectFit = 'contain';
+                }}
               />
               <div className="category-name">{category.name}</div>
             </div>

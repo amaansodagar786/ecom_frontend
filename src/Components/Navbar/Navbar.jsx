@@ -10,6 +10,8 @@ import {
   FiLogOut,
   FiGrid
 } from 'react-icons/fi';
+import { FaHeart } from 'react-icons/fa';
+
 import { useAuth } from '../Context/AuthContext';
 import Cart from '../../Pages/Cart/Cart';
 
@@ -17,7 +19,7 @@ const Navbar = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
-  const { isAuthenticated, logout, isAdmin } = useAuth();
+  const { isAuthenticated, logout, isAdmin ,cartItems, wishlistItems  } = useAuth();
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const closeMenu = () => setIsMenuOpen(false);
@@ -66,12 +68,15 @@ const Navbar = () => {
               </div>
 
               <div className="nav-icon" onClick={handleWishlistClick}>
-                <FiHeart className="icon" />
+                {/* Filled heart if wishlist not empty */}
+                {wishlistItems.length > 0
+                  ? <FaHeart className="icon filled-heart" />
+                  : <FiHeart className="icon" />}
               </div>
 
               <div className="nav-icon nav-cart" onClick={handleCartClick}>
                 <FiShoppingCart className="icon" />
-                <span className="cart-count">0</span>
+                <span className="cart-count">{cartItems.length}</span>
               </div>
 
               {isAuthenticated ? (

@@ -1,14 +1,17 @@
 .shop-by-category {
-  margin: 75px 0;
+  margin: 50px 0;
   padding: 0 15px;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
 
   @media (min-width: 768px) {
-    margin: 50px 0;
     padding: 0 30px;
+    margin: 60px auto;
   }
 
   .sec-heading {
-    margin-top: 80px;
+    margin-top: 0;
     margin-bottom: 20px;
     font-size: 18px;
     font-weight: 500;
@@ -16,8 +19,8 @@
     color: #333;
 
     @media (min-width: 768px) {
-      margin-bottom: 35px;
-      font-size: 24px;
+      margin-bottom: 30px;
+      font-size: 22px;
     }
 
     &:after {
@@ -38,10 +41,10 @@
     position: relative;
     display: flex;
     align-items: center;
-    padding: 0 10px; // Reduced padding for better space on mobile
+    padding: 0 10px;
 
     @media (min-width: 768px) {
-      padding: 0;
+      padding: 0 30px;
     }
   }
 
@@ -51,8 +54,8 @@
     background: white;
     border: none;
     border-radius: 50%;
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
     cursor: pointer;
     display: flex;
@@ -62,41 +65,40 @@
     font-size: 16px;
     transition: all 0.3s ease;
     top: 50%;
-    transform: translateY(-50%); // Center vertically
+    transform: translateY(-50%);
 
     &:hover {
       background: #f8f8f8;
-      // transform: scale(1.05);
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
     }
 
     &.left {
-      left: -10px;
+      left: -5px;
 
       @media (min-width: 768px) {
-        left: -20px;
+        left: 0;
       }
     }
 
     &.right {
-      right: -10px;
+      right: -5px;
 
       @media (min-width: 768px) {
-        right: -20px;
+        right: 0;
       }
     }
   }
 
   .categories {
-    margin: 0 auto;
     display: flex;
-    gap: 20px;
+    gap: 15px;
     width: 100%;
     overflow-x: auto;
     scroll-behavior: smooth;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    scroll-snap-type: x mandatory;
     padding: 10px 0;
+    scroll-padding: 0 20px;
 
     &::-webkit-scrollbar {
       display: none;
@@ -104,39 +106,38 @@
 
     .category {
       background-color: #000;
-      border-radius: 20px;
+      border-radius: 12px;
       overflow: hidden;
       cursor: pointer;
       position: relative;
       transition: all 0.3s ease;
-      scroll-snap-align: start;
-      aspect-ratio: 1 / 1.1; // Taller cards
-
-      // ✅ Show 3 slides on mobile
       flex: 0 0 calc(33.333% - 10px);
       min-width: calc(33.333% - 10px);
+      aspect-ratio: 1 / 1.1;
 
-      @media (min-width: 600px) {
-        flex: 0 0 calc(33.333% - 10px);
-        min-width: calc(33.333% - 10px);
+      @media (min-width: 480px) {
+        flex: 0 0 calc(25% - 12px);
+        min-width: calc(25% - 12px);
       }
 
       @media (min-width: 768px) {
-        flex: 0 0 calc(25% - 15px);
-        min-width: calc(25% - 15px);
+        flex: 0 0 calc(20% - 12px);
+        min-width: calc(20% - 12px);
+        border-radius: 16px;
+      }
+
+      @media (min-width: 1024px) {
+        flex: 0 0 calc(16.666% - 15px);
+        min-width: calc(16.666% - 15px);
       }
 
       &:hover {
         transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.249);
-        border: 1px solid #5d3434;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
 
         img {
           opacity: 0.8;
-
-          @media (min-width: 768px) {
-            transform: scale(1.05);
-          }
+          transform: scale(1.03);
         }
 
         .category-name {
@@ -158,7 +159,7 @@
         bottom: 0;
         left: 0;
         right: 0;
-        padding: 15px;
+        padding: 12px;
         background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
         color: white;
         font-weight: 600;
@@ -170,10 +171,10 @@
         text-align: center;
 
         @media (min-width: 768px) {
-          font-size: 16px;
-          padding: 20px;
+          font-size: 14px;
+          padding: 15px;
           opacity: 0;
-          transform: translateY(20px);
+          transform: translateY(10px);
         }
       }
     }
