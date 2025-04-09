@@ -262,6 +262,7 @@ const ProductManagement = () => {
             }
           }
         );
+        
       } else {
         // Create new product
         response = await axios.post(
@@ -278,15 +279,18 @@ const ProductManagement = () => {
 
       // Refresh product list
       const res = await axios.get(`${import.meta.env.VITE_SERVER_API}/products`);
-      setProducts(res.data);
-      cancelEdit();
-    } catch (err) {
-      setError(err.response?.data?.message || err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  setProducts(res.data);
+  cancelEdit();
+} catch (err) {
+  console.error('Product save error:', {
+    message: err.message,
+    response: err.response?.data,
+    status: err.response?.status
+  });
+  setError(err.response?.data?.message || err.message || 'Failed to save product');
+} finally {
+  setIsLoading(false);
+}}
   // Handle file uploads for product images
   const handleProductImageChange = (e) => {
     const files = Array.from(e.target.files);
@@ -297,7 +301,7 @@ const ProductManagement = () => {
   const removeProductImage = async (imageId) => {
     try {
       await axios.delete(
-        `${import.meta.env.VITE_SERVER_API}/products/${editingProduct}/images/${imageId}`,
+        `${import.meta.env.VITE_SERVER_API}/${editingProduct}/images/${imageId}`,
         {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -335,7 +339,7 @@ const ProductManagement = () => {
   const removeColorImage = async (colorIndex, imageId) => {
     try {
       await axios.delete(
-        `${import.meta.env.VITE_SERVER_API}/products/${editingProduct}/images/${imageId}`,
+        `${import.meta.env.VITE_SERVER_API}/${editingProduct}/images/${imageId}`,
         {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -379,7 +383,7 @@ const ProductManagement = () => {
   const removeModelColorImage = async (modelIndex, colorIndex, imageId) => {
     try {
       await axios.delete(
-        `${import.meta.env.VITE_SERVER_API}/products/${editingProduct}/images/${imageId}`,
+        `${import.meta.env.VITE_SERVER_API}/${editingProduct}/images/${imageId}`,
         {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -589,7 +593,7 @@ const ProductManagement = () => {
       setIsLoading(true);
       try {
         await axios.delete(
-          `${import.meta.env.VITE_SERVER_API}/products/${productId}`,
+          `${import.meta.env.VITE_SERVER_API}/${productId}`,
           {
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('token')}`
