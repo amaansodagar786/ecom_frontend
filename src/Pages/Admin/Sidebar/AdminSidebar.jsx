@@ -9,6 +9,7 @@ const AdminSidebar = ({ isOpen, toggleSidebar, isMobile }) => {
   const navItems = [
     { path: '/admindashboard', name: 'Dashboard', icon: <FiHome /> },
     { path: '/addproducts', name: 'List Products', icon: <FiBox /> },
+    { path: '/updateproducts', name: 'Update Products', icon: <FiBox /> },
     { path: '/admininventory', name: 'Inventory', icon: <FiPackage /> },
     { path: '/adminorders', name: 'Orders', icon: <FiShoppingCart /> },
     { path: '/admininpayment', name: 'Payments', icon: <FiCreditCard /> },

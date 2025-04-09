@@ -25,7 +25,7 @@ import Dashboard from './Pages/Admin/AdminPanel/Dashboard';
 import Orders from './Pages/Admin/Orders/Orders';
 import Inventory from './Pages/Admin/Inventory/Inventory';
 import Payment from './Pages/Admin/Payment/Payment';
-// import Adminsignup from './Pages/Admin/Authentication/Adminsignup';
+import Adminsignup from './Pages/Admin/Authentication/Adminsignup';
 
 // USER PAGES 
 import UserDashboard from './Pages/User/UserPanel/Dashboard';
@@ -37,6 +37,7 @@ import Cart from './Pages/Cart/Cart';
 import AllProducts from './Pages/AllProducts/AllProducts';
 import ProductPage from './Pages/Product/ProductPage';
 import AuthCallback from './Pages/Authentication/Auth/AuthCallback';
+import ProductManagement from './Pages/Admin/Products/ProductManagement';
 
 
 
@@ -72,7 +73,7 @@ function App() {
 
 
           {/* ADMIN PAGES  */}
-          {/* <Route path="/adminreg" element={<Adminsignup />} /> */}
+          <Route path="/adminreg" element={<Adminsignup />} />
 
 
           <Route path="/wishlist" element={<Wishlist />} />
@@ -90,6 +91,7 @@ function App() {
           <Route path="/adminorders" element={<AdminRoute> <Orders /> </AdminRoute> } />
           <Route path="/admininventory" element={<AdminRoute> <Inventory /> </AdminRoute> } />
           <Route path="/admininpayment" element={<AdminRoute> <Payment /> </AdminRoute> } />
+          <Route path="/updateproducts" element={<AdminRoute> <ProductManagement /> </AdminRoute> } />
 
 
 

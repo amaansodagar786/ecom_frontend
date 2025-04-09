@@ -10,32 +10,37 @@ const MainProducts = () => {
   const [products, setProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
 
-
-  
   useEffect(() => {
-
     if (!categoryId) {
       console.error("No category ID provided");
       return;
     }
-    
+
     const fetchProducts = async () => {
-      console.log('Fetching products for category:', categoryId); // Debugging line
+      console.log('Fetching products for category:', categoryId); // Debugging
       try {
         const response = await axios.get(
           `${import.meta.env.VITE_SERVER_API}/products/by-category/${categoryId}`
         );
-        setProducts(response.data);
+
+        console.log("API Response:", response.data);
+
+        const data = Array.isArray(response.data) ? response.data : [];
+        setProducts(data);
       } catch (error) {
         console.error('Error fetching products:', error);
+        setProducts([]); // fallback to avoid crashing
       }
     };
-    fetchProducts();
-  }, [categoryId]); // Ensure categoryId is a dependency
 
-  const filteredProducts = products.filter((product) =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    fetchProducts();
+  }, [categoryId]);
+
+  const filteredProducts = Array.isArray(products)
+    ? products.filter((product) =>
+        product.name.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : [];
 
   return (
     <div className="home-products">
@@ -54,44 +59,41 @@ const MainProducts = () => {
 
       <h2 className="section-title">{categoryId} Products</h2>
       <div className="product-grid">
-      {filteredProducts.length > 0 ? (
-  filteredProducts.map((product) => {
-    const hasImages = product.images && product.images.length > 0;
-    const imageUrl = hasImages
-  ? `${import.meta.env.VITE_SERVER_API}/static/${product.images[0]}`
-  : null;
+        {filteredProducts.length > 0 ? (
+          filteredProducts.map((product) => {
+            const hasImages = product.images && product.images.length > 0;
+            const imageUrl = hasImages
+              ? `${import.meta.env.VITE_SERVER_API}/static/${product.images[0]}`
+              : null;
 
+            console.log('Product:', product.name, '| Image URL:', imageUrl);
 
-    console.log('Product:', product.name, '| Image URL:', imageUrl);
-
-    return (
-      <div key={product.product_id} className="product-card">
-        {imageUrl ? (
-          <img
-            src={imageUrl}
-            alt={product.name}
-            className="product-image"
-          />
+            return (
+              <div key={product.product_id} className="product-card">
+                {imageUrl ? (
+                  <img
+                    src={imageUrl}
+                    alt={product.name}
+                    className="product-image"
+                  />
+                ) : (
+                  <div className="no-image">No Image Available</div>
+                )}
+                <div className="product-details">
+                  <h3>{product.name}</h3>
+                  <p>{product.description}</p>
+                  <p className="price">
+                    {product.colors?.length > 0
+                      ? `$${product.colors[0].price}`
+                      : 'Price unavailable'}
+                  </p>
+                </div>
+              </div>
+            );
+          })
         ) : (
-          <div className="no-image">No Image Available</div>
+          <p className="no-products">No products found.</p>
         )}
-        <div className="product-details">
-          <h3>{product.name}</h3>
-          <p>{product.description}</p>
-          <p className="price">
-            {product.colors.length > 0
-              ? `$${product.colors[0].price}`
-              : 'Price unavailable'}
-          </p>
-        </div>
-      </div>
-    );
-  })
-) : (
-  <p className="no-products">No products found.</p>
-)}
-
-
       </div>
     </div>
   );

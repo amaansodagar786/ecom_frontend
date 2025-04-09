@@ -81,7 +81,7 @@ export const AuthProvider = ({ children }) => {
   };
 
 // In AuthProvider component
-const toggleWishlistItem = (product, selectedModel = null, selectedColor = null) => {
+const toggleWishlistItem = async (product, selectedModel = null, selectedColor = null) => {
   const wishlistItem = {
     product_id: product.product_id,
     model_id: selectedModel?.model_id || null,
@@ -98,49 +98,46 @@ const toggleWishlistItem = (product, selectedModel = null, selectedColor = null)
   // Check existence before updating state
   const exists = wishlistItems.some(item => 
     item.product_id === wishlistItem.product_id &&
-    (item.model_id === wishlistItem.model_id || (!item.model_id && !wishlistItem.model_id)) &&
-    (item.color_id === wishlistItem.color_id || (!item.color_id && !wishlistItem.color_id))
-  );
+    item.model_id === wishlistItem.model_id &&
+    item.color_id === wishlistItem.color_id
+  );;
 
-  setWishlistItems(prev => {
-    const newWishlist = exists
-      ? prev.filter(item => !(
-          item.product_id === wishlistItem.product_id &&
-          (item.model_id === wishlistItem.model_id || (!item.model_id && !wishlistItem.model_id)) &&
-          (item.color_id === wishlistItem.color_id || (!item.color_id && !wishlistItem.color_id))
-        ))
-      : [...prev, wishlistItem];
+  const newWishlist = exists
+    ? wishlistItems.filter(item => 
+        !(item.product_id === wishlistItem.product_id &&
+          item.model_id === wishlistItem.model_id &&
+          item.color_id === wishlistItem.color_id)
+      ) // <-- This closing parenthesis was missing
+    : [...wishlistItems, wishlistItem]
 
-    localStorage.setItem('wishlist', JSON.stringify(newWishlist));
-    return newWishlist;
-  });
+setWishlistItems(newWishlist);
+localStorage.setItem('wishlist', JSON.stringify(newWishlist));
 
-  // Sync with server
-  if (authState.isAuthenticated) {
-    syncWishlistWithServer(wishlistItem, exists);
-  }
-};
-
-
-const syncWishlistWithServer = async (item, shouldRemove) => {
+// Sync with server if authenticated
+if (authState.isAuthenticated) {
   try {
     const token = getToken();
-    const endpoint = shouldRemove 
+    const endpoint = exists 
       ? `${import.meta.env.VITE_SERVER_API}/wishlist/deleteitem`
       : `${import.meta.env.VITE_SERVER_API}/wishlist/additem`;
 
     await axios.post(
       endpoint,
       { 
-        product_id: item.product_id,
-        model_id: item.model_id,
-        color_id: item.color_id
+        product_id: wishlistItem.product_id,
+        model_id: wishlistItem.model_id,
+        color_id: wishlistItem.color_id
       },
       { headers: { Authorization: `Bearer ${token}` } }
     );
+  
   } catch (err) {
+    // Revert on error
+    setWishlistItems(wishlistItems);
+    localStorage.setItem('wishlist', JSON.stringify(wishlistItems));
     console.error('Error syncing wishlist:', err);
   }
+}
 };
 
 

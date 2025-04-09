@@ -1,0 +1,589 @@
+// ProductManagement.scss
+
+// Variables
+$primary-color: #4361ee;
+$secondary-color: #3f37c9;
+$danger-color: #f72585;
+$success-color: #4cc9f0;
+$light-color: #f8f9fa;
+$dark-color: #212529;
+$border-radius: 8px;
+$box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+$transition: all 0.3s ease;
+
+// Mixins
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin card-style {
+  background: white;
+  border-radius: $border-radius;
+  box-shadow: $box-shadow;
+  padding: 1.5rem;
+  transition: $transition;
+  
+  &:hover {
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+  }
+}
+
+// Base Styles
+.product-management {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: $dark-color;
+
+  .tabs {
+    display: flex;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid #ddd;
+
+    button {
+      padding: 0.75rem 1.5rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #666;
+      position: relative;
+      transition: $transition;
+
+      &.active {
+        color: $primary-color;
+
+        &::after {
+          content: '';
+          position: absolute;
+          bottom: -1px;
+          left: 0;
+          width: 100%;
+          height: 3px;
+          background: $primary-color;
+          border-radius: 3px 3px 0 0;
+        }
+      }
+
+      &:hover:not(.active) {
+        color: $secondary-color;
+      }
+    }
+  }
+
+  .error-message {
+    background: rgba($danger-color, 0.1);
+    color: $danger-color;
+    padding: 1rem;
+    border-radius: $border-radius;
+    margin: 1rem 0;
+    border-left: 4px solid $danger-color;
+  }
+
+  .loading {
+    @include flex-center;
+    padding: 2rem;
+    font-size: 1.2rem;
+    color: #666;
+  }
+}
+
+// Product List Styles
+.product-list-container {
+  .product-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+
+    h2 {
+      font-size: 1.8rem;
+      color: $dark-color;
+      margin: 0;
+    }
+
+    .btn-add-product {
+      background: $primary-color;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: $border-radius;
+      font-weight: 600;
+      cursor: pointer;
+      transition: $transition;
+
+      &:hover {
+        background: $secondary-color;
+      }
+    }
+  }
+
+  .product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .product-card {
+    @include card-style;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+
+    .product-images {
+      width: 100%;
+      height: 200px;
+      overflow: hidden;
+      border-radius: $border-radius $border-radius 0 0;
+      margin-bottom: 1rem;
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: $transition;
+      }
+
+      &:hover img {
+        transform: scale(1.05);
+      }
+    }
+
+    .product-details {
+      flex: 1;
+
+      h3 {
+        margin: 0 0 0.5rem;
+        font-size: 1.2rem;
+        color: $dark-color;
+      }
+
+      .product-description {
+        margin: 0 0 1rem;
+        color: #666;
+        font-size: 0.9rem;
+        line-height: 1.4;
+      }
+
+      .product-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+
+        span {
+          font-size: 0.8rem;
+          padding: 0.25rem 0.5rem;
+          border-radius: 4px;
+          background: rgba($primary-color, 0.1);
+          color: $primary-color;
+
+          &.product-type {
+            background: rgba($success-color, 0.1);
+            color: darken($success-color, 20%);
+          }
+
+          &.product-category {
+            background: rgba($danger-color, 0.1);
+            color: darken($danger-color, 10%);
+          }
+        }
+      }
+    }
+
+    .product-actions {
+      display: flex;
+      gap: 0.5rem;
+
+      button {
+        flex: 1;
+        padding: 0.5rem;
+        border: none;
+        border-radius: 4px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: $transition;
+
+        &.btn-edit {
+          background: rgba($primary-color, 0.1);
+          color: $primary-color;
+
+          &:hover {
+            background: rgba($primary-color, 0.2);
+          }
+        }
+
+        &.btn-delete {
+          background: rgba($danger-color, 0.1);
+          color: $danger-color;
+
+          &:hover {
+            background: rgba($danger-color, 0.2);
+          }
+        }
+      }
+    }
+  }
+}
+
+// Product Form Styles
+.product-form-container {
+  @include card-style;
+  margin-bottom: 2rem;
+
+  h2 {
+    font-size: 1.5rem;
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    color: $dark-color;
+  }
+
+  .product-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+
+    .form-section {
+      padding: 1.5rem;
+      background: rgba($light-color, 0.5);
+      border-radius: $border-radius;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+
+      label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: $dark-color;
+      }
+
+      input[type="text"],
+      input[type="number"],
+      select,
+      textarea {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: $border-radius;
+        font-size: 1rem;
+        transition: $transition;
+
+        &:focus {
+          outline: none;
+          border-color: $primary-color;
+          box-shadow: 0 0 0 2px rgba($primary-color, 0.2);
+        }
+      }
+
+      textarea {
+        min-height: 100px;
+        resize: vertical;
+      }
+
+      .file-input {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px dashed #ddd;
+        border-radius: $border-radius;
+        background: white;
+      }
+    }
+
+    .price-fields,
+    .stock-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    // Image Preview Styles
+    .image-preview-container {
+      margin-top: 1rem;
+
+      h4 {
+        font-size: 1rem;
+        margin: 1rem 0 0.5rem;
+        color: #666;
+      }
+
+      .image-preview {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .image-preview-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 1rem;
+      }
+
+      .image-thumbnail {
+        position: relative;
+        width: 120px;
+        height: 120px;
+        border-radius: $border-radius;
+        overflow: hidden;
+        box-shadow: $box-shadow;
+
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .btn-remove-image {
+          position: absolute;
+          top: 0.25rem;
+          right: 0.25rem;
+          width: 24px;
+          height: 24px;
+          background: rgba($danger-color, 0.8);
+          color: white;
+          border: none;
+          border-radius: 50%;
+          cursor: pointer;
+          @include flex-center;
+          transition: $transition;
+
+          &:hover {
+            background: $danger-color;
+            transform: scale(1.1);
+          }
+        }
+      }
+    }
+
+    // Specification Styles
+    .specifications-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .specification-item {
+      display: flex;
+      gap: 0.5rem;
+
+      input {
+        flex: 1;
+      }
+
+      .btn-remove {
+        width: auto;
+        padding: 0 1rem;
+      }
+    }
+
+    // Color Variant Styles
+    .color-variants-list,
+    .models-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .color-variant,
+    .product-model {
+      @include card-style;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+
+      .color-details,
+      .model-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .color-images,
+      .model-specifications,
+      .model-colors {
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #eee;
+      }
+
+      h4, h5, h6 {
+        margin-top: 0;
+      }
+    }
+
+    // Button Styles
+    .btn-add,
+    .btn-remove,
+    .btn-save,
+    .btn-cancel {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: $border-radius;
+      font-weight: 600;
+      cursor: pointer;
+      transition: $transition;
+    }
+
+    .btn-add {
+      background: rgba($primary-color, 0.1);
+      color: $primary-color;
+
+      &:hover {
+        background: rgba($primary-color, 0.2);
+      }
+    }
+
+    .btn-remove {
+      background: rgba($danger-color, 0.1);
+      color: $danger-color;
+      margin-top: 0.5rem;
+
+      &:hover {
+        background: rgba($danger-color, 0.2);
+      }
+    }
+
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 1rem;
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid #eee;
+
+      .btn-save {
+        background: $primary-color;
+        color: white;
+
+        &:hover {
+          background: $secondary-color;
+        }
+
+        &:disabled {
+          background: #ccc;
+          cursor: not-allowed;
+        }
+      }
+
+      .btn-cancel {
+        background: #eee;
+        color: #666;
+
+        &:hover {
+          background: #ddd;
+        }
+      }
+    }
+  }
+}
+
+// Category Management Styles
+.category-management {
+  h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .category-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .category-card {
+    @include card-style;
+
+    img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      border-radius: $border-radius;
+      margin-bottom: 1rem;
+    }
+
+    h3 {
+      margin: 0 0 1rem;
+      font-size: 1.2rem;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+
+      li {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #eee;
+
+        &:last-child {
+          border-bottom: none;
+        }
+      }
+    }
+  }
+}
+
+// Responsive Styles
+@media (max-width: 768px) {
+  .product-management {
+    padding: 1rem;
+  }
+
+  .product-list-container {
+    .product-list-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+  }
+
+  .product-form-container {
+    .product-form {
+      .price-fields,
+      .stock-fields,
+      .color-details,
+      .model-details {
+        grid-template-columns: 1fr;
+      }
+
+      .specification-item {
+        flex-direction: column;
+      }
+
+      .form-actions {
+        flex-direction: column;
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .product-management {
+    .tabs {
+      flex-direction: column;
+
+      button {
+        width: 100%;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+
+        &.active::after {
+          display: none;
+        }
+      }
+    }
+  }
+
+  .product-grid {
+    grid-template-columns: 1fr;
+  }
+}

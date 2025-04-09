@@ -8,7 +8,6 @@ import 'react-toastify/dist/ReactToastify.css';
 import './AddProducts.scss';
 import AdminLayout from '../AdminPanel/AdminLayout';
 
-// Define initialValues outside the component to avoid reference error
 const initialValues = {
   name: '',
   description: '',
@@ -46,7 +45,7 @@ const AddProducts = () => {
   const [showSubcategoryModal, setShowSubcategoryModal] = useState(false);
   const [selectedMainCategory, setSelectedMainCategory] = useState(null);
   const [categoryImage, setCategoryImage] = useState(null);
-  const setFieldValueRef = useRef(() => { });
+  const setFieldValueRef = useRef(() => {});
   const formValuesRef = useRef(initialValues);
 
   useEffect(() => {
@@ -173,7 +172,6 @@ const AddProducts = () => {
         }
       );
 
-      // Re-fetch categories to get the latest data
       const categoriesResponse = await axios.get(`${import.meta.env.VITE_SERVER_API}/categories`);
       setCategories(categoriesResponse.data);
 
@@ -197,7 +195,7 @@ const AddProducts = () => {
     try {
       const formData = new FormData();
 
-      // Add product data
+      // Add basic product data
       formData.append('name', values.name);
       formData.append('description', values.description);
       formData.append('category_id', values.main_category_id);
@@ -209,7 +207,7 @@ const AddProducts = () => {
         formData.append('product_images', image);
       });
 
-      // For single product, ensure model name matches product name
+      // For single product, set unit and ensure model name matches product name
       if (values.product_type === 'single') {
         formData.append('unit', values.unit);
         values.models[0].name = values.name;
@@ -224,43 +222,65 @@ const AddProducts = () => {
 
         // Add model specifications
         model.specifications.forEach((spec, specIndex) => {
-          formData.append(`spec_key_${specIndex}`, spec.key);
-          formData.append(`spec_value_${specIndex}`, spec.value);
+          const specKey = values.product_type === 'variable' 
+            ? `model_${modelIndex}_spec_key_${specIndex}`
+            : `spec_key_${specIndex}`;
+          const specValue = values.product_type === 'variable'
+            ? `model_${modelIndex}_spec_value_${specIndex}`
+            : `spec_value_${specIndex}`;
+          
+          formData.append(specKey, spec.key);
+          formData.append(specValue, spec.value);
         });
-        formData.append('specs_count', model.specifications.length);
 
         // Add model colors
         model.colors.forEach((color, colorIndex) => {
-          formData.append(`color_name_${colorIndex}`, color.name);
-          formData.append(`color_price_${colorIndex}`, color.price);
-          formData.append(`color_original_price_${colorIndex}`, color.original_price || '');
-          formData.append(`color_stock_${colorIndex}`, color.stock_quantity);
+          const colorNameKey = values.product_type === 'variable'
+            ? `model_${modelIndex}_color_name_${colorIndex}`
+            : `color_name_${colorIndex}`;
+          const colorPriceKey = values.product_type === 'variable'
+            ? `model_${modelIndex}_color_price_${colorIndex}`
+            : `color_price_${colorIndex}`;
+          const colorOriginalPriceKey = values.product_type === 'variable'
+            ? `model_${modelIndex}_color_original_price_${colorIndex}`
+            : `color_original_price_${colorIndex}`;
+          const colorStockKey = values.product_type === 'variable'
+            ? `model_${modelIndex}_color_stock_${colorIndex}`
+            : `color_stock_${colorIndex}`;
+          const colorImagesKey = values.product_type === 'variable'
+            ? `model_${modelIndex}_color_images_${colorIndex}`
+            : `color_images_${colorIndex}`;
+
+          formData.append(colorNameKey, color.name);
+          formData.append(colorPriceKey, color.price);
+          formData.append(colorOriginalPriceKey, color.original_price || '');
+          formData.append(colorStockKey, color.stock_quantity);
 
           color.images.forEach((image) => {
-            formData.append(`color_images_${colorIndex}`, image);
+            formData.append(colorImagesKey, image);
           });
         });
-        formData.append('colors_count', model.colors.length);
+
+        if (values.product_type === 'variable') {
+          formData.append(`model_colors_count_${modelIndex}`, model.colors.length);
+          formData.append(`model_specs_count_${modelIndex}`, model.specifications.length);
+        }
       });
 
       formData.append('models_count', values.models.length);
+      formData.append('specs_count', values.models[0]?.specifications.length || 0);
+      formData.append('colors_count', values.models[0]?.colors.length || 0);
 
-      // Add new category if specified
-      if (values.new_category) {
-        formData.append('new_category', values.new_category);
-      }
-
-      // Add new subcategory if specified
-      if (values.new_subcategory) {
-        formData.append('new_subcategory', values.new_subcategory);
-      }
-
-      const response = await axios.post(`${import.meta.env.VITE_SERVER_API}/product/add`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+      const response = await axios.post(
+        `${import.meta.env.VITE_SERVER_API}/product/add`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
         }
-      });
+      );
 
       toast.success('Product added successfully!');
       resetForm();
@@ -270,6 +290,12 @@ const AddProducts = () => {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const getSubcategories = (mainCategoryId) => {
+    if (!mainCategoryId) return [];
+    const mainCategory = categories.find(cat => cat.category_id == mainCategoryId);
+    return mainCategory ? mainCategory.subcategories || [] : [];
   };
 
   return (
@@ -284,29 +310,9 @@ const AddProducts = () => {
           <Formik
             initialValues={initialValues}
             validationSchema={validationSchema}
-            onSubmit={(values, { setSubmitting, setErrors }) => {
-              handleSubmit(values, {
-                setSubmitting,
-                setErrors,
-                scrollToError: () => {
-                  const errorElement = document.querySelector('.error-message');
-                  if (errorElement) {
-                    errorElement.scrollIntoView({
-                      behavior: 'smooth',
-                      block: 'center'
-                    });
-                    const inputName = errorElement.getAttribute('data-fieldname');
-                    if (inputName) {
-                      const inputElement = document.querySelector(`[name="${inputName}"]`);
-                      if (inputElement) inputElement.focus();
-                    }
-                  }
-                }
-              });
-            }}
+            onSubmit={handleSubmit}
           >
             {({ values, setFieldValue, isSubmitting, errors }) => {
-              // Update both refs
               useEffect(() => {
                 setFieldValueRef.current = setFieldValue;
                 formValuesRef.current = values;
@@ -326,12 +332,6 @@ const AddProducts = () => {
                 }
               }, [errors]);
 
-              const getSubcategories = () => {
-                if (!values.main_category_id) return [];
-                const mainCategory = categories.find(cat => cat.category_id == values.main_category_id);
-                return mainCategory ? mainCategory.subcategories || [] : [];
-              };
-
               return (
                 <Form className="product-form">
                   {/* Basic Product Information */}
@@ -347,7 +347,6 @@ const AddProducts = () => {
                           placeholder="Enter product name"
                           onChange={(e) => {
                             setFieldValue('name', e.target.value);
-                            // Sync with model name for single product
                             if (values.product_type === 'single' && values.models[0]) {
                               setFieldValue('models.0.name', e.target.value);
                             }
@@ -369,7 +368,6 @@ const AddProducts = () => {
                           name="description"
                           component="div"
                           className="error-message"
-                          data-fieldname="description"
                         />
                       </div>
                     </div>
@@ -422,10 +420,9 @@ const AddProducts = () => {
                             name="sub_category_id"
                             className="form-input"
                             disabled={!values.main_category_id}
-                            key={values.main_category_id}
                           >
                             <option value="">Select subcategory</option>
-                            {getSubcategories().map(subcategory => (
+                            {getSubcategories(values.main_category_id).map(subcategory => (
                               <option key={subcategory.subcategory_id} value={subcategory.subcategory_id}>
                                 {subcategory.name}
                               </option>
@@ -506,7 +503,6 @@ const AddProducts = () => {
                       </div>
                       <ErrorMessage name="product_images" component="div" className="error-message" />
 
-                      {/* Image Previews */}
                       {values.product_images.length > 0 && (
                         <div className="image-previews">
                           {values.product_images.map((image, index) => (
@@ -534,7 +530,7 @@ const AddProducts = () => {
                     </div>
                   </div>
 
-                  {/* Model Details - Always shown */}
+                  {/* Model Details */}
                   <FieldArray name="models">
                     {({ push: pushModel, remove: removeModel }) => (
                       <div className="form-section">
@@ -592,17 +588,7 @@ const AddProducts = () => {
                                       ? 'Same as product name'
                                       : 'Enter model name'
                                   }
-                                  value={
-                                    values.product_type === 'single' && modelIndex === 0
-                                      ? values.name || model.name
-                                      : model.name
-                                  }
-                                  onChange={(e) => {
-                                    setFieldValue(`models.${modelIndex}.name`, e.target.value);
-                                    if (values.product_type === 'single' && modelIndex === 0) {
-                                      setFieldValue('name', e.target.value);
-                                    }
-                                  }}
+                                  readOnly={values.product_type === 'single' && modelIndex === 0}
                                 />
                                 <ErrorMessage
                                   name={`models.${modelIndex}.name`}
@@ -752,7 +738,6 @@ const AddProducts = () => {
                                           className="error-message"
                                         />
 
-                                        {/* Image Previews */}
                                         {color.images.length > 0 && (
                                           <div className="image-previews">
                                             {color.images.map((image, imgIndex) => (
@@ -857,7 +842,7 @@ const AddProducts = () => {
                     </button>
                   </div>
                 </Form>
-              )
+              );
             }}
           </Formik>
         </div>
@@ -963,7 +948,6 @@ const AddProducts = () => {
                   onClick={async () => {
                     try {
                       await handleAddSubcategory(setFieldValueRef.current);
-                      // Force update categories list
                       const refreshed = await axios.get(`${import.meta.env.VITE_SERVER_API}/categories`);
                       setCategories(refreshed.data);
                     } catch (error) {
@@ -996,6 +980,6 @@ const AddProducts = () => {
       </div>
     </AdminLayout>
   );
-}
+};
 
 export default AddProducts;

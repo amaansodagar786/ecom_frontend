@@ -23,6 +23,8 @@ const ProductPage = () => {
     const [selectedImage, setSelectedImage] = useState(0);
     const [quantity, setQuantity] = useState(1);
     const [filteredImages, setFilteredImages] = useState([]);
+    const [isWishlisting, setIsWishlisting] = useState(false); // Add this state
+
     const [cartStatus, setCartStatus] = useState({
         loading: false,
         error: null,
@@ -193,42 +195,43 @@ const ProductPage = () => {
         }
     };
 
-    const handleWishlistToggle = () => {
-        if (!product) return;
+    
+  const handleWishlistToggle = async () => {
+    if (isWishlisting || !product) return; // Prevent rapid clicks
+    setIsWishlisting(true);
 
-        toggleWishlistItem(product, selectedModel, selectedColor);
+    try {
+      await toggleWishlistItem(product, selectedModel, selectedColor);
+      
+      if (isAuthenticated) {
+        const token = localStorage.getItem('token');
+        const isInWishlist = wishlistItems.some(item =>
+          item.product_id === product.product_id &&
+          item.model_id === (selectedModel?.model_id || null) &&
+          item.color_id === (selectedColor?.color_id || null)
+        );
 
-        if (isAuthenticated) {
-            const syncWithServer = async () => {
-                try {
-                    const token = localStorage.getItem('token');
-                    const isInWishlist = wishlistItems.some(item =>
-                        item.product_id === product.product_id &&
-                        item.model_id === (selectedModel?.model_id || null) &&
-                        item.color_id === (selectedColor?.color_id || null)
-                    );
+        const endpoint = isInWishlist
+          ? `${import.meta.env.VITE_SERVER_API}/wishlist/deleteitem`
+          : `${import.meta.env.VITE_SERVER_API}/wishlist/additem`;
 
-                    const endpoint = isInWishlist
-                        ? `${import.meta.env.VITE_SERVER_API}/wishlist/deleteitem`
-                        : `${import.meta.env.VITE_SERVER_API}/wishlist/additem`;
-
-                    await axios.post(
-                        endpoint,
-                        {
-                            product_id: product.product_id,
-                            model_id: selectedModel?.model_id || null,
-                            color_id: selectedColor?.color_id || null
-                        },
-                        { headers: { 'Authorization': `Bearer ${token}` } }
-                    );
-                } catch (err) {
-                    console.error('Error syncing wishlist:', err);
-                    toggleWishlistItem(product, selectedModel, selectedColor);
-                }
-            };
-            syncWithServer();
-        }
-    };
+        await axios.post(
+          endpoint,
+          {
+            product_id: product.product_id,
+            model_id: selectedModel?.model_id || null,
+            color_id: selectedColor?.color_id || null,
+          },
+          { headers: { 'Authorization': `Bearer ${token}` } }
+        );
+      }
+    } catch (err) {
+      console.error('Error syncing wishlist:', err);
+      toggleWishlistItem(product, selectedModel, selectedColor); // Revert on error
+    } finally {
+      setIsWishlisting(false); // Reset state
+    }
+  };
 
     const currentStock = selectedColor?.stock_quantity ||
         selectedModel?.colors?.reduce((acc, color) => acc + color.stock_quantity, 0) ||

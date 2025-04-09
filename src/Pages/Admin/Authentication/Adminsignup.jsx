@@ -45,25 +45,30 @@ const Adminsignup = () => {
 
   const handleSubmit = async (values, { setSubmitting, resetForm }) => {
     try {
-      const response = await axios.post('http://127.0.0.1:5000/admin-signup', values, {
+      console.log('Submitting:', values);
+      const response = await axios.post('http://localhost:5000/admin-signup', values, {
         headers: {
           'Content-Type': 'application/json'
         },
         withCredentials: true
       });
-      
+
       toast.success(response.data.message || 'Admin account created successfully!');
-      
+
       setTimeout(() => {
         resetForm();
         navigate('/login');
       }, 2500);
-      
+
     } catch (error) {
-      const errorMsg = error.response?.data?.message || 
-                      error.response?.data?.error || 
-                      'Signup failed. Please try again.';
+      const errorMsg = error.response?.data?.message ||
+        error.response?.data?.error ||
+        'Signup failed. Please try again.';
       toast.error(errorMsg);
+
+      console.log('Response data:', error.response.data);
+      console.log('Response status:', error.response.status);
+      console.log('Response headers:', error.response.headers);
     } finally {
       setSubmitting(false);
     }
@@ -89,8 +94,8 @@ const Adminsignup = () => {
                   <FaUser className="input-icon" />
                   Full Name
                 </label>
-                <Field 
-                  type="text" 
+                <Field
+                  type="text"
                   name="name"
                   id="name"
                   placeholder="Enter your full name"
@@ -104,8 +109,8 @@ const Adminsignup = () => {
                   <FaEnvelope className="input-icon" />
                   Email Address
                 </label>
-                <Field 
-                  type="email" 
+                <Field
+                  type="email"
                   name="email"
                   id="email"
                   placeholder="Enter your email"
@@ -119,8 +124,8 @@ const Adminsignup = () => {
                   <FaPhone className="input-icon" />
                   Mobile Number
                 </label>
-                <Field 
-                  type="tel" 
+                <Field
+                  type="tel"
                   name="mobile"
                   id="mobile"
                   placeholder="Enter 10-digit mobile number"
@@ -134,8 +139,8 @@ const Adminsignup = () => {
                   <FaLock className="input-icon" />
                   Password
                 </label>
-                <Field 
-                  type="password" 
+                <Field
+                  type="password"
                   name="password"
                   id="password"
                   placeholder="Create a password"
@@ -149,8 +154,8 @@ const Adminsignup = () => {
                   <FaShieldAlt className="input-icon" />
                   Admin Token
                 </label>
-                <Field 
-                  type="password" 
+                <Field
+                  type="password"
                   name="admin_token"
                   id="admin_token"
                   placeholder="Enter admin registration token"
@@ -159,8 +164,8 @@ const Adminsignup = () => {
                 <ErrorMessage name="admin_token" component="div" className="error-message" />
               </div>
 
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="submit-button"
                 disabled={isSubmitting}
               >

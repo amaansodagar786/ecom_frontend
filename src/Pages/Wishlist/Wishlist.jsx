@@ -17,6 +17,8 @@ const Wishlist = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const [isWishlisting, setIsWishlisting] = useState(false); // Add this state
+
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -59,6 +61,29 @@ const Wishlist = () => {
     fetchWishlistProducts();
   }, [isAuthenticated, getToken, navigate, updateWishlistCount]);
 
+
+  const handleClearWishlist = async () => {
+    if (isClearing || wishlistProducts.length === 0) return;
+    
+    setIsClearing(true);
+    try {
+      const token = getToken();
+      await axios.post(
+        `${import.meta.env.VITE_SERVER_API}/wishlist/clear`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      // Update both local state and AuthContext
+      setWishlistProducts([]);
+      clearWishlistContext();
+    } catch (error) {
+      console.error('Error clearing wishlist:', error);
+    } finally {
+      setIsClearing(false);
+    }
+  };
+
   const getWishlistItemPrice = (item) => {
     // Check if we have a selected color price
     if (item.color?.price) {
@@ -96,6 +121,9 @@ const Wishlist = () => {
   };
 
   const handleRemoveItem = async (item) => {
+    if (isWishlisting) return; // Prevent rapid clicks
+    setIsWishlisting(true);
+
     try {
       const token = getToken();
       await axios.post(
@@ -109,9 +137,11 @@ const Wishlist = () => {
       );
 
       // Update both local state and AuthContext
-      toggleWishlistItem(item.product, item.model, item.color);
+      await toggleWishlistItem(item.product, item.model, item.color);
     } catch (error) {
       console.error('Error removing item:', error);
+    } finally {
+      setIsWishlisting(false); // Reset state
     }
   };
 

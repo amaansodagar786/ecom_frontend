@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Categories.scss';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import errorImage from '../../../assets/Images/mtm-logo.jpg';
 
 const Categories = () => {
   const navigate = useNavigate();
@@ -77,7 +78,7 @@ const Categories = () => {
                 src={`${import.meta.env.VITE_SERVER_API}/static/${category.image_url}`}
                 alt={category.name}
                 onError={(e) => {
-                  e.target.src = 'https://via.placeholder.com/300.png?text=No+Image';
+                  e.target.src = errorImage;                  
                   e.target.style.objectFit = 'contain';
                 }}
               />

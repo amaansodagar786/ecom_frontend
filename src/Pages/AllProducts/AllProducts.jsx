@@ -8,10 +8,10 @@ const AllProducts = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [wishlistItems, setWishlistItems] = useState([]);
-  const { toggleWishlistItem } = useAuth();
+  const { wishlistItems, toggleWishlistItem, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [isWishlisting, setIsWishlisting] = useState(false);
 
   const [filters, setFilters] = useState({
     priceRange: [0, 200000],
@@ -50,7 +50,8 @@ const AllProducts = () => {
           price: parseFloat(c.price),
           original: c.original_price ? parseFloat(c.original_price) : null,
           stock: c.stock_quantity > 0,
-          images: c.images
+          images: c.images,
+          name: c.name
         }));
 
         const minEntry = findMinPriceEntry(colorEntries);
@@ -62,7 +63,7 @@ const AllProducts = () => {
         }
 
         inStock = product.colors.some(c => c.stock_quantity > 0);
-        availableColors = product.colors.map(c => c.name);
+        availableColors = product.colors.map(c => c.name.toLowerCase());
 
         // Find main image from the color with lowest price or first available
         const firstColorWithImage = (minEntry?.images?.length ? minEntry : product.colors.find(c => c.images?.length))?.images?.[0];
@@ -76,6 +77,7 @@ const AllProducts = () => {
             original: c.original_price ? parseFloat(c.original_price) : null,
             stock: c.stock_quantity > 0,
             images: c.images,
+            name: c.name,
             model: m
           })) || []
         );
@@ -89,7 +91,7 @@ const AllProducts = () => {
         }
 
         inStock = allColorEntries.some(c => c.stock);
-        availableColors = [...new Set(allColorEntries.map(c => c.name))];
+        availableColors = [...new Set(allColorEntries.map(c => c.name.toLowerCase()))];
 
         // Find main image from the color with lowest price or first available
         const firstColorWithImage = (minEntry?.images?.length ? minEntry : allColorEntries.find(c => c.images?.length))?.images?.[0];
@@ -106,23 +108,30 @@ const AllProducts = () => {
     };
   };
 
-  const handleWishlistClick = (product) => {
-    const { price, deleted_price, mainImage } = getProductInfo(product);
+  const handleWishlistClick = async (product, e) => {
+    if (e) e.stopPropagation();
+    if (isWishlisting) return;
+    setIsWishlisting(true);
 
-    toggleWishlistItem({
-      product_id: product.product_id,
-      name: product.name,
-      price: price,
-      image: mainImage,
-      category: product.category,
-      deleted_price: deleted_price
-    });
+    if (!isAuthenticated) {
+      navigate('/login');
+      setIsWishlisting(false);
+      return;
+    }
 
-    setWishlistItems((prevWishlist) =>
-      prevWishlist.includes(product.product_id)
-        ? prevWishlist.filter((id) => id !== product.product_id)
-        : [...prevWishlist, product.product_id]
-    );
+    try {
+      const { price, deleted_price, mainImage } = getProductInfo(product);
+      await toggleWishlistItem({
+        product_id: product.product_id,
+        name: product.name,
+        price: price,
+        image: mainImage,
+        category: product.category,
+        deleted_price: deleted_price,
+      });
+    } finally {
+      setIsWishlisting(false);
+    }
   };
 
   // Fetch products from the API
@@ -167,37 +176,44 @@ const AllProducts = () => {
   ];
 
   // Filtering and Sorting Logic
-  const filteredProducts = products
-    .filter(product => {
-      const { price, availableColors } = getProductInfo(product);
-      const matchesSearch = product.name?.toLowerCase().includes(filters.searchQuery.toLowerCase()) ||
-        product.description?.toLowerCase().includes(filters.searchQuery.toLowerCase());
-      const priceInRange = price >= filters.priceRange[0] &&
-        price <= filters.priceRange[1];
-      const colorMatch = filters.colors.length === 0 ||
-        filters.colors.some(color =>
-          availableColors.some(c => c.toLowerCase().includes(color.toLowerCase()))
-        );
-      const categoryMatch = filters.categories.length === 0 ||
-        (product.category && filters.categories.includes(product.category));
-      return matchesSearch && priceInRange && colorMatch && categoryMatch;
-    })
-    .sort((a, b) => {
-      const aInfo = getProductInfo(a);
-      const bInfo = getProductInfo(b);
+  const filteredProducts = React.useMemo(() => {
+    return products
+      .filter(product => {
+        const { price, availableColors } = getProductInfo(product);
+        const matchesSearch = product.name?.toLowerCase().includes(filters.searchQuery.toLowerCase()) ||
+          product.description?.toLowerCase().includes(filters.searchQuery.toLowerCase());
+        const priceInRange = price >= filters.priceRange[0] &&
+          price <= filters.priceRange[1];
 
-      switch (filters.sortBy) {
-        case 'price-low': return aInfo.price - bInfo.price;
-        case 'price-high': return bInfo.price - aInfo.price;
-        case 'newest':
-          // Fallback to product_id if created_at is not available
-          const aDate = a.created_at ? new Date(a.created_at) : a.product_id;
-          const bDate = b.created_at ? new Date(b.created_at) : b.product_id;
-          return bDate - aDate;
-        case 'rating': return (b.rating || 0) - (a.rating || 0);
-        default: return 0; // Featured keeps original order
-      }
-    });
+        // Fix for color filtering
+        const colorMatch = filters.colors.length === 0 ||
+          filters.colors.some(filterColor =>
+            availableColors.some(productColor =>
+              productColor.includes(filterColor.toLowerCase())
+            )
+          );
+
+        const categoryMatch = filters.categories.length === 0 ||
+          (product.category && filters.categories.includes(product.category));
+
+        return matchesSearch && priceInRange && colorMatch && categoryMatch;
+      })
+      .sort((a, b) => {
+        const aInfo = getProductInfo(a);
+        const bInfo = getProductInfo(b);
+
+        switch (filters.sortBy) {
+          case 'price-low': return aInfo.price - bInfo.price;
+          case 'price-high': return bInfo.price - aInfo.price;
+          case 'newest':
+            const aDate = a.created_at ? new Date(a.created_at) : a.product_id;
+            const bDate = b.created_at ? new Date(b.created_at) : b.product_id;
+            return bDate - aDate;
+          case 'rating': return (b.rating || 0) - (a.rating || 0);
+          default: return 0;
+        }
+      });
+  }, [products, filters]);
 
   const toggleColor = (color) => {
     setFilters({
@@ -400,13 +416,11 @@ const AllProducts = () => {
           {/* Main Content Area */}
           <main className="main-content">
             {/* Sort Bar */}
-            {/* Sort Bar */}
             <div className="sort-bar">
               <div className="results-count">
                 Showing {filteredProducts.length} of {products.length} products
               </div>
               <div className="sort-options">
-                {/* Mobile Filter Button - Only shown on mobile */}
                 <button
                   className="mobile-filter-btn"
                   onClick={() => setShowMobileFilters(true)}
@@ -447,19 +461,30 @@ const AllProducts = () => {
               {filteredProducts.length > 0 ? (
                 filteredProducts.map((product) => {
                   const { price, deleted_price, inStock, mainImage } = getProductInfo(product);
+                  const isInWishlist = wishlistItems.some(item =>
+                    typeof item === 'object'
+                      ? item.product_id === product.product_id
+                      : item === product.product_id
+                  );
 
                   return (
-                    <div className="product-card" key={product.product_id}>
+                    <div className="product-card" key={product.product_id}
+                      onClick={() => navigate(`/product/${product.product_id}`, { state: { product } })}
+
+                    >
                       <div className="product-badge">
                         {inStock ? 'In Stock' : 'Pre-Order'}
                       </div>
-                      <div className="wishlist-icon" onClick={() => handleWishlistClick(product)}>
+                      <div
+                        className={`wishlist-icon ${isInWishlist ? 'active' : ''}`}
+                        onClick={(e) => handleWishlistClick(product, e)}
+                      >
                         <svg
                           width="24"
                           height="24"
                           viewBox="0 0 24 24"
-                          fill={wishlistItems.includes(product.product_id) ? "#ff4757" : "none"}
-                          stroke={wishlistItems.includes(product.product_id) ? "#ff4757" : "#111"}
+                          fill={isInWishlist ? "#ff4757" : "none"}
+                          stroke={isInWishlist ? "#ff4757" : "#111"}
                           strokeWidth="2"
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -474,24 +499,16 @@ const AllProducts = () => {
                             alt={product.name}
                             loading="lazy"
                             onError={(e) => {
-                              console.error('Failed to load:', e.target.src);
                               e.target.src = '/path-to-fallback-image.jpg';
                             }}
                           />
                         )}
-                        <button
-                          className="quick-view"
-                          onClick={() => navigate(`/product/${product.product_id}`)}
-                        >
-                          Quick View
-                        </button>
+
                       </div>
                       <div className="product-details">
                         <span className="product-category">{product.category || 'Uncategorized'}</span>
                         <h3 className="product-name">{product.name}</h3>
-                        <p className="product-description">
-                          {product.description || 'No description available'}
-                        </p>
+
                         <div className="product-pricing">
                           <span className="current-price">${price.toFixed(2)}</span>
                           {deleted_price && (
