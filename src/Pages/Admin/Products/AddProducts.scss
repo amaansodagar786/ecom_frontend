@@ -50,9 +50,8 @@ $input-height: 3rem;
   transition: $transition;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
-  position: relative;
-  overflow: hidden;
   
   &:hover {
     transform: translateY(-2px);
@@ -64,7 +63,6 @@ $input-height: 3rem;
 // Base Styles
 // =============================================
 .admin-panel {
-  // margin-top: 75px;
   font-family: $font-family;
   background-color: #f8fafc;
   min-height: 100vh;
@@ -212,11 +210,27 @@ $input-height: 3rem;
       display: flex;
       align-items: center;
       gap: 0.5rem;
+      height: fit-content;
 
       &::before {
         content: '⚠';
         font-size: 1.1rem;
       }
+    }
+  }
+
+  // New add button container styles
+  .add-button-container {
+    margin-top: 1.5rem;
+    display: flex;
+    justify-content: center;
+
+    .add-button {
+      @include primary-button;
+      padding: 0.75rem 1.5rem;
+      font-size: 0.95rem;
+      width: auto;
+      min-width: 200px;
     }
   }
 }
@@ -328,6 +342,9 @@ $input-height: 3rem;
       padding: 0.5rem;
       border-radius: 50%;
       transition: $transition;
+      display: flex;
+      align-items: center;
+      justify-content: center;
 
       &:hover {
         background: rgba($danger-color, 0.1);
@@ -344,17 +361,30 @@ $input-height: 3rem;
     display: flex;
     gap: 1rem;
     margin-bottom: 1rem;
+    align-items: flex-end;
 
     .form-group {
       flex: 1;
+      margin-bottom: 0;
     }
 
     .remove-button {
-      @include primary-button;
       background: $danger-color;
-      padding: 0.5rem;
+      color: white;
+      border: none;
+      border-radius: $border-radius-sm;
+      padding: 0.75rem;
       height: $input-height;
       width: $input-height;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: $transition;
+
+      &:hover {
+        background: darken($danger-color, 10%);
+      }
     }
   }
 }
@@ -423,6 +453,48 @@ $input-height: 3rem;
 }
 
 // =============================================
+// Select with Button Component
+// =============================================
+.select-with-button {
+  display: flex;
+  gap: 0.5rem;
+
+  .form-input {
+    flex: 1;
+  }
+
+  .add-button {
+    @include primary-button;
+    padding: 0 1rem;
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+}
+
+// =============================================
+// Radio Group Styles
+// =============================================
+.radio-group {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 0.5rem;
+
+  .radio-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+
+    .radio-input {
+      margin: 0;
+      width: 18px;
+      height: 18px;
+      accent-color: $primary-color;
+    }
+  }
+}
+
+// =============================================
 // Responsive Adjustments
 // =============================================
 @media (max-width: $breakpoint-md) {
@@ -445,30 +517,18 @@ $input-height: 3rem;
 
   .spec-row {
     flex-direction: column;
+    align-items: stretch;
   }
 
   .image-previews {
     grid-template-columns: repeat(3, 1fr);
   }
-}
 
-
-.add-button {
-  background: $primary-color;
-  color: white;
-  border: none;
-  border-radius: $border-radius;
-  padding: 0.50rem 1rem;
-  // font-size: 0.95rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: $transition;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  box-shadow: 0 2px 5px rgba($primary-color, 0.2);
-  // padding: 0 1.25rem;
-  font-size: 0.7rem;
-  margin-top: 5px;
-  margin-bottom: 5px;
+  .select-with-button {
+    flex-direction: column;
+    
+    .add-button {
+      width: 100%;
+    }
+  }
 }

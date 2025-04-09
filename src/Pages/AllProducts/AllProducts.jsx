@@ -65,7 +65,6 @@ const AllProducts = () => {
         inStock = product.colors.some(c => c.stock_quantity > 0);
         availableColors = product.colors.map(c => c.name.toLowerCase());
 
-        // Find main image from the color with lowest price or first available
         const firstColorWithImage = (minEntry?.images?.length ? minEntry : product.colors.find(c => c.images?.length))?.images?.[0];
         mainImage = firstColorWithImage?.image_url || mainImage;
       }
@@ -93,7 +92,6 @@ const AllProducts = () => {
         inStock = allColorEntries.some(c => c.stock);
         availableColors = [...new Set(allColorEntries.map(c => c.name.toLowerCase()))];
 
-        // Find main image from the color with lowest price or first available
         const firstColorWithImage = (minEntry?.images?.length ? minEntry : allColorEntries.find(c => c.images?.length))?.images?.[0];
         mainImage = firstColorWithImage?.image_url || mainImage;
       }
@@ -185,7 +183,6 @@ const AllProducts = () => {
         const priceInRange = price >= filters.priceRange[0] &&
           price <= filters.priceRange[1];
 
-        // Fix for color filtering
         const colorMatch = filters.colors.length === 0 ||
           filters.colors.some(filterColor =>
             availableColors.some(productColor =>
@@ -281,31 +278,6 @@ const AllProducts = () => {
           <aside className="filter-sidebar">
             <div className="sidebar-header">
               <h3>Filter Products</h3>
-            </div>
-
-            {/* Search Filter */}
-            <div className="filter-group">
-              <h4 className="filter-title">Search</h4>
-              <div className="search-filter">
-                <input
-                  type="text"
-                  placeholder="Search products..."
-                  value={filters.searchQuery}
-                  onChange={(e) => setFilters({ ...filters, searchQuery: e.target.value })}
-                  className="search-input"
-                />
-                {filters.searchQuery && (
-                  <button
-                    className="clear-search"
-                    onClick={() => setFilters({ ...filters, searchQuery: '' })}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="18" y1="6" x2="6" y2="18"></line>
-                      <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                  </button>
-                )}
-              </div>
             </div>
 
             {/* Price Range Filter */}
@@ -415,45 +387,70 @@ const AllProducts = () => {
 
           {/* Main Content Area */}
           <main className="main-content">
-            {/* Sort Bar */}
+            {/* Sort Bar with Search */}
             <div className="sort-bar">
-              <div className="results-count">
-                Showing {filteredProducts.length} of {products.length} products
-              </div>
-              <div className="sort-options">
-                <button
-                  className="mobile-filter-btn"
-                  onClick={() => setShowMobileFilters(true)}
-                >
-                  Filters
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="4" y1="21" x2="4" y2="14"></line>
-                    <line x1="4" y1="10" x2="4" y2="3"></line>
-                    <line x1="12" y1="21" x2="12" y2="12"></line>
-                    <line x1="12" y1="8" x2="12" y2="3"></line>
-                    <line x1="20" y1="21" x2="20" y2="16"></line>
-                    <line x1="20" y1="12" x2="20" y2="3"></line>
-                    <line x1="1" y1="14" x2="7" y2="14"></line>
-                    <line x1="9" y1="8" x2="15" y2="8"></line>
-                    <line x1="17" y1="16" x2="23" y2="16"></line>
-                  </svg>
-                </button>
+              <div className="search-sort-container">
+                <div className="search-filter">
+                  <input
+                    type="text"
+                    placeholder="Search products..."
+                    value={filters.searchQuery}
+                    onChange={(e) => setFilters({ ...filters, searchQuery: e.target.value })}
+                    className="search-input"
+                  />
+                  {filters.searchQuery && (
+                    <button
+                      className="clear-search"
+                      onClick={() => setFilters({ ...filters, searchQuery: '' })}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                      </svg>
+                    </button>
+                  )}
+                </div>
 
-                <div className="sort-select-wrapper">
-                  <label>Sort By:</label>
-                  <select
-                    value={filters.sortBy}
-                    onChange={(e) => setFilters({ ...filters, sortBy: e.target.value })}
-                    className="sort-select"
-                  >
-                    {sortOptions.map(option => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
+                <div className="sort-options">
+                  <div className="results-count">
+                    Showing {filteredProducts.length} of {products.length} products
+                  </div>
+
+                  <div className="sort-select-wrapper">
+                    <label>Sort By:</label>
+                    <select
+                      value={filters.sortBy}
+                      onChange={(e) => setFilters({ ...filters, sortBy: e.target.value })}
+                      className="sort-select"
+                    >
+                      {sortOptions.map(option => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
+
+              {/* Mobile Filter Button - Only visible on mobile */}
+              <button
+                className="mobile-filter-btn"
+                onClick={() => setShowMobileFilters(true)}
+              >
+                Filters
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="4" y1="21" x2="4" y2="14"></line>
+                  <line x1="4" y1="10" x2="4" y2="3"></line>
+                  <line x1="12" y1="21" x2="12" y2="12"></line>
+                  <line x1="12" y1="8" x2="12" y2="3"></line>
+                  <line x1="20" y1="21" x2="20" y2="16"></line>
+                  <line x1="20" y1="12" x2="20" y2="3"></line>
+                  <line x1="1" y1="14" x2="7" y2="14"></line>
+                  <line x1="9" y1="8" x2="15" y2="8"></line>
+                  <line x1="17" y1="16" x2="23" y2="16"></line>
+                </svg>
+              </button>
             </div>
 
             {/* Product Grid */}
@@ -470,7 +467,6 @@ const AllProducts = () => {
                   return (
                     <div className="product-card" key={product.product_id}
                       onClick={() => navigate(`/product/${product.product_id}`, { state: { product } })}
-
                     >
                       <div className="product-badge">
                         {inStock ? 'In Stock' : 'Pre-Order'}
@@ -503,7 +499,6 @@ const AllProducts = () => {
                             }}
                           />
                         )}
-
                       </div>
                       <div className="product-details">
                         <span className="product-category">{product.category || 'Uncategorized'}</span>
@@ -563,31 +558,6 @@ const AllProducts = () => {
           </div>
 
           <div className="mobile-filter-content">
-            {/* Search Filter */}
-            <div className="filter-group">
-              <h4 className="filter-title">Search</h4>
-              <div className="search-filter">
-                <input
-                  type="text"
-                  placeholder="Search products..."
-                  value={filters.searchQuery}
-                  onChange={(e) => setFilters({ ...filters, searchQuery: e.target.value })}
-                  className="search-input"
-                />
-                {filters.searchQuery && (
-                  <button
-                    className="clear-search"
-                    onClick={() => setFilters({ ...filters, searchQuery: '' })}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="18" y1="6" x2="6" y2="18"></line>
-                      <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                  </button>
-                )}
-              </div>
-            </div>
-
             {/* Price Range Filter */}
             <div className="filter-group">
               <div

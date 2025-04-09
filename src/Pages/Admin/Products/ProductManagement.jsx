@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import Loader from "../../../Components/Loader/Loader"
+import AdminLayout from '../AdminPanel/AdminLayout';
 import './ProductManagement.scss';
 
 const ProductManagement = () => {
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [editingProduct, setEditingProduct] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -21,6 +26,11 @@ const ProductManagement = () => {
   const [newImages, setNewImages] = useState([]);
   const [activeTab, setActiveTab] = useState('products');
 
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortOption, setSortOption] = useState('name_asc');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+
   // Fetch initial data
   useEffect(() => {
     const fetchData = async () => {
@@ -29,7 +39,12 @@ const ProductManagement = () => {
           axios.get(`${import.meta.env.VITE_SERVER_API}/products`),
           axios.get(`${import.meta.env.VITE_SERVER_API}/categories`)
         ]);
+
+        console.log('Fetched products:', productsRes.data);
+        console.log('Fetched categories:', categoriesRes.data);
+
         setProducts(productsRes.data);
+        setFilteredProducts(productsRes.data);
         setCategories(categoriesRes.data);
         setIsLoading(false);
       } catch (err) {
@@ -37,8 +52,74 @@ const ProductManagement = () => {
         setIsLoading(false);
       }
     };
+
+    console.log('Fetching data...');
     fetchData();
   }, []);
+
+
+  // Apply filters whenever search term, sort option, or category filter changes
+  useEffect(() => {
+    let result = [...products];
+
+    // Apply search filter
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      result = result.filter(product =>
+        product.name.toLowerCase().includes(term) ||
+        product.description.toLowerCase().includes(term)
+      );
+    }
+
+    // Apply category filter
+    if (categoryFilter !== 'all') {
+      result = result.filter(product =>
+        product.category?.category_id == categoryFilter
+      );
+    }
+
+    // Apply sorting
+    switch (sortOption) {
+      case 'name_asc':
+        result.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case 'name_desc':
+        result.sort((a, b) => b.name.localeCompare(a.name));
+        break;
+      case 'price_asc':
+        result.sort((a, b) => {
+          const aPrice = a.product_type === 'single'
+            ? (a.colors[0]?.price || 0)
+            : (a.models[0]?.colors[0]?.price || 0);
+          const bPrice = b.product_type === 'single'
+            ? (b.colors[0]?.price || 0)
+            : (b.models[0]?.colors[0]?.price || 0);
+          return aPrice - bPrice;
+        });
+        break;
+      case 'price_desc':
+        result.sort((a, b) => {
+          const aPrice = a.product_type === 'single'
+            ? (a.colors[0]?.price || 0)
+            : (a.models[0]?.colors[0]?.price || 0);
+          const bPrice = b.product_type === 'single'
+            ? (b.colors[0]?.price || 0)
+            : (b.models[0]?.colors[0]?.price || 0);
+          return bPrice - aPrice;
+        });
+        break;
+      case 'newest':
+        result.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        break;
+      case 'oldest':
+        result.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        break;
+      default:
+        break;
+    }
+
+    setFilteredProducts(result);
+  }, [searchTerm, sortOption, categoryFilter, products]);
 
   // Handle input changes
   const handleInputChange = (e) => {
@@ -172,25 +253,25 @@ const ProductManagement = () => {
       if (editingProduct) {
         // Update existing product
         response = await axios.put(
-          `${import.meta.env.VITE_SERVER_API}/${editingProduct}`,
+          `${import.meta.env.VITE_SERVER_API}/products/${editingProduct}`,
           formDataToSend,
-          { 
-            headers: { 
+          {
+            headers: {
               'Content-Type': 'multipart/form-data',
               'Authorization': `Bearer ${localStorage.getItem('token')}`
-            } 
+            }
           }
         );
       } else {
         // Create new product
         response = await axios.post(
-          `${import.meta.env.VITE_SERVER_API}/product/add`,
+          `${import.meta.env.VITE_SERVER_API}/products`,
           formDataToSend,
-          { 
-            headers: { 
+          {
+            headers: {
               'Content-Type': 'multipart/form-data',
               'Authorization': `Bearer ${localStorage.getItem('token')}`
-            } 
+            }
           }
         );
       }
@@ -216,14 +297,14 @@ const ProductManagement = () => {
   const removeProductImage = async (imageId) => {
     try {
       await axios.delete(
-        `${import.meta.env.VITE_SERVER_API}/${editingProduct}/images/${imageId}`,
+        `${import.meta.env.VITE_SERVER_API}/products/${editingProduct}/images/${imageId}`,
         {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
         }
       );
-      
+
       // Update form data to remove the deleted image
       setFormData(prev => ({
         ...prev,
@@ -254,14 +335,14 @@ const ProductManagement = () => {
   const removeColorImage = async (colorIndex, imageId) => {
     try {
       await axios.delete(
-        `${import.meta.env.VITE_SERVER_API}/${editingProduct}/images/${imageId}`,
+        `${import.meta.env.VITE_SERVER_API}/products/${editingProduct}/images/${imageId}`,
         {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
         }
       );
-      
+
       // Update form data to remove the deleted image
       setFormData(prev => {
         const updatedColors = [...prev.colors];
@@ -298,18 +379,18 @@ const ProductManagement = () => {
   const removeModelColorImage = async (modelIndex, colorIndex, imageId) => {
     try {
       await axios.delete(
-        `${import.meta.env.VITE_SERVER_API}/${editingProduct}/images/${imageId}`,
+        `${import.meta.env.VITE_SERVER_API}/products/${editingProduct}/images/${imageId}`,
         {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
         }
       );
-      
+
       // Update form data to remove the deleted image
       setFormData(prev => {
         const updatedModels = [...prev.models];
-        updatedModels[modelIndex].colors[colorIndex].images = 
+        updatedModels[modelIndex].colors[colorIndex].images =
           updatedModels[modelIndex].colors[colorIndex].images.filter(
             img => img.image_id !== imageId
           );
@@ -508,14 +589,14 @@ const ProductManagement = () => {
       setIsLoading(true);
       try {
         await axios.delete(
-          `${import.meta.env.VITE_SERVER_API}/${productId}`,
+          `${import.meta.env.VITE_SERVER_API}/products/${productId}`,
           {
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
           }
         );
-        
+
         // Refresh product list
         const res = await axios.get(`${import.meta.env.VITE_SERVER_API}/products`);
         setProducts(res.data);
@@ -551,63 +632,109 @@ const ProductManagement = () => {
     <div className="product-list-container">
       <div className="product-list-header">
         <h2>Product List</h2>
-        <button 
+        <button
           className="btn-add-product"
-          onClick={() => startEditProduct({
-            product_type: 'single',
-            colors: [],
-            models: [{
-              specifications: []
-            }]
-          })}
+          onClick={() => navigate('/addproducts')}
         >
           + Add New Product
         </button>
       </div>
 
-      {isLoading ? (
-        <div className="loading">Loading products...</div>
-      ) : error ? (
-        <div className="error-message">{error}</div>
-      ) : (
-        <div className="product-grid">
-          {products.map(product => (
-            <div key={product.product_id} className="product-card">
-              <div className="product-images">
-                {product.images.slice(0, 1).map(img => (
-                  <img
-                    key={img.image_id}
-                    src={`${import.meta.env.VITE_SERVER_API}/static/${img.image_url}`}
-                    alt={product.name}
-                  />
-                ))}
-              </div>
-              <div className="product-details">
-                <h3>{product.name}</h3>
-                <p className="product-description">{product.description.substring(0, 50)}...</p>
-                <div className="product-meta">
-                  <span className="product-type">{product.product_type}</span>
-                  <span className="product-category">{product.category || 'No category'}</span>
-                </div>
-              </div>
-              <div className="product-actions">
-                <button 
-                  className="btn-edit"
-                  onClick={() => startEditProduct(product)}
-                >
-                  Edit
-                </button>
-                <button 
-                  className="btn-delete"
-                  onClick={() => deleteProduct(product.product_id)}
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          ))}
+      {/* Filter Section */}
+      <div className="product-filters">
+        <div className="filter-group">
+          <label htmlFor="search">Search:</label>
+          <input
+            type="text"
+            id="search"
+            placeholder="Search products..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
-      )}
+
+        <div className="filter-group">
+          <label htmlFor="sort">Sort By:</label>
+          <select
+            id="sort"
+            value={sortOption}
+            onChange={(e) => setSortOption(e.target.value)}
+          >
+            <option value="name_asc">Name (A-Z)</option>
+            <option value="name_desc">Name (Z-A)</option>
+            <option value="price_asc">Price (Low to High)</option>
+            <option value="price_desc">Price (High to Low)</option>
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+          </select>
+        </div>
+
+        <div className="filter-group">
+          <label htmlFor="category">Category:</label>
+          <select
+            id="category"
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+          >
+            <option value="all">All Categories</option>
+            {categories.map(category => (
+              <option key={category.category_id} value={category.category_id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {
+        isLoading ? (
+          <div className="loading">Loading products...</div>
+        ) : error ? (
+          <div className="error-message">{error}</div>
+        ) : (
+          <div className="product-grid">
+            {filteredProducts.length > 0 ? (
+              filteredProducts.map(product => (
+                <div key={product.product_id} className="product-card">
+                  <div className="product-images">
+                    {product.images.slice(0, 1).map(img => (
+                      <img
+                        key={img.image_id}
+                        src={`${import.meta.env.VITE_SERVER_API}/static/${img.image_url}`}
+                        alt={product.name}
+                      />
+                    ))}
+                  </div>
+                  <div className="product-details">
+                    <h3>{product.name}</h3>
+                    <p className="product-description">{product.description.substring(0, 50)}...</p>
+                    <div className="product-meta">
+                      <span className="product-type">{product.product_type}</span>
+                      <span className="product-category">{product.category || 'No category'}</span>
+                    </div>
+                  </div>
+                  <div className="product-actions">
+                    <button
+                      className="btn-edit"
+                      onClick={() => startEditProduct(product)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="btn-delete"
+                      onClick={() => deleteProduct(product.product_id)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="no-products">No products found matching your criteria</div>
+            )}
+          </div>
+        )
+      }
     </div>
   );
 
@@ -645,44 +772,70 @@ const ProductManagement = () => {
             name="product_type"
             value={formData.product_type}
             onChange={handleInputChange}
+            disabled={editingProduct !== null} // Disable when editing
           >
             <option value="single">Single Product</option>
             <option value="variable">Variable Product (with models)</option>
           </select>
+          {editingProduct && (
+            <p className="form-note">Product type cannot be changed after creation</p>
+          )}
         </div>
 
-        <div className="form-group">
+        {/* <div className="form-group">
           <label>Category:</label>
-          <select
-            name="category_id"
-            value={formData.category_id}
-            onChange={handleInputChange}
-            required
-          >
-            <option value="">Select a category</option>
-            {categories.map(category => (
-              <option key={category.category_id} value={category.category_id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
+          {editingProduct ? (
+            <>
+              <p className="form-text">
+                {editingProduct?.category || 'N/A'}
+              </p>
+              <p className="form-note">Category cannot be changed after creation</p>
+            </>
+          ) : (
+            <select
+              name="category_id"
+              value={formData.category_id}
+              onChange={handleInputChange}
+              required
+            >
+              <option value="">Select a category</option>
+              {categories.map(category => (
+                <option key={category.category_id} value={category.category_id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
 
         <div className="form-group">
           <label>Subcategory:</label>
-          <select
-            name="subcategory_id"
-            value={formData.subcategory_id}
-            onChange={handleInputChange}
-          >
-            <option value="">Select a subcategory (optional)</option>
-            {getSubcategories().map(subcategory => (
-              <option key={subcategory.subcategory_id} value={subcategory.subcategory_id}>
-                {subcategory.name}
-              </option>
-            ))}
-          </select>
-        </div>
+          {editingProduct ? (
+            <>
+              <p className="form-text">
+                {editingProduct?.subcategory ? editingProduct.subcategory : 'N/A'}
+              </p>
+              <p className="form-note">Subcategory cannot be changed after creation</p>
+            </>
+          ) : (
+            <select
+              name="subcategory_id"
+              value={formData.subcategory_id}
+              onChange={handleInputChange}
+              disabled={!formData.category_id}
+            >
+              <option value="">Select a subcategory (optional)</option>
+              {getSubcategories().map(subcategory => (
+                <option key={subcategory.subcategory_id} value={subcategory.subcategory_id}>
+                  {subcategory.name}
+                </option>
+              ))}
+            </select>
+          )}
+        </div> */}
+
+
+
 
         <div className="form-group">
           <label>Product Images:</label>
@@ -702,8 +855,8 @@ const ProductManagement = () => {
                     src={`${import.meta.env.VITE_SERVER_API}/static/${img.image_url}`}
                     alt={`Product ${index}`}
                   />
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     className="btn-remove-image"
                     onClick={() => removeProductImage(img.image_id)}
                   >
@@ -712,7 +865,7 @@ const ProductManagement = () => {
                 </div>
               ))}
             </div>
-            
+
             <h4>New Images to Upload</h4>
             <div className="image-preview">
               {newImages.map((file, index) => (
@@ -745,8 +898,8 @@ const ProductManagement = () => {
                   value={spec.value}
                   onChange={(e) => updateSpecification(0, specIndex, 'value', e.target.value)}
                 />
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="btn-remove"
                   onClick={() => removeSpecification(0, specIndex)}
                 >
@@ -754,8 +907,8 @@ const ProductManagement = () => {
                 </button>
               </div>
             ))}
-            <button 
-              type="button" 
+            <button
+              type="button"
               className="btn-add"
               onClick={() => addSpecification(0)}
             >
@@ -827,8 +980,8 @@ const ProductManagement = () => {
                             src={`${import.meta.env.VITE_SERVER_API}/static/${img.image_url}`}
                             alt={`Color ${imgIndex}`}
                           />
-                          <button 
-                            type="button" 
+                          <button
+                            type="button"
                             className="btn-remove-image"
                             onClick={() => removeColorImage(colorIndex, img.image_id)}
                           >
@@ -837,7 +990,7 @@ const ProductManagement = () => {
                         </div>
                       ))}
                     </div>
-                    
+
                     <h4>New Images to Upload</h4>
                     <div className="image-preview">
                       {color.newImages?.map((file, imgIndex) => (
@@ -852,8 +1005,8 @@ const ProductManagement = () => {
                   </div>
                 </div>
 
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="btn-remove"
                   onClick={() => removeColor(colorIndex)}
                 >
@@ -861,8 +1014,8 @@ const ProductManagement = () => {
                 </button>
               </div>
             ))}
-            <button 
-              type="button" 
+            <button
+              type="button"
               className="btn-add"
               onClick={addColor}
             >
@@ -908,8 +1061,8 @@ const ProductManagement = () => {
                         value={spec.value}
                         onChange={(e) => updateSpecification(modelIndex, specIndex, 'value', e.target.value)}
                       />
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         className="btn-remove"
                         onClick={() => removeSpecification(modelIndex, specIndex)}
                       >
@@ -917,8 +1070,8 @@ const ProductManagement = () => {
                       </button>
                     </div>
                   ))}
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     className="btn-add"
                     onClick={() => addSpecification(modelIndex)}
                   >
@@ -987,8 +1140,8 @@ const ProductManagement = () => {
                                   src={`${import.meta.env.VITE_SERVER_API}/static/${img.image_url}`}
                                   alt={`Color ${imgIndex}`}
                                 />
-                                <button 
-                                  type="button" 
+                                <button
+                                  type="button"
                                   className="btn-remove-image"
                                   onClick={() => removeModelColorImage(modelIndex, colorIndex, img.image_id)}
                                 >
@@ -997,11 +1150,12 @@ const ProductManagement = () => {
                               </div>
                             ))}
                           </div>
-                          
+
                           <h4>New Images to Upload</h4>
                           <div className="image-preview">
                             {color.newImages?.map((file, imgIndex) => (
                               <div key={`new-${imgIndex}`} className="image-thumbnail">
+
                                 <img
                                   src={URL.createObjectURL(file)}
                                   alt={`New color image ${imgIndex}`}
@@ -1012,8 +1166,8 @@ const ProductManagement = () => {
                         </div>
                       </div>
 
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         className="btn-remove"
                         onClick={() => removeModelColor(modelIndex, colorIndex)}
                       >
@@ -1021,8 +1175,8 @@ const ProductManagement = () => {
                       </button>
                     </div>
                   ))}
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     className="btn-add"
                     onClick={() => addModelColor(modelIndex)}
                   >
@@ -1030,8 +1184,8 @@ const ProductManagement = () => {
                   </button>
                 </div>
 
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="btn-remove"
                   onClick={() => removeModel(modelIndex)}
                 >
@@ -1039,8 +1193,8 @@ const ProductManagement = () => {
                 </button>
               </div>
             ))}
-            <button 
-              type="button" 
+            <button
+              type="button"
               className="btn-add"
               onClick={addModel}
             >
@@ -1050,15 +1204,15 @@ const ProductManagement = () => {
         )}
 
         <div className="form-actions">
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="btn-save"
             disabled={isLoading}
           >
             {isLoading ? 'Saving...' : 'Save Product'}
           </button>
-          <button 
-            type="button" 
+          <button
+            type="button"
             className="btn-cancel"
             onClick={cancelEdit}
           >
@@ -1069,49 +1223,56 @@ const ProductManagement = () => {
     </div>
   );
 
+
+  if (isLoading) return <Loader />;
+
   return (
-    <div className="product-management">
-      <div className="tabs">
-        <button
-          className={activeTab === 'products' ? 'active' : ''}
-          onClick={() => setActiveTab('products')}
-        >
-          Products
-        </button>
-        <button
-          className={activeTab === 'categories' ? 'active' : ''}
-          onClick={() => setActiveTab('categories')}
-        >
-          Categories
-        </button>
-      </div>
-
-      {activeTab === 'products' ? (
-        editingProduct ? renderProductForm() : renderProductList()
-      ) : (
-        <div className="category-management">
-          <h2>Categories</h2>
-          <div className="category-list">
-            {categories.map(category => (
-              <div key={category.category_id} className="category-card">
-                <img
-                  src={`${import.meta.env.VITE_SERVER_API}/static/${category.image_url}`}
-                  alt={category.name}
-                />
-                <h3>{category.name}</h3>
-                <ul>
-                  {category.subcategories.map(subcategory => (
-                    <li key={subcategory.subcategory_id}>{subcategory.name}</li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
+    <AdminLayout>
+      <div className="product-management">
+        <div className="tabs">
+          <button
+            className={activeTab === 'products' ? 'active' : ''}
+            onClick={() => setActiveTab('products')}
+          >
+            Products
+          </button>
+          {/* <button
+            className={activeTab === 'categories' ? 'active' : ''}
+            onClick={() => setActiveTab('categories')}
+          >
+            Categories
+          </button> */}
         </div>
-      )}
 
-      {error && <div className="error-message">{error}</div>}
-    </div>
+        <div className="content-area">
+          {activeTab === 'products' ? (
+            editingProduct ? renderProductForm() : renderProductList()
+          ) : (
+            <div className="category-management">
+              <h2>Categories</h2>
+              <div className="category-list">
+                {categories.map(category => (
+                  <div key={category.category_id} className="category-card">
+                    <img
+                      src={`${import.meta.env.VITE_SERVER_API}/static/${category.image_url}`}
+                      alt={category.name}
+                    />
+                    <h3>{category.name}</h3>
+                    <ul>
+                      {category.subcategories.map(subcategory => (
+                        <li key={subcategory.subcategory_id}>{subcategory.name}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {error && <div className="error-message">{error}</div>}
+        </div>
+      </div>
+    </AdminLayout>
   );
 };
 

@@ -38,6 +38,7 @@ import AllProducts from './Pages/AllProducts/AllProducts';
 import ProductPage from './Pages/Product/ProductPage';
 import AuthCallback from './Pages/Authentication/Auth/AuthCallback';
 import ProductManagement from './Pages/Admin/Products/ProductManagement';
+import Loader from './Components/Loader/Loader';
 
 
 
@@ -70,6 +71,7 @@ function App() {
           <Route path="/randr" element={<ReviewandRating />} />
           <Route path="/support" element={<Support />} />
           <Route path="/auth-callback" element={<AuthCallback />} />
+          {/* <Route path="/loader" element={<Loader />} /> */}
 
 
           {/* ADMIN PAGES  */}

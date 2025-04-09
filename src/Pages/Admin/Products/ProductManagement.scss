@@ -83,6 +83,7 @@ $transition: all 0.3s ease;
     border-radius: $border-radius;
     margin: 1rem 0;
     border-left: 4px solid $danger-color;
+    height: fit-content
   }
 
   .loading {
@@ -585,5 +586,221 @@ $transition: all 0.3s ease;
 
   .product-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+// Product Filters SCSS
+.product-filters {
+  @include card-style;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: #fff;
+  border-radius: $border-radius;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  align-items: end;
+
+  .filter-group {
+    position: relative;
+    margin-bottom: 0;
+
+    label {
+      display: block;
+      margin-bottom: 0.75rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: lighten($dark-color, 15%);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      color: $dark-color;
+      background-color: #f9fafb;
+      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+      appearance: none;
+      
+      &:focus {
+        outline: none;
+        border-color: $primary-color;
+        box-shadow: 0 0 0 3px rgba($primary-color, 0.1);
+        background-color: #fff;
+      }
+    }
+
+    input {
+      &::placeholder {
+        color: #9ca3af;
+      }
+    }
+
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236b7280' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.75rem center;
+      background-size: 16px 12px;
+      padding-right: 2.5rem;
+    }
+
+    // Search icon for search input
+    &.search-filter {
+      position: relative;
+      
+      &:after {
+        content: '\f002';
+        font-family: 'Font Awesome 5 Free';
+        font-weight: 900;
+        position: absolute;
+        right: 1rem;
+        bottom: 0.75rem;
+        color: #9ca3af;
+        pointer-events: none;
+      }
+    }
+  }
+
+  // Animation for filter elements
+  .filter-group {
+    animation: fadeInUp 0.4s ease-out forwards;
+    
+    @for $i from 1 through 5 {
+      &:nth-child(#{$i}) {
+        animation-delay: 0.1s * $i;
+      }
+    }
+  }
+}
+
+// Keyframes for animations
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 992px) {
+  .product-filters {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .product-filters {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+    
+    .filter-group {
+      margin-bottom: 0;
+      
+      label {
+        margin-bottom: 0.5rem;
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .product-filters {
+    padding: 1.25rem;
+    
+    .filter-group {
+      input, select {
+        padding: 0.65rem 0.9rem;
+        font-size: 0.9rem;
+      }
+    }
+  }
+}
+
+// Optional: Add a transition when filters are applied
+.filter-transition {
+  transition: all 0.4s cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+
+// Filter results count style
+.filter-results-count {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin-top: 0.5rem;
+  font-style: italic;
+  display: block;
+  text-align: right;
+  
+  strong {
+    color: $primary-color;
+    font-weight: 600;
+  }
+}
+
+// Clear filters button (optional)
+.clear-filters-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background: rgba($danger-color, 0.1);
+  color: $danger-color;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 1rem;
+  
+  &:hover {
+    background: rgba($danger-color, 0.2);
+  }
+  
+  i {
+    margin-right: 0.5rem;
+    font-size: 0.8rem;
+  }
+}
+
+// For the "No products found" message
+.no-products {
+  @include card-style;
+  padding: 2rem;
+  text-align: center;
+  grid-column: 1 / -1;
+  
+  h3 {
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+  }
+  
+  p {
+    color: #9ca3af;
+    margin-bottom: 1.5rem;
+  }
+  
+  .btn-reset-filters {
+    background: $primary-color;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    
+    &:hover {
+      background: $secondary-color;
+    }
   }
 }

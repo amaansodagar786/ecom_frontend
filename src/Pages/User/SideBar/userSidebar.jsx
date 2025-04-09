@@ -10,8 +10,6 @@ const UserSidebar = ({ isOpen, toggleSidebar, isMobile }) => {
     { path: '/userdashboard', name: 'Dashboard', icon: <FiHome /> },
     { path: '/address', name: 'Address', icon: <FiMapPin /> },
     { path: '/userorders', name: 'Orders', icon: <FiShoppingBag /> },
-    { path: '/wishlist', name: 'Wishlist', icon: <FiHeart /> },
-    { path: '/cart', name: 'Cart', icon: <FiShoppingCart /> },
     { path: '/randr', name: 'Reviews & Ratings', icon: <FiStar /> },
     { path: '/support', name: 'Support', icon: <FiHelpCircle /> },
   ];

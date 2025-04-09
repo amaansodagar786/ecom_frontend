@@ -4,13 +4,14 @@ import { FiHeart, FiTrash2, FiShoppingCart, FiChevronRight } from 'react-icons/f
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import "./Wishlist.scss";
+import Loader from '../../Components/Loader/Loader';
 
 const Wishlist = () => {
   const {
     wishlistItems,
     toggleWishlistItem,
     isAuthenticated,
-    getToken, 
+    getToken,
     updateWishlistCount
   } = useAuth();
   const [wishlistProducts, setWishlistProducts] = useState([]);
@@ -18,6 +19,7 @@ const Wishlist = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   const [isWishlisting, setIsWishlisting] = useState(false); // Add this state
+  const [isClearing, setIsClearing] = useState(false);
 
 
   useEffect(() => {
@@ -33,18 +35,18 @@ const Wishlist = () => {
           `${import.meta.env.VITE_SERVER_API}/wishlist/getbycustid`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-  
+
         if (response.data.success) {
           const items = response.data.wishlist.items || [];
           setWishlistProducts(items);
-          
+
           // Convert to format compatible with AuthContext
           const simplifiedItems = items.map(item => ({
             product_id: item.product.product_id,
             model_id: item.model?.model_id || null,
             color_id: item.color?.color_id || null
           }));
-          
+
           updateWishlistCount(simplifiedItems);
         } else {
           setWishlistProducts([]);
@@ -57,14 +59,14 @@ const Wishlist = () => {
         setLoading(false);
       }
     };
-  
+
     fetchWishlistProducts();
   }, [isAuthenticated, getToken, navigate, updateWishlistCount]);
 
 
   const handleClearWishlist = async () => {
     if (isClearing || wishlistProducts.length === 0) return;
-    
+
     setIsClearing(true);
     try {
       const token = getToken();
@@ -128,7 +130,7 @@ const Wishlist = () => {
       const token = getToken();
       await axios.post(
         `${import.meta.env.VITE_SERVER_API}/wishlist/deleteitem`,
-        { 
+        {
           product_id: item.product.product_id,
           model_id: item.model?.model_id || null,
           color_id: item.color?.color_id || null
@@ -151,9 +153,9 @@ const Wishlist = () => {
       const response = await axios.get(
         `${import.meta.env.VITE_SERVER_API}/product/${item.product.product_id}`
       );
-  
+
       const fullProduct = response.data;
-  
+
       // Prepare navigation state with all necessary details
       const navigationState = {
         product: fullProduct,
@@ -166,7 +168,7 @@ const Wishlist = () => {
           colorId: item.color?.color_id || null
         }
       };
-  
+
       navigate(`/product/${item.product.product_id}`, {
         state: navigationState
       });
@@ -189,20 +191,18 @@ const Wishlist = () => {
 
   const getVariantDetails = (item) => {
     if (!item.model && !item.color) return null;
-    
+
     let details = [];
     if (item.model) details.push(`Model: ${item.model.name}`);
     if (item.color) details.push(`Color: ${item.color.name}`);
-    
+
     return details.join(' • ');
   };
 
-  if (loading) return (
-    <div className="loading-state">
-      <div className="spinner"></div>
-      <p>Loading wishlist items...</p>
-    </div>
-  );
+  if (loading) return <Loader />;
+  if (isWishlisting) return <Loader />;
+  if (isClearing) return <Loader />;
+
 
   if (error) return (
     <div className="error-state">
@@ -218,8 +218,21 @@ const Wishlist = () => {
   return (
     <div className="wishlist-page">
       <div className="wishlist-header">
-        <h1>Your Wishlist</h1>
-        <p className="item-count">{wishlistProducts.length} {wishlistProducts.length === 1 ? 'item' : 'items'}</p>
+        <div className="header-content">
+          <h1>Your Wishlist</h1>
+          <p className="item-count">{wishlistProducts.length} {wishlistProducts.length === 1 ? 'item' : 'items'}</p>
+        </div>
+
+        {wishlistProducts.length > 0 && (
+          <button
+            onClick={handleClearWishlist}
+            className="clear-wishlist-btn"
+            disabled={isClearing}
+          >
+            <FiTrash2 size={16} />
+            {isClearing ? 'Clearing...' : 'Clear Wishlist'}
+          </button>
+        )}
       </div>
 
       {wishlistProducts.length > 0 ? (

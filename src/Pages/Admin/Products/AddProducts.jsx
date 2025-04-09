@@ -14,7 +14,6 @@ const initialValues = {
   main_category_id: '',
   sub_category_id: '',
   product_type: 'single',
-  unit: 1,
   models: [
     {
       name: '',
@@ -25,6 +24,7 @@ const initialValues = {
           stock_quantity: 0,
           price: 0,
           original_price: 0,
+          threshold: 10,
           images: []
         }
       ],
@@ -69,12 +69,6 @@ const AddProducts = () => {
     main_category_id: yup.number().required('Main category is required'),
     sub_category_id: yup.number().required('Subcategory is required'),
     product_type: yup.string().required('Product type is required'),
-    unit: yup.number()
-      .when('product_type', {
-        is: 'single',
-        then: (schema) => schema.required('Unit is required').min(1),
-        otherwise: (schema) => schema.notRequired()
-      }),
     models: yup.array()
       .of(
         yup.object().shape({
@@ -89,6 +83,7 @@ const AddProducts = () => {
                 original_price: yup.number()
                   .min(yup.ref('price'), 'Original price must be greater than price')
                   .nullable(),
+                threshold: yup.number().required('Threshold is required').min(1),
                 images: yup.array().min(1, 'At least one image is required')
               })
             )
@@ -207,9 +202,8 @@ const AddProducts = () => {
         formData.append('product_images', image);
       });
 
-      // For single product, set unit and ensure model name matches product name
+      // For single product, ensure model name matches product name
       if (values.product_type === 'single') {
-        formData.append('unit', values.unit);
         values.models[0].name = values.name;
       }
 
@@ -247,6 +241,9 @@ const AddProducts = () => {
           const colorStockKey = values.product_type === 'variable'
             ? `model_${modelIndex}_color_stock_${colorIndex}`
             : `color_stock_${colorIndex}`;
+          const colorThresholdKey = values.product_type === 'variable'
+            ? `model_${modelIndex}_threshold_${colorIndex}`
+            : `threshold_${colorIndex}`;
           const colorImagesKey = values.product_type === 'variable'
             ? `model_${modelIndex}_color_images_${colorIndex}`
             : `color_images_${colorIndex}`;
@@ -255,6 +252,7 @@ const AddProducts = () => {
           formData.append(colorPriceKey, color.price);
           formData.append(colorOriginalPriceKey, color.original_price || '');
           formData.append(colorStockKey, color.stock_quantity);
+          formData.append(colorThresholdKey, color.threshold || 10);
 
           color.images.forEach((image) => {
             formData.append(colorImagesKey, image);
@@ -464,19 +462,6 @@ const AddProducts = () => {
                         </div>
                         <ErrorMessage name="product_type" component="div" className="error-message" />
                       </div>
-
-                      {values.product_type === 'single' && (
-                        <div className="form-group">
-                          <label className="form-label">Unit *</label>
-                          <Field
-                            type="number"
-                            name="unit"
-                            className="form-input"
-                            min="1"
-                          />
-                          <ErrorMessage name="unit" component="div" className="error-message" />
-                        </div>
-                      )}
                     </div>
                   </div>
 
@@ -536,26 +521,6 @@ const AddProducts = () => {
                       <div className="form-section">
                         <div className="section-header">
                           <h3 className="section-title">Model Details</h3>
-                          {values.product_type === 'variable' && (
-                            <button
-                              type="button"
-                              className="add-button"
-                              onClick={() => pushModel({
-                                name: '',
-                                description: '',
-                                colors: [{
-                                  name: '',
-                                  stock_quantity: 0,
-                                  price: 0,
-                                  original_price: 0,
-                                  images: []
-                                }],
-                                specifications: [{ key: '', value: '' }]
-                              })}
-                            >
-                              <FaPlus /> Add Model
-                            </button>
-                          )}
                         </div>
 
                         {values.models.map((model, modelIndex) => (
@@ -618,23 +583,8 @@ const AddProducts = () => {
                             <FieldArray name={`models.${modelIndex}.colors`}>
                               {({ push: pushColor, remove: removeColor }) => (
                                 <div className="form-section">
-                                  <div className="section-header">
-                                    <h4>Color Options</h4>
-                                    <button
-                                      type="button"
-                                      className="add-button"
-                                      onClick={() => pushColor({
-                                        name: '',
-                                        stock_quantity: 0,
-                                        price: 0,
-                                        original_price: 0,
-                                        images: []
-                                      })}
-                                    >
-                                      <FaPlus /> Add Color
-                                    </button>
-                                  </div>
-
+                                  <h4>Color Options</h4>
+                                  
                                   {model.colors.map((color, colorIndex) => (
                                     <div key={colorIndex} className="color-card">
                                       <div className="color-header">
@@ -711,6 +661,21 @@ const AddProducts = () => {
                                             className="error-message"
                                           />
                                         </div>
+
+                                        <div className="form-group">
+                                          <label className="form-label">Low Stock Threshold *</label>
+                                          <Field
+                                            type="number"
+                                            name={`models.${modelIndex}.colors.${colorIndex}.threshold`}
+                                            className="form-input"
+                                            min="1"
+                                          />
+                                          <ErrorMessage
+                                            name={`models.${modelIndex}.colors.${colorIndex}.threshold`}
+                                            component="div"
+                                            className="error-message"
+                                          />
+                                        </div>
                                       </div>
 
                                       {/* Color Images */}
@@ -765,6 +730,24 @@ const AddProducts = () => {
                                       </div>
                                     </div>
                                   ))}
+
+                                  {/* Add Color Button */}
+                                  <div className="add-button-container">
+                                    <button
+                                      type="button"
+                                      className="add-button"
+                                      onClick={() => pushColor({
+                                        name: '',
+                                        stock_quantity: 0,
+                                        price: 0,
+                                        original_price: 0,
+                                        threshold: 10,
+                                        images: []
+                                      })}
+                                    >
+                                      <FaPlus /> Add Color
+                                    </button>
+                                  </div>
                                 </div>
                               )}
                             </FieldArray>
@@ -773,17 +756,8 @@ const AddProducts = () => {
                             <FieldArray name={`models.${modelIndex}.specifications`}>
                               {({ push: pushSpec, remove: removeSpec }) => (
                                 <div className="form-section">
-                                  <div className="section-header">
-                                    <h4>Specifications</h4>
-                                    <button
-                                      type="button"
-                                      className="add-button"
-                                      onClick={() => pushSpec({ key: '', value: '' })}
-                                    >
-                                      <FaPlus /> Add Specification
-                                    </button>
-                                  </div>
-
+                                  <h4>Specifications</h4>
+                                  
                                   {model.specifications.map((spec, specIndex) => (
                                     <div key={specIndex} className="spec-row">
                                       <div className="form-group">
@@ -822,11 +796,47 @@ const AddProducts = () => {
                                       </button>
                                     </div>
                                   ))}
+
+                                  {/* Add Specification Button */}
+                                  <div className="add-button-container">
+                                    <button
+                                      type="button"
+                                      className="add-button"
+                                      onClick={() => pushSpec({ key: '', value: '' })}
+                                    >
+                                      <FaPlus /> Add Specification
+                                    </button>
+                                  </div>
                                 </div>
                               )}
                             </FieldArray>
                           </div>
                         ))}
+
+                        {/* Add Model Button */}
+                        {values.product_type === 'variable' && (
+                          <div className="add-button-container">
+                            <button
+                              type="button"
+                              className="add-button"
+                              onClick={() => pushModel({
+                                name: '',
+                                description: '',
+                                colors: [{
+                                  name: '',
+                                  stock_quantity: 0,
+                                  price: 0,
+                                  original_price: 0,
+                                  threshold: 10,
+                                  images: []
+                                }],
+                                specifications: [{ key: '', value: '' }]
+                              })}
+                            >
+                              <FaPlus /> Add Model
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </FieldArray>
