@@ -17,6 +17,7 @@ $highlight-color: #6e8efb;
   overflow: hidden;
   font-family: 'Poppins', sans-serif;
   border-top: 1px solid darken($primary-color, 5%);
+  // z-index: 2000;
 
   .footer-content {
     max-width: 1200px;

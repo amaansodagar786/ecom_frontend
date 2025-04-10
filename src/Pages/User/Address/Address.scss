@@ -267,7 +267,7 @@ $transition: all 0.3s ease;
 
   input, textarea, select {
     width: 100%;
-    padding: 0.8rem;
+    // padding: 0.8rem;
     border: 1px solid #ddd;
     border-radius: $border-radius;
     font-size: 1rem;
@@ -436,7 +436,7 @@ $transition: all 0.3s ease;
 }
 
 // Loading and Error states
-.loading-spinner, .error-message, .no-addresses {
+.loading-spinner,  .no-addresses {
   display: flex;
   flex-direction: column;
   align-items: center;

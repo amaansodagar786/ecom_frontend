@@ -154,7 +154,7 @@ $small-mobile-breakpoint: 576px;
 
 .form-input {
   width: 100%;
-  padding: 0.8rem 1rem 0.8rem 2.5rem;
+  padding: 0.8rem 1rem 0.8rem 3rem;
   border: 1px solid $border-color;
   border-radius: 8px;
   font-size: 1rem;
@@ -171,6 +171,7 @@ $small-mobile-breakpoint: 576px;
   }
 
   &::placeholder {
+    // margin-left: 10px;
     color: $placeholder-color;
     font-family: 'Poppins', sans-serif;
   }

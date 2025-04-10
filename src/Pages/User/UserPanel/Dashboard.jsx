@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import UserLayout from '../../User/UserPanel/UserLayout';
 import { toast } from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import axios from 'axios';
 import './Userdashboard.scss';
 
@@ -112,7 +114,7 @@ const ProfileDashboard = () => {
         <div className="profile-header">
           <h1>My Profile</h1>
           {!editMode && (
-            <button 
+            <button
               className="edit-btn"
               onClick={() => setEditMode(true)}
             >
@@ -191,8 +193,8 @@ const ProfileDashboard = () => {
 
                 <div className="form-actions">
                   <button type="submit" className="save-btn">Save Changes</button>
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     className="cancel-btn"
                     onClick={() => {
                       setEditMode(false);
@@ -273,8 +275,8 @@ const ProfileDashboard = () => {
                     </div>
                     <div className="form-actions">
                       <button type="submit" className="save-btn">Update Password</button>
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         className="cancel-btn"
                         onClick={() => setShowPasswordForm(false)}
                       >
@@ -283,7 +285,7 @@ const ProfileDashboard = () => {
                     </div>
                   </form>
                 ) : (
-                  <button 
+                  <button
                     className="change-password-btn"
                     onClick={() => setShowPasswordForm(true)}
                   >
@@ -295,6 +297,19 @@ const ProfileDashboard = () => {
           </div>
         </div>
       </div>
+
+      <ToastContainer
+        position="top-center"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+      />
+
     </UserLayout>
   );
 };

@@ -66,16 +66,17 @@ const Wishlist = () => {
 
   const handleClearWishlist = async () => {
     if (isClearing || wishlistProducts.length === 0) return;
-
+  
     setIsClearing(true);
     try {
       const token = getToken();
-      await axios.post(
+      await axios.delete(
         `${import.meta.env.VITE_SERVER_API}/wishlist/clear`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
       );
-
+  
       // Update both local state and AuthContext
       setWishlistProducts([]);
       clearWishlistContext();
@@ -85,6 +86,7 @@ const Wishlist = () => {
       setIsClearing(false);
     }
   };
+  
 
   const getWishlistItemPrice = (item) => {
     // Check if we have a selected color price
