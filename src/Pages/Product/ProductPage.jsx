@@ -291,10 +291,7 @@ const ProductPage = () => {
                                 <img
                                     src={`${import.meta.env.VITE_SERVER_API}/static${img.image_url}`}
                                     alt={`${product.name} thumbnail ${index + 1}`}
-                                    onError={(e) => {
-                                        e.target.src = '/fallback-image.jpg';
-                                        console.error('Image load failed:', img.image_url);
-                                    }}
+                                    
                                 />
                             </div>
                         ))}
@@ -353,10 +350,10 @@ const ProductPage = () => {
                     </div>
 
                     <div className="price-container">
-                        <span className="current-price">${currentPrice.toFixed(2)}</span>
+                        <span className="current-price">₹{currentPrice.toFixed(2)}</span>
                         {originalPrice && (
                             <>
-                                <span className="original-price">${originalPrice.toFixed(2)}</span>
+                                <span className="original-price">₹{originalPrice.toFixed(2)}</span>
                                 <span className="discount-badge">
                                     {Math.round((1 - currentPrice / originalPrice) * 100)}% OFF
                                 </span>

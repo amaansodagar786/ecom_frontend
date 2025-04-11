@@ -130,15 +130,18 @@ const Wishlist = () => {
 
     try {
       const token = getToken();
-      await axios.post(
+      await axios.delete(
         `${import.meta.env.VITE_SERVER_API}/wishlist/deleteitem`,
         {
-          product_id: item.product.product_id,
-          model_id: item.model?.model_id || null,
-          color_id: item.color?.color_id || null
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
+          headers: { Authorization: `Bearer ${token}` },
+          data: {
+            product_id: item.product.product_id,
+            model_id: item.model?.model_id || null,
+            color_id: item.color?.color_id || null
+          }
+        }
       );
+      
 
       // Update both local state and AuthContext
       await toggleWishlistItem(item.product, item.model, item.color);
@@ -276,11 +279,11 @@ const Wishlist = () => {
                     <p className="product-category">{item.product.category}</p>
                     <div className="product-pricing">
                       <span className="current-price">
-                        ${currentPrice.toFixed(2)}
+                      ₹{currentPrice.toFixed(2)}
                       </span>
                       {originalPrice && originalPrice > currentPrice && (
                         <span className="original-price">
-                          ${originalPrice.toFixed(2)}
+                          ₹{originalPrice.toFixed(2)}
                         </span>
                       )}
                     </div>

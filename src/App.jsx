@@ -39,6 +39,7 @@ import ProductPage from './Pages/Product/ProductPage';
 import AuthCallback from './Pages/Authentication/Auth/AuthCallback';
 import ProductManagement from './Pages/Admin/Products/ProductManagement';
 import Loader from './Components/Loader/Loader';
+import NewProduct from './Pages/Admin/Products/NewProduct';
 
 
 
@@ -93,7 +94,8 @@ function App() {
           <Route path="/adminorders" element={<AdminRoute> <Orders /> </AdminRoute> } />
           <Route path="/admininventory" element={<AdminRoute> <Inventory /> </AdminRoute> } />
           <Route path="/admininpayment" element={<AdminRoute> <Payment /> </AdminRoute> } />
-          <Route path="/updateproducts" element={<AdminRoute> <ProductManagement /> </AdminRoute> } />
+          {/* <Route path="/updateproducts" element={<AdminRoute> <ProductManagement /> </AdminRoute> } /> */}
+          <Route path="/newproducts" element={<AdminRoute> <NewProduct /> </AdminRoute> } />
 
 
 

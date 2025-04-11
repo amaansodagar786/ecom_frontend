@@ -1,36 +1,40 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
-import Loader from "../../../Components/Loader/Loader";
+import { useParams } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import AdminLayout from '../AdminPanel/AdminLayout';
-import './ProductManagement.scss';
+import axios from 'axios';
+// import '/ProductManagement.scss' ;
+
 
 const ProductManagement = () => {
-  const navigate = useNavigate();
+  const { product_id } = useParams();
+  const [isLoading, setIsLoading] = useState(true);
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [editingProduct, setEditingProduct] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    product_type: 'single',
-    category_id: '',
-    subcategory_id: '',
-    images: [],
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+
+  const [productData, setProductData] = useState({
+    basic: {
+      name: '',
+      description: '',
+      category_id: '',
+      subcategory_id: '',
+      product_type: 'single'
+    },
+    specifications: [],
     colors: [],
-    models: []
+    models: [],
+    images_to_delete: []
   });
   const [newImages, setNewImages] = useState([]);
-  const [activeTab, setActiveTab] = useState('products');
+  const [colorImages, setColorImages] = useState({});
+  const [categories, setCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
 
-  // Filter states
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortOption, setSortOption] = useState('name_asc');
-  const [categoryFilter, setCategoryFilter] = useState('all');
-
+  // Fetch all products and categories
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -39,1165 +43,777 @@ const ProductManagement = () => {
           axios.get(`${import.meta.env.VITE_SERVER_API}/categories`)
         ]);
 
-        console.log('Fetched Products:', productsRes.data);
-        console.log('Fetched Categories:', categoriesRes.data);
-
         setProducts(productsRes.data);
         setFilteredProducts(productsRes.data);
         setCategories(categoriesRes.data);
+
+        if (product_id) {
+          const productToEdit = productsRes.data.find(p => p.product_id == product_id);
+          if (productToEdit) {
+            setSelectedProduct(productToEdit);
+            setIsEditing(true);
+            loadProductData(productToEdit, categoriesRes.data);
+          }
+        }
+
         setIsLoading(false);
-      } catch (err) {
-        console.error('Fetch error:', err);
-        setError(err.message);
-        setIsLoading(false);
+      } catch (error) {
+        toast.error('Failed to load data');
+        console.error(error);
       }
     };
 
     fetchData();
-  }, []);
+  }, [product_id]);
 
-
-  // Apply filters
-  useEffect(() => {
-    let result = [...products];
-
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      result = result.filter(product =>
-        product.name.toLowerCase().includes(term) ||
-        product.description.toLowerCase().includes(term)
-      );
-    }
-
-    if (categoryFilter !== 'all') {
-      result = result.filter(product =>
-        product.category?.category_id == categoryFilter
-      );
-    }
-
-    switch (sortOption) {
-      case 'name_asc':
-        result.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      case 'name_desc':
-        result.sort((a, b) => b.name.localeCompare(a.name));
-        break;
-      case 'price_asc':
-        result.sort((a, b) => {
-          const aPrice = a.product_type === 'single'
-            ? (a.colors[0]?.price || 0)
-            : (a.models[0]?.colors[0]?.price || 0);
-          const bPrice = b.product_type === 'single'
-            ? (b.colors[0]?.price || 0)
-            : (b.models[0]?.colors[0]?.price || 0);
-          return aPrice - bPrice;
-        });
-        break;
-      case 'price_desc':
-        result.sort((a, b) => {
-          const aPrice = a.product_type === 'single'
-            ? (a.colors[0]?.price || 0)
-            : (a.models[0]?.colors[0]?.price || 0);
-          const bPrice = b.product_type === 'single'
-            ? (b.colors[0]?.price || 0)
-            : (b.models[0]?.colors[0]?.price || 0);
-          return bPrice - aPrice;
-        });
-        break;
-      case 'newest':
-        result.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-        break;
-      case 'oldest':
-        result.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-        break;
-      default:
-        break;
-    }
-
-    setFilteredProducts(result);
-  }, [searchTerm, sortOption, categoryFilter, products]);
-
-  // Handle input changes
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  // Start editing a product
-  const startEditProduct = (product) => {
-    const matchedCategory = categories.find(c => c.name === product.category);
-    const matchedSubcategory = matchedCategory?.subcategories?.find(sc => sc.name === product.subcategory);
-  
-    console.log("Resolved category:", matchedCategory);
-    console.log("Resolved subcategory:", matchedSubcategory);
-  
-    setEditingProduct({
-      ...product,
-      category_id: matchedCategory?.category_id || '',
-      subcategory_id: matchedSubcategory?.subcategory_id || ''
-    });
-  
-    setFormData({
-      name: product.name,
-      description: product.description,
-      product_type: product.product_type,
-      category_id: matchedCategory?.category_id || '',
-      subcategory_id: matchedSubcategory?.subcategory_id || '',
-      images: product.images || [],
-      colors: product.colors || [],
-      models: product.models || []
-    });
-  
-    setNewImages([]);
-  };
-  
-  
-  
-
-  // Cancel editing
-  const cancelEdit = () => {
-    setEditingProduct(null);
-    setFormData({
-      name: '',
-      description: '',
-      product_type: 'single',
-      category_id: '',
-      subcategory_id: '',
-      images: [],
-      colors: [],
-      models: []
-    });
-    setNewImages([]);
-  };
-
-  // Separate image upload function
-  const uploadImage = async (file, productId) => {
-    const formData = new FormData();
-    formData.append('image', file);
-
-    const response = await axios.post(
-      `${import.meta.env.VITE_SERVER_API}/${productId}/images`,
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      }
+  const loadProductData = (product, categories) => {
+    // Find the category object that matches the product's category
+    const productCategory = categories.find(cat => 
+      cat.category_id === product.main_category?.category_id || 
+      cat.name === product.main_category?.name
     );
-
-    return response.data.image_url;
-  };
-
-  // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      // First upload any new images separately
-      const uploadedImages = await Promise.all(
-        newImages.map(file => uploadImage(file, editingProduct))
+    
+    const categoryId = productCategory?.category_id || '';
+    let subcategoryId = '';
+    
+    // Find the subcategory if it exists
+    if (productCategory?.subcategories) {
+      const productSubcategory = productCategory.subcategories.find(
+        sub => sub.subcategory_id === product.sub_category?.subcategory_id || 
+              sub.name === product.sub_category?.name
       );
+      subcategoryId = productSubcategory?.subcategory_id || '';
+    }
 
-      // Prepare the product data
-      const productData = {
-        name: formData.name,
-        description: formData.description,
-        product_type: formData.product_type,
-        category_id: formData.category_id,
-        subcategory_id: formData.subcategory_id,
-        // Include existing images and new ones
-        images: [
-          ...formData.images.map(img => ({ image_url: img.image_url })),
-          ...uploadedImages.map(url => ({ image_url: url }))
-        ],
-        colors: formData.colors,
-        models: formData.models
-      };
+    // Format product data for our form
+    setProductData({
+      basic: {
+        name: product.name,
+        description: product.description,
+        category_id: categoryId,
+        subcategory_id: subcategoryId,
+        product_type: product.product_type || 'single'
+      },
+      specifications: product.specifications || [],
+      colors: product.colors || [],
+      models: product.models || [],
+      images_to_delete: []
+    });
 
-      // Send the product update
-      const response = await axios.put(
-        `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}`,
-        productData,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        }
-      );
-      
-
-      // Refresh product list
-      const res = await axios.get(`${import.meta.env.VITE_SERVER_API}/products`);
-      setProducts(res.data);
-      cancelEdit();
-    } catch (err) {
-      console.error('Product save error:', {
-        message: err.message,
-        response: err.response?.data,
-        status: err.response?.status
-      });
-      setError(err.response?.data?.message || err.message || 'Failed to save product');
-    } finally {
-      setIsLoading(false);
+    // Set subcategories if category is found
+    if (productCategory) {
+      setSubcategories(productCategory.subcategories || []);
     }
   };
 
-  // Handle file uploads for product images
-  const handleProductImageChange = (e) => {
-    const files = Array.from(e.target.files);
-    setNewImages(files);
-  };
-
-  // Remove existing product image
-  const removeProductImage = async (imageId) => {
-    try {
-      await axios.delete(
-        `${import.meta.env.VITE_SERVER_API}/${editingProduct}/images/${imageId}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        }
+  // Filter products based on search term
+  useEffect(() => {
+    if (searchTerm) {
+      const filtered = products.filter(product =>
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (product.main_category?.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (product.sub_category?.name.toLowerCase().includes(searchTerm.toLowerCase()))
       );
+      setFilteredProducts(filtered);
+    } else {
+      setFilteredProducts(products);
+    }
+  }, [searchTerm, products]);
 
-      setFormData(prev => ({
+  const handleBasicChange = (e) => {
+    const { name, value } = e.target;
+    setProductData(prev => ({
+      ...prev,
+      basic: {
+        ...prev.basic,
+        [name]: value
+      }
+    }));
+
+    // If category changed, update subcategories from the already loaded categories
+    if (name === 'category_id') {
+      const category = categories.find(c => c.category_id == value);
+      setSubcategories(category?.subcategories || []);
+      // Reset subcategory when category changes
+      setProductData(prev => ({
         ...prev,
-        images: prev.images.filter(img => img.image_id !== imageId)
+        basic: {
+          ...prev.basic,
+          subcategory_id: ''
+        }
       }));
-    } catch (err) {
-      setError(err.response?.data?.message || err.message);
     }
   };
 
-  // Handle file uploads for color images
-  const handleColorImageChange = (colorIndex, e) => {
-    const files = Array.from(e.target.files);
-    setFormData(prev => {
-      const updatedColors = [...prev.colors];
-      updatedColors[colorIndex] = {
-        ...updatedColors[colorIndex],
-        newImages: files
-      };
-      return {
-        ...prev,
-        colors: updatedColors
-      };
-    });
-  };
-
-  // Remove existing color image
-  const removeColorImage = async (colorIndex, imageId) => {
-    try {
-      await axios.delete(
-        `${import.meta.env.VITE_SERVER_API}/${editingProduct}/images/${imageId}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        }
-      );
-
-      setFormData(prev => {
-        const updatedColors = [...prev.colors];
-        updatedColors[colorIndex].images = updatedColors[colorIndex].images.filter(
-          img => img.image_id !== imageId
-        );
-        return {
-          ...prev,
-          colors: updatedColors
-        };
-      });
-    } catch (err) {
-      setError(err.response?.data?.message || err.message);
-    }
-  };
-
-  // Handle file uploads for model color images
-  const handleModelColorImageChange = (modelIndex, colorIndex, e) => {
-    const files = Array.from(e.target.files);
-    setFormData(prev => {
-      const updatedModels = [...prev.models];
-      updatedModels[modelIndex].colors[colorIndex] = {
-        ...updatedModels[modelIndex].colors[colorIndex],
-        newImages: files
-      };
-      return {
-        ...prev,
-        models: updatedModels
-      };
-    });
-  };
-
-  // Remove existing model color image
-  const removeModelColorImage = async (modelIndex, colorIndex, imageId) => {
-    try {
-      await axios.delete(
-        `${import.meta.env.VITE_SERVER_API}/${editingProduct}/images/${imageId}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        }
-      );
-
-      setFormData(prev => {
-        const updatedModels = [...prev.models];
-        updatedModels[modelIndex].colors[colorIndex].images =
-          updatedModels[modelIndex].colors[colorIndex].images.filter(
-            img => img.image_id !== imageId
-          );
-        return {
-          ...prev,
-          models: updatedModels
-        };
-      });
-    } catch (err) {
-      setError(err.response?.data?.message || err.message);
-    }
-  };
-
-  // Add a new color variant
-  const addColor = () => {
-    setFormData(prev => ({
+  const handleSpecChange = (index, e) => {
+    const { name, value } = e.target;
+    const updatedSpecs = [...productData.specifications];
+    updatedSpecs[index] = {
+      ...updatedSpecs[index],
+      [name]: value
+    };
+    setProductData(prev => ({
       ...prev,
-      colors: [...prev.colors, {
-        name: '',
-        price: 0,
-        original_price: 0,
-        stock_quantity: 0,
-        threshold: 10,
-        images: [],
-        newImages: []
-      }]
+      specifications: updatedSpecs
     }));
   };
 
-  // Update color variant
-  const updateColor = (index, field, value) => {
-    setFormData(prev => {
-      const updatedColors = [...prev.colors];
-      updatedColors[index] = {
-        ...updatedColors[index],
-        [field]: field === 'price' || field === 'original_price' || field === 'stock_quantity' || field === 'threshold'
-          ? Number(value)
-          : value
-      };
-      return {
-        ...prev,
-        colors: updatedColors
-      };
-    });
-  };
-
-  // Remove a color variant
-  const removeColor = (index) => {
-    setFormData(prev => {
-      const updatedColors = [...prev.colors];
-      updatedColors.splice(index, 1);
-      return {
-        ...prev,
-        colors: updatedColors
-      };
-    });
-  };
-
-  // Add a new model (for variable products)
-  const addModel = () => {
-    setFormData(prev => ({
+  const addNewSpec = () => {
+    setProductData(prev => ({
       ...prev,
-      models: [...prev.models, {
-        name: '',
-        description: '',
-        colors: [],
-        specifications: []
-      }]
+      specifications: [
+        ...prev.specifications,
+        { key: '', value: '', spec_id: null }
+      ]
     }));
   };
 
-  // Update model details
-  const updateModel = (modelIndex, field, value) => {
-    setFormData(prev => {
-      const updatedModels = [...prev.models];
-      updatedModels[modelIndex] = {
-        ...updatedModels[modelIndex],
-        [field]: value
-      };
-      return {
+  const removeSpec = (index) => {
+    const updatedSpecs = [...productData.specifications];
+    const specToRemove = updatedSpecs[index];
+    
+    if (specToRemove.spec_id) {
+      setProductData(prev => ({
         ...prev,
-        models: updatedModels
-      };
-    });
+        images_to_delete: [...prev.images_to_delete, specToRemove.spec_id]
+      }));
+    }
+    
+    updatedSpecs.splice(index, 1);
+    setProductData(prev => ({
+      ...prev,
+      specifications: updatedSpecs
+    }));
   };
 
-  // Remove a model
-  const removeModel = (modelIndex) => {
-    setFormData(prev => {
-      const updatedModels = [...prev.models];
-      updatedModels.splice(modelIndex, 1);
-      return {
-        ...prev,
-        models: updatedModels
-      };
-    });
+  const handleColorChange = (index, e) => {
+    const { name, value } = e.target;
+    const updatedColors = [...productData.colors];
+    updatedColors[index] = {
+      ...updatedColors[index],
+      [name]: value
+    };
+    setProductData(prev => ({
+      ...prev,
+      colors: updatedColors
+    }));
   };
 
-  // Add specification to a model
-  const addSpecification = (modelIndex) => {
-    setFormData(prev => {
-      const updatedModels = [...prev.models];
-      updatedModels[modelIndex].specifications = [
-        ...(updatedModels[modelIndex].specifications || []),
-        { key: '', value: '' }
-      ];
-      return {
-        ...prev,
-        models: updatedModels
-      };
-    });
-  };
-
-  // Update specification
-  const updateSpecification = (modelIndex, specIndex, field, value) => {
-    setFormData(prev => {
-      const updatedModels = [...prev.models];
-      updatedModels[modelIndex].specifications[specIndex] = {
-        ...updatedModels[modelIndex].specifications[specIndex],
-        [field]: value
-      };
-      return {
-        ...prev,
-        models: updatedModels
-      };
-    });
-  };
-
-  // Remove specification
-  const removeSpecification = (modelIndex, specIndex) => {
-    setFormData(prev => {
-      const updatedModels = [...prev.models];
-      updatedModels[modelIndex].specifications.splice(specIndex, 1);
-      return {
-        ...prev,
-        models: updatedModels
-      };
-    });
-  };
-
-  // Add color to a model
-  const addModelColor = (modelIndex) => {
-    setFormData(prev => {
-      const updatedModels = [...prev.models];
-      updatedModels[modelIndex].colors = [
-        ...(updatedModels[modelIndex].colors || []),
+  const addNewColor = () => {
+    const tempId = Date.now();
+    setProductData(prev => ({
+      ...prev,
+      colors: [
+        ...prev.colors,
         {
+          temp_id: tempId,
           name: '',
           price: 0,
           original_price: 0,
           stock_quantity: 0,
           threshold: 10,
-          images: [],
-          newImages: []
+          model_id: null
         }
-      ];
-      return {
-        ...prev,
-        models: updatedModels
-      };
-    });
+      ]
+    }));
   };
 
-  // Update model color
-  const updateModelColor = (modelIndex, colorIndex, field, value) => {
-    setFormData(prev => {
-      const updatedModels = [...prev.models];
-      updatedModels[modelIndex].colors[colorIndex] = {
-        ...updatedModels[modelIndex].colors[colorIndex],
-        [field]: field === 'price' || field === 'original_price' || field === 'stock_quantity' || field === 'threshold'
-          ? Number(value)
-          : value
-      };
-      return {
+  const removeColor = (index) => {
+    const updatedColors = [...productData.colors];
+    const colorToRemove = updatedColors[index];
+    
+    if (colorToRemove.color_id) {
+      setProductData(prev => ({
         ...prev,
-        models: updatedModels
-      };
-    });
+        images_to_delete: [...prev.images_to_delete, colorToRemove.color_id]
+      }));
+    }
+    
+    updatedColors.splice(index, 1);
+    setProductData(prev => ({
+      ...prev,
+      colors: updatedColors
+    }));
   };
 
-  // Remove model color
-  const removeModelColor = (modelIndex, colorIndex) => {
-    setFormData(prev => {
-      const updatedModels = [...prev.models];
-      updatedModels[modelIndex].colors.splice(colorIndex, 1);
-      return {
-        ...prev,
-        models: updatedModels
-      };
-    });
+  const handleModelChange = (index, e) => {
+    const { name, value } = e.target;
+    const updatedModels = [...productData.models];
+    updatedModels[index] = {
+      ...updatedModels[index],
+      [name]: value
+    };
+    setProductData(prev => ({
+      ...prev,
+      models: updatedModels
+    }));
   };
 
-  // Delete a product
-  const deleteProduct = async (productId) => {
-    if (window.confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
-      setIsLoading(true);
-      try {
-        await axios.delete(
-          `${import.meta.env.VITE_SERVER_API}/${productId}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-          }
-        );
+  const addNewModel = () => {
+    setProductData(prev => ({
+      ...prev,
+      models: [
+        ...prev.models,
+        { name: '', description: '', model_id: null }
+      ]
+    }));
+  };
 
-        const res = await axios.get(`${import.meta.env.VITE_SERVER_API}/products`);
-        setProducts(res.data);
-        setError(null);
-      } catch (err) {
-        console.error('Delete error details:', {
-          message: err.message,
-          response: err.response?.data,
-          status: err.response?.status
+  const removeModel = (index) => {
+    const updatedModels = [...productData.models];
+    const modelToRemove = updatedModels[index];
+    
+    if (modelToRemove.model_id) {
+      setProductData(prev => ({
+        ...prev,
+        images_to_delete: [...prev.images_to_delete, modelToRemove.model_id]
+      }));
+    }
+    
+    updatedModels.splice(index, 1);
+    setProductData(prev => ({
+      ...prev,
+      models: updatedModels
+    }));
+  };
+
+  const handleMainImageUpload = (e) => {
+    setNewImages([...e.target.files]);
+  };
+
+  const handleColorImageUpload = (colorId, e) => {
+    setColorImages(prev => ({
+      ...prev,
+      [colorId]: [...(prev[colorId] || []), ...e.target.files]
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('productData', JSON.stringify(productData));
+
+      newImages.forEach(file => {
+        formData.append('images', file);
+      });
+
+      Object.entries(colorImages).forEach(([colorId, files]) => {
+        files.forEach(file => {
+          formData.append(`color_image_${colorId}`, file);
         });
+      });
 
-        setError(
-          err.response?.data?.error ||
-          err.response?.data?.message ||
-          err.message ||
-          'Failed to delete product'
-        );
-      } finally {
-        setIsLoading(false);
+      const url = isEditing 
+        ? `${import.meta.env.VITE_SERVER_API}/${selectedProduct.product_id}/update-all`
+        : `${import.meta.env.VITE_SERVER_API}/products/create`;
+
+      const response = await axios.post(
+        url,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+
+      toast.success(isEditing ? 'Product updated successfully!' : 'Product created successfully!');
+      
+      const productsRes = await axios.get(`${import.meta.env.VITE_SERVER_API}/products`);
+      setProducts(productsRes.data);
+      setFilteredProducts(productsRes.data);
+      
+      if (!isEditing) {
+        resetForm();
+      }
+    } catch (error) {
+      console.error('Error saving product:', error);
+      toast.error(`Failed to ${isEditing ? 'update' : 'create'} product: ${error.response?.data?.error || error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setProductData({
+      basic: {
+        name: '',
+        description: '',
+        category_id: '',
+        subcategory_id: '',
+        product_type: 'single'
+      },
+      specifications: [],
+      colors: [],
+      models: [],
+      images_to_delete: []
+    });
+    setNewImages([]);
+    setColorImages({});
+    setSelectedProduct(null);
+    setIsEditing(false);
+  };
+
+  const handleEditProduct = (product) => {
+    setSelectedProduct(product);
+    setIsEditing(true);
+    loadProductData(product, categories);
+    document.getElementById('product-form-section').scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleCreateNew = () => {
+    resetForm();
+    document.getElementById('product-form-section').scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const deleteProduct = async (productId) => {
+    if (window.confirm('Are you sure you want to delete this product?')) {
+      try {
+        await axios.delete(`${import.meta.env.VITE_SERVER_API}/products/${productId}`);
+        toast.success('Product deleted successfully');
+        setProducts(products.filter(p => p.product_id !== productId));
+        setFilteredProducts(filteredProducts.filter(p => p.product_id !== productId));
+        
+        if (selectedProduct && selectedProduct.product_id === productId) {
+          resetForm();
+        }
+      } catch (error) {
+        toast.error('Failed to delete product');
+        console.error(error);
       }
     }
   };
 
-  // Get subcategories for selected category
-  const getSubcategories = () => {
-    if (!formData.category_id) return [];
-    const category = categories.find(c => c.category_id == formData.category_id);
-    return category ? category.subcategories : [];
-  };
+  if (isLoading) {
+    return (
+      <AdminLayout>
+        <div className="flex justify-center items-center h-screen">
+          <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
-  // Render product list
-  const renderProductList = () => (
-    <div className="product-list-container">
-      <div className="product-list-header">
-        <h2>Product List</h2>
-        <button
-          className="btn-add-product"
-          onClick={() => navigate('/addproducts')}
-        >
-          + Add New Product
-        </button>
-      </div>
+  return (
+    <AdminLayout>
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-12">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold">Product Management</h1>
+            <button
+              onClick={handleCreateNew}
+              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+            >
+              Add New Product
+            </button>
+          </div>
 
-      <div className="product-filters">
-        <div className="filter-group">
-          <label htmlFor="search">Search:</label>
-          <input
-            type="text"
-            id="search"
-            placeholder="Search products..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+          <div className="mb-6">
+            <input
+              type="text"
+              placeholder="Search products..."
+              className="w-full px-4 py-2 border border-gray-300 rounded-md"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          <div className="bg-white shadow rounded-lg overflow-hidden">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredProducts.map((product) => (
+                  <tr key={product.product_id}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {product.images?.length > 0 ? (
+                        <img
+                          src={product.images[0].image_url}
+                          alt={product.name}
+                          className="h-10 w-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="h-10 w-10 rounded-full bg-gray-200"></div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                      <div className="text-sm text-gray-500 line-clamp-1">{product.description}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{product.main_category?.name}</div>
+                      <div className="text-sm text-gray-500">{product.sub_category?.name}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {product.product_type || 'single'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button
+                        onClick={() => handleEditProduct(product)}
+                        className="text-blue-600 hover:text-blue-900 mr-4"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => deleteProduct(product.product_id)}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        <div className="filter-group">
-          <label htmlFor="sort">Sort By:</label>
-          <select
-            id="sort"
-            value={sortOption}
-            onChange={(e) => setSortOption(e.target.value)}
-          >
-            <option value="name_asc">Name (A-Z)</option>
-            <option value="name_desc">Name (Z-A)</option>
-            <option value="price_asc">Price (Low to High)</option>
-            <option value="price_desc">Price (High to Low)</option>
-            <option value="newest">Newest First</option>
-            <option value="oldest">Oldest First</option>
-          </select>
-        </div>
-
-        <div className="filter-group">
-          <label htmlFor="category">Category:</label>
-          <select
-            id="category"
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-          >
-            <option value="all">All Categories</option>
-            {categories.map(category => (
-              <option key={category.category_id} value={category.category_id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {isLoading ? (
-        <div className="loading">Loading products...</div>
-      ) : error ? (
-        <div className="error-message">{error}</div>
-      ) : (
-        <div className="product-grid">
-          {filteredProducts.length > 0 ? (
-            filteredProducts.map(product => (
-              <div key={product.product_id} className="product-card">
-                <div className="product-images">
-                  {product.images.slice(0, 1).map(img => (
-                    <img
-                      key={img.image_id}
-                      src={`${import.meta.env.VITE_SERVER_API}/static/${img.image_url}`}
-                      alt={product.name}
+        <div id="product-form-section" className="bg-white shadow rounded-lg p-6 mb-8">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold">
+              {isEditing ? `Update Product: ${selectedProduct?.name}` : 'Create New Product'}
+            </h1>
+            {isEditing && (
+              <button
+                onClick={resetForm}
+                className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+              >
+                Cancel Edit
+              </button>
+            )}
+          </div>
+          
+          <form onSubmit={handleSubmit} className="space-y-8">
+            <div className="bg-white shadow rounded-lg p-6">
+              <h2 className="text-xl font-semibold mb-4">Basic Information</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={productData.basic.name}
+                    onChange={handleBasicChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Product Type</label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={productData.basic.product_type}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+                      readOnly
                     />
-                  ))}
+                  ) : (
+                    <select
+                      name="product_type"
+                      value={productData.basic.product_type}
+                      onChange={handleBasicChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    >
+                      <option value="single">Single Product</option>
+                      <option value="variable">Variable Product</option>
+                    </select>
+                  )}
                 </div>
-                <div className="product-details">
-                  <h3>{product.name}</h3>
-                  <p className="product-description">{product.description.substring(0, 50)}...</p>
-                  <div className="product-meta">
-                    <span className="product-type">{product.product_type}</span>
-                    <span className="product-category">{product.category || 'No category'}</span>
-                  </div>
-                </div>
-                <div className="product-actions">
-                  <button
-                    className="btn-edit"
-                    onClick={() => startEditProduct(product)}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                  <select
+                    name="category_id"
+                    value={productData.basic.category_id}
+                    onChange={handleBasicChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    required
                   >
-                    Edit
-                  </button>
-                  <button
-                    className="btn-delete"
-                    onClick={() => deleteProduct(product.product_id)}
+                    <option value="">Select Category</option>
+                    {categories.map(category => (
+                      <option key={category.category_id} value={category.category_id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Subcategory</label>
+                  <select
+                    name="subcategory_id"
+                    value={productData.basic.subcategory_id}
+                    onChange={handleBasicChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    disabled={!productData.basic.category_id}
                   >
-                    Delete
-                  </button>
+                    <option value="">Select Subcategory</option>
+                    {subcategories.map(subcategory => (
+                      <option key={subcategory.subcategory_id} value={subcategory.subcategory_id}>
+                        {subcategory.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              </div>
-            ))
-          ) : (
-            <div className="no-products">No products found matching your criteria</div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-
-  // Render product form
-  const renderProductForm = () => (
-    <div className="product-form-container">
-      <h2>{editingProduct ? 'Edit Product' : 'Add New Product'}</h2>
-      <form onSubmit={handleSubmit} className="product-form">
-        <div className="form-group">
-          <label>Product Name:</label>
-          <input
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleInputChange}
-            placeholder="Enter product name"
-            required
-          />
-        </div>
-
-        <div className="form-group">
-          <label>Description:</label>
-          <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleInputChange}
-            placeholder="Enter detailed product description"
-            required
-          />
-        </div>
-
-        {/* Display Category (based on formData.category_id) */}
-        <div className="form-group">
-          <label>Category:</label>
-          <p>
-            {
-              (() => {
-                console.log("Editing Product Category ID:", editingProduct?.category_id);
-                console.log("All Categories IDs:", categories.map(c => c.category_id));
-
-                const matchedCategory = categories.find(c => c.category_id == editingProduct?.category_id);
-                return matchedCategory?.name || 'No category';
-              })()
-            }
-          </p>
-          <input type="hidden" name="category_id" value={editingProduct?.category_id || ''} />
-        </div>
-
-
-
-
-
-        {/* Display Subcategory (based on formData.subcategory_id) */}
-        <div className="form-group">
-          <label>Subcategory:</label>
-          <p>
-            {
-              categories
-                .flatMap(c => c.subcategories)
-                .find(s => s.subcategory_id == formData.subcategory_id)?.name
-              || 'No subcategory'
-            }
-          </p>
-          <input type="hidden" name="subcategory_id" value={formData.subcategory_id || ''} />
-        </div>
-
-
-
-
-
-
-        <div className="form-group">
-          <label>Product Type:</label>
-          <select
-            name="product_type"
-            value={formData.product_type}
-            onChange={handleInputChange}
-            disabled={editingProduct !== null}
-          >
-            <option value="single">Single Product</option>
-            <option value="variable">Variable Product (with models)</option>
-          </select>
-          {editingProduct && (
-            <p className="form-note">Product type cannot be changed after creation</p>
-          )}
-        </div>
-
-        <div className="form-group">
-          <label>Product Images:</label>
-          <input
-            type="file"
-            multiple
-            onChange={handleProductImageChange}
-            accept="image/*"
-            className="file-input"
-          />
-          <div className="image-preview-container">
-            <h4>Existing Images</h4>
-            <div className="image-preview">
-              {formData.images.map((img, index) => (
-                <div key={index} className="image-thumbnail">
-                  <img
-                    src={`${import.meta.env.VITE_SERVER_API}/static/${img.image_url}`}
-                    alt={`Product ${index}`}
-                  />
-                  <button
-                    type="button"
-                    className="btn-remove-image"
-                    onClick={() => removeProductImage(img.image_id)}
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            <h4>New Images to Upload</h4>
-            <div className="image-preview">
-              {newImages.map((file, index) => (
-                <div key={`new-${index}`} className="image-thumbnail">
-                  <img
-                    src={URL.createObjectURL(file)}
-                    alt={`New image ${index}`}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {formData.product_type === 'single' && formData.models.length > 0 && (
-          <div className="form-group">
-            <h3>Specifications</h3>
-            {formData.models[0].specifications?.map((spec, specIndex) => (
-              <div key={specIndex} className="specification-item">
-                <input
-                  type="text"
-                  placeholder="Specification name (e.g., Material)"
-                  value={spec.key}
-                  onChange={(e) => updateSpecification(0, specIndex, 'key', e.target.value)}
-                />
-                <input
-                  type="text"
-                  placeholder="Specification value (e.g., Cotton)"
-                  value={spec.value}
-                  onChange={(e) => updateSpecification(0, specIndex, 'value', e.target.value)}
-                />
-                <button
-                  type="button"
-                  className="btn-remove"
-                  onClick={() => removeSpecification(0, specIndex)}
-                >
-                  Remove
-                </button>
-              </div>
-            ))}
-            <button
-              type="button"
-              className="btn-add"
-              onClick={() => addSpecification(0)}
-            >
-              + Add Specification
-            </button>
-          </div>
-        )}
-
-        {formData.product_type === 'single' && (
-          <div className="form-group">
-            <h3>Colors/Variants</h3>
-            {formData.colors.map((color, colorIndex) => (
-              <div key={colorIndex} className="color-variant">
-                <div className="color-details">
-                  <input
-                    type="text"
-                    placeholder="Color name (e.g., Red)"
-                    value={color.name}
-                    onChange={(e) => updateColor(colorIndex, 'name', e.target.value)}
-                  />
-                  <input
-                    type="number"
-                    placeholder="Price"
-                    value={color.price}
-                    onChange={(e) => updateColor(colorIndex, 'price', e.target.value)}
-                    min="0"
-                    step="0.01"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Original Price (optional)"
-                    value={color.original_price || ''}
-                    onChange={(e) => updateColor(colorIndex, 'original_price', e.target.value)}
-                    min="0"
-                    step="0.01"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Stock quantity"
-                    value={color.stock_quantity}
-                    onChange={(e) => updateColor(colorIndex, 'stock_quantity', e.target.value)}
-                    min="0"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Low stock threshold"
-                    value={color.threshold}
-                    onChange={(e) => updateColor(colorIndex, 'threshold', e.target.value)}
-                    min="0"
-                  />
-                </div>
-
-                <div className="color-images">
-                  <label>Color Images:</label>
-                  <input
-                    type="file"
-                    multiple
-                    onChange={(e) => handleColorImageChange(colorIndex, e)}
-                    accept="image/*"
-                    className="file-input"
-                  />
-                  <div className="image-preview-container">
-                    <h4>Existing Images</h4>
-                    <div className="image-preview">
-                      {color.images?.map((img, imgIndex) => (
-                        <div key={imgIndex} className="image-thumbnail">
-                          <img
-                            src={`${import.meta.env.VITE_SERVER_API}/static/${img.image_url}`}
-                            alt={`Color ${imgIndex}`}
-                          />
-                          <button
-                            type="button"
-                            className="btn-remove-image"
-                            onClick={() => removeColorImage(colorIndex, img.image_id)}
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-
-                    <h4>New Images to Upload</h4>
-                    <div className="image-preview">
-                      {color.newImages?.map((file, imgIndex) => (
-                        <div key={`new-${imgIndex}`} className="image-thumbnail">
-                          <img
-                            src={URL.createObjectURL(file)}
-                            alt={`New color image ${imgIndex}`}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  className="btn-remove"
-                  onClick={() => removeColor(colorIndex)}
-                >
-                  Remove Color Variant
-                </button>
-              </div>
-            ))}
-            <button
-              type="button"
-              className="btn-add"
-              onClick={addColor}
-            >
-              + Add Color Variant
-            </button>
-          </div>
-        )}
-
-        {formData.product_type === 'variable' && (
-          <div className="form-group">
-            <h3>Models</h3>
-            {formData.models.map((model, modelIndex) => (
-              <div key={modelIndex} className="product-model">
-                <h4>Model {modelIndex + 1}</h4>
-                <div className="model-details">
-                  <input
-                    type="text"
-                    placeholder="Model name (e.g., Pro Version)"
-                    value={model.name}
-                    onChange={(e) => updateModel(modelIndex, 'name', e.target.value)}
-                  />
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                   <textarea
-                    placeholder="Model description"
-                    value={model.description}
-                    onChange={(e) => updateModel(modelIndex, 'description', e.target.value)}
+                    name="description"
+                    value={productData.basic.description}
+                    onChange={handleBasicChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    rows="4"
                   />
                 </div>
+              </div>
+            </div>
 
-                <div className="model-specifications">
-                  <h5>Specifications</h5>
-                  {model.specifications?.map((spec, specIndex) => (
-                    <div key={specIndex} className="specification-item">
+            <div className="bg-white shadow rounded-lg p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">Specifications</h2>
+                <button
+                  type="button"
+                  onClick={addNewSpec}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                >
+                  Add Specification
+                </button>
+              </div>
+              <div className="space-y-4">
+                {productData.specifications.map((spec, index) => (
+                  <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Key</label>
                       <input
                         type="text"
-                        placeholder="Spec name (e.g., Weight)"
+                        name="key"
                         value={spec.key}
-                        onChange={(e) => updateSpecification(modelIndex, specIndex, 'key', e.target.value)}
+                        onChange={(e) => handleSpecChange(index, e)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
                       />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Value</label>
                       <input
                         type="text"
-                        placeholder="Spec value (e.g., 1.2kg)"
+                        name="value"
                         value={spec.value}
-                        onChange={(e) => updateSpecification(modelIndex, specIndex, 'value', e.target.value)}
+                        onChange={(e) => handleSpecChange(index, e)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
                       />
+                    </div>
+                    <div>
                       <button
                         type="button"
-                        className="btn-remove"
-                        onClick={() => removeSpecification(modelIndex, specIndex)}
+                        onClick={() => removeSpec(index)}
+                        className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
                       >
                         Remove
                       </button>
                     </div>
-                  ))}
-                  <button
-                    type="button"
-                    className="btn-add"
-                    onClick={() => addSpecification(modelIndex)}
-                  >
-                    + Add Specification
-                  </button>
-                </div>
-
-                <div className="model-colors">
-                  <h5>Colors/Variants</h5>
-                  {model.colors?.map((color, colorIndex) => (
-                    <div key={colorIndex} className="color-variant">
-                      <div className="color-details">
-                        <input
-                          type="text"
-                          placeholder="Color name"
-                          value={color.name}
-                          onChange={(e) => updateModelColor(modelIndex, colorIndex, 'name', e.target.value)}
-                        />
-                        <input
-                          type="number"
-                          placeholder="Price"
-                          value={color.price}
-                          onChange={(e) => updateModelColor(modelIndex, colorIndex, 'price', e.target.value)}
-                          min="0"
-                          step="0.01"
-                        />
-                        <input
-                          type="number"
-                          placeholder="Original Price"
-                          value={color.original_price || ''}
-                          onChange={(e) => updateModelColor(modelIndex, colorIndex, 'original_price', e.target.value)}
-                          min="0"
-                          step="0.01"
-                        />
-                        <input
-                          type="number"
-                          placeholder="Stock quantity"
-                          value={color.stock_quantity}
-                          onChange={(e) => updateModelColor(modelIndex, colorIndex, 'stock_quantity', e.target.value)}
-                          min="0"
-                        />
-                        <input
-                          type="number"
-                          placeholder="Low stock threshold"
-                          value={color.threshold}
-                          onChange={(e) => updateModelColor(modelIndex, colorIndex, 'threshold', e.target.value)}
-                          min="0"
-                        />
-                      </div>
-
-                      <div className="color-images">
-                        <label>Color Images:</label>
-                        <input
-                          type="file"
-                          multiple
-                          onChange={(e) => handleModelColorImageChange(modelIndex, colorIndex, e)}
-                          accept="image/*"
-                          className="file-input"
-                        />
-                        <div className="image-preview-container">
-                          <h4>Existing Images</h4>
-                          <div className="image-preview">
-                            {color.images?.map((img, imgIndex) => (
-                              <div key={imgIndex} className="image-thumbnail">
-                                <img
-                                  src={`${import.meta.env.VITE_SERVER_API}/static/${img.image_url}`}
-                                  alt={`Color ${imgIndex}`}
-                                />
-                                <button
-                                  type="button"
-                                  className="btn-remove-image"
-                                  onClick={() => removeModelColorImage(modelIndex, colorIndex, img.image_id)}
-                                >
-                                  ×
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-
-                          <h4>New Images to Upload</h4>
-                          <div className="image-preview">
-                            {color.newImages?.map((file, imgIndex) => (
-                              <div key={`new-${imgIndex}`} className="image-thumbnail">
-                                <img
-                                  src={URL.createObjectURL(file)}
-                                  alt={`New color image ${imgIndex}`}
-                                />
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        className="btn-remove"
-                        onClick={() => removeModelColor(modelIndex, colorIndex)}
-                      >
-                        Remove Color Variant
-                      </button>
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    className="btn-add"
-                    onClick={() => addModelColor(modelIndex)}
-                  >
-                    + Add Color Variant
-                  </button>
-                </div>
-
-                <button
-                  type="button"
-                  className="btn-remove"
-                  onClick={() => removeModel(modelIndex)}
-                >
-                  Remove Model
-                </button>
-              </div>
-            ))}
-            <button
-              type="button"
-              className="btn-add"
-              onClick={addModel}
-            >
-              + Add Model
-            </button>
-          </div>
-        )}
-
-        <div className="form-actions">
-          <button
-            type="submit"
-            className="btn-save"
-            disabled={isLoading}
-          >
-            {isLoading ? 'Saving...' : 'Save Product'}
-          </button>
-          <button
-            type="button"
-            className="btn-cancel"
-            onClick={cancelEdit}
-          >
-            Cancel
-          </button>
-        </div>
-      </form>
-    </div>
-  );
-
-  if (isLoading) return <Loader />;
-
-  return (
-    <AdminLayout>
-      <div className="product-management">
-        <div className="tabs">
-          <button
-            className={activeTab === 'products' ? 'active' : ''}
-            onClick={() => setActiveTab('products')}
-          >
-            Products
-          </button>
-        </div>
-
-        <div className="content-area">
-          {activeTab === 'products' ? (
-            editingProduct ? renderProductForm() : renderProductList()
-          ) : (
-            <div className="category-management">
-              <h2>Categories</h2>
-              <div className="category-list">
-                {categories.map(category => (
-                  <div key={category.category_id} className="category-card">
-                    <img
-                      src={`${import.meta.env.VITE_SERVER_API}/static/${category.image_url}`}
-                      alt={category.name}
-                    />
-                    <h3>{category.name}</h3>
-                    <ul>
-                      {category.subcategories.map(subcategory => (
-                        <li key={subcategory.subcategory_id}>{subcategory.name}</li>
-                      ))}
-                    </ul>
                   </div>
                 ))}
               </div>
             </div>
-          )}
 
-          {error && <div className="error-message">{error}</div>}
+            {productData.basic.product_type === 'single' && (
+              <div className="bg-white shadow rounded-lg p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold">Color Variants</h2>
+                  <button
+                    type="button"
+                    onClick={addNewColor}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                  >
+                    Add Color Variant
+                  </button>
+                </div>
+                <div className="space-y-6">
+                  {productData.colors.map((color, index) => (
+                    <div key={index} className="border border-gray-200 rounded-lg p-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Color Name</label>
+                          <input
+                            type="text"
+                            name="name"
+                            value={color.name}
+                            onChange={(e) => handleColorChange(index, e)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
+                          <input
+                            type="number"
+                            name="price"
+                            value={color.price}
+                            onChange={(e) => handleColorChange(index, e)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                            step="0.01"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Original Price</label>
+                          <input
+                            type="number"
+                            name="original_price"
+                            value={color.original_price}
+                            onChange={(e) => handleColorChange(index, e)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                            step="0.01"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Stock Quantity</label>
+                          <input
+                            type="number"
+                            name="stock_quantity"
+                            value={color.stock_quantity}
+                            onChange={(e) => handleColorChange(index, e)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Threshold</label>
+                          <input
+                            type="number"
+                            name="threshold"
+                            value={color.threshold}
+                            onChange={(e) => handleColorChange(index, e)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Color Images</label>
+                        <input
+                          type="file"
+                          multiple
+                          onChange={(e) => handleColorImageUpload(color.color_id || color.temp_id, e)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        />
+                      </div>
+                      
+                      <button
+                        type="button"
+                        onClick={() => removeColor(index)}
+                        className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                      >
+                        Remove Color
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {productData.basic.product_type === 'variable' && (
+              <div className="bg-white shadow rounded-lg p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold">Models</h2>
+                  <button
+                    type="button"
+                    onClick={addNewModel}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                  >
+                    Add Model
+                  </button>
+                </div>
+                <div className="space-y-4">
+                  {productData.models.map((model, index) => (
+                    <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Model Name</label>
+                        <input
+                          type="text"
+                          name="name"
+                          value={model.name}
+                          onChange={(e) => handleModelChange(index, e)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        />
+                      </div>
+                      <div className="md:col-span-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <input
+                          type="text"
+                          name="description"
+                          value={model.description}
+                          onChange={(e) => handleModelChange(index, e)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        />
+                      </div>
+                      <div>
+                        <button
+                          type="button"
+                          onClick={() => removeModel(index)}
+                          className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="bg-white shadow rounded-lg p-6">
+              <h2 className="text-xl font-semibold mb-4">Main Product Images</h2>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Upload New Images</label>
+                <input
+                  type="file"
+                  multiple
+                  onChange={handleMainImageUpload}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              {isEditing && selectedProduct?.images?.length > 0 && (
+                <div className="mt-4">
+                  <h3 className="text-lg font-medium mb-2">Current Images</h3>
+                  <div className="flex flex-wrap gap-4">
+                    {selectedProduct.images.map((image, index) => (
+                      <div key={index} className="relative">
+                        <img
+                          src={image.image_url}
+                          alt={`Product ${index}`}
+                          className="h-24 w-24 object-cover rounded"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end space-x-4">
+              <button
+                type="button"
+                onClick={resetForm}
+                className="px-6 py-3 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+              >
+                Reset
+              </button>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="px-6 py-3 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:bg-gray-400"
+              >
+                {isLoading ? 'Saving...' : isEditing ? 'Update Product' : 'Create Product'}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </AdminLayout>

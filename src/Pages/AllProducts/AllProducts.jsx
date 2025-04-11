@@ -305,7 +305,7 @@ const AllProducts = () => {
                     })}
                   />
                   <div className="price-display">
-                    $0 - ${filters.priceRange[1]}
+                  ₹0 - ₹{filters.priceRange[1]}
                   </div>
                 </div>
               )}
@@ -505,9 +505,9 @@ const AllProducts = () => {
                         <h3 className="product-name">{product.name}</h3>
 
                         <div className="product-pricing">
-                          <span className="current-price">${price.toFixed(2)}</span>
+                          <span className="current-price">₹{price.toFixed(2)}</span>
                           {deleted_price && (
-                            <span className="original-price">${deleted_price.toFixed(2)}</span>
+                            <span className="original-price">₹{deleted_price.toFixed(2)}</span>
                           )}
                         </div>
                         <button
@@ -583,7 +583,7 @@ const AllProducts = () => {
                     })}
                   />
                   <div className="price-display">
-                    $0 - ${filters.priceRange[1]}
+                  ₹0 - ₹{filters.priceRange[1]}
                   </div>
                 </div>
               )}

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { FiArrowLeft } from 'react-icons/fi';
+import { FiArrowLeft, FiSearch, FiFilter, FiChevronDown } from 'react-icons/fi';
 import './MainProducts.scss';
 
 const MainProducts = () => {
@@ -11,6 +11,10 @@ const MainProducts = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [sortOption, setSortOption] = useState('default');
+  const [colorFilter, setColorFilter] = useState('all');
+  const [showFilters, setShowFilters] = useState(false);
+  const [availableColors, setAvailableColors] = useState([]);
 
   useEffect(() => {
     if (!categoryId) {
@@ -32,6 +36,18 @@ const MainProducts = () => {
 
         const data = Array.isArray(response.data) ? response.data : [];
         setProducts(data);
+        
+        // Extract available colors
+        const colors = new Set();
+        data.forEach(product => {
+          if (product.colors && product.colors.length > 0) {
+            product.colors.forEach(color => {
+              if (color.name) colors.add(color.name);
+            });
+          }
+        });
+        setAvailableColors(['all', ...Array.from(colors)]);
+        
         setError(null);
       } catch (error) {
         console.error('Error fetching products:', error);
@@ -48,22 +64,18 @@ const MainProducts = () => {
   const getImageUrl = (imageData) => {
     if (!imageData) return null;
     
-    // Handle case where imageData is a string (direct path)
     if (typeof imageData === 'string') {
       return `${import.meta.env.VITE_SERVER_API}/static/${imageData}`;
     }
     
-    // Handle case where imageData is an object with image_url property
     if (typeof imageData === 'object' && imageData.image_url) {
       return `${import.meta.env.VITE_SERVER_API}/static/${imageData.image_url}`;
     }
     
-    // Handle case where imageData is an object with url property
     if (typeof imageData === 'object' && imageData.url) {
       return `${import.meta.env.VITE_SERVER_API}/static/${imageData.url}`;
     }
     
-    // Fallback : try to find any string property in the object
     if (typeof imageData === 'object') {
       const possibleUrl = Object.values(imageData).find(val => typeof val === 'string');
       return possibleUrl ? `${import.meta.env.VITE_SERVER_API}/static/${possibleUrl}` : null;
@@ -72,13 +84,36 @@ const MainProducts = () => {
     return null;
   };
 
+  const handleProductClick = (product, e) => {
+    console.log('Product clicked:', product.product_id);
+    if (e) e.stopPropagation();
+    navigate(`/product/${product.product_id}`, { state: { product } });
+  };
+
   const filteredProducts = Array.isArray(products)
-  ? products.filter((product) =>
-      product.name?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  : [];
-
-
+    ? products
+        .filter((product) =>
+          product.name?.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+        .filter((product) => {
+          if (colorFilter === 'all') return true;
+          return product.colors?.some(color => color.name === colorFilter);
+        })
+        .sort((a, b) => {
+          switch (sortOption) {
+            case 'price-asc':
+              return (a.colors?.[0]?.price || 0) - (b.colors?.[0]?.price || 0);
+            case 'price-desc':
+              return (b.colors?.[0]?.price || 0) - (a.colors?.[0]?.price || 0);
+            case 'name-asc':
+              return (a.name || '').localeCompare(b.name || '');
+            case 'name-desc':
+              return (b.name || '').localeCompare(a.name || '');
+            default:
+              return 0;
+          }
+        })
+    : [];
 
   if (loading) {
     return (
@@ -112,14 +147,57 @@ const MainProducts = () => {
         <button className="back-button" onClick={() => navigate(-1)}>
           <FiArrowLeft /> Back
         </button>
-        <input
-          type="text"
-          placeholder="Search products..."
-          className="search-input"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+        <div className="search-container">
+          <FiSearch className="search-icon" />
+          <input
+            type="text"
+            placeholder="Search products..."
+            className="search-input"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <button 
+          className="filter-toggle"
+          onClick={() => setShowFilters(!showFilters)}
+        >
+          <FiFilter /> Filters <FiChevronDown className={`chevron ${showFilters ? 'open' : ''}`} />
+        </button>
       </div>
+
+      {showFilters && (
+        <div className="filters-panel">
+          <div className="filter-group">
+            <label>Sort by:</label>
+            <select 
+              value={sortOption}
+              onChange={(e) => setSortOption(e.target.value)}
+              className="filter-select"
+            >
+              <option value="default">Default</option>
+              <option value="price-asc">Price: Low to High</option>
+              <option value="price-desc">Price: High to Low</option>
+              <option value="name-asc">Name: A to Z</option>
+              <option value="name-desc">Name: Z to A</option>
+            </select>
+          </div>
+          
+          <div className="filter-group">
+            <label>Color:</label>
+            <select 
+              value={colorFilter}
+              onChange={(e) => setColorFilter(e.target.value)}
+              className="filter-select"
+            >
+              {availableColors.map(color => (
+                <option key={color} value={color}>
+                  {color.charAt(0).toUpperCase() + color.slice(1)}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
 
       <h2 className="section-title">Products</h2>
       <div className="product-grid">
@@ -128,32 +206,38 @@ const MainProducts = () => {
             const firstImage = product.images?.[0];
             const imageUrl = getImageUrl(firstImage);
 
-            console.log('Product:', product.name, '| Image URL:', imageUrl);
-
             return (
-              <div key={product.product_id} className="product-card">
+              <div 
+                key={product.product_id} 
+                className="product-card"
+                onClick={(e) => handleProductClick(product, e)}
+              >
                 {imageUrl ? (
                   <img
                     src={imageUrl}
                     alt={product.name}
                     className="product-image"
-                    // onError={(e) => {
-                    //   e.target.onerror = null;
-                    //   e.target.src = '/placeholder-image.jpg';
-                    //   e.target.classList.add('image-error');
-                    // }}
                   />
                 ) : (
                   <div className="no-image">No Image Available</div>
                 )}
                 <div className="product-details">
                   <h3>{product.name || 'Unnamed Product'}</h3>
-                  <p>{product.description || 'No description available'}</p>
+                  <p className="description">{product.description || 'No description available'}</p>
                   <p className="price">
                     {product.colors?.length > 0
                       ? `$${product.colors[0].price}`
                       : 'Price unavailable'}
                   </p>
+                  <button 
+                    className="view-button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleProductClick(product);
+                    }}
+                  >
+                    View Product
+                  </button>
                 </div>
               </div>
             );
