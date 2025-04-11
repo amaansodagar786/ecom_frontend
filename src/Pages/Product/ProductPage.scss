@@ -456,7 +456,7 @@ $font-bold: 700;
             }
 
             @media (max-width: $breakpoint-mobile) {
-                flex-direction: column;
+                flex-direction: row;
 
                 button {
                     width: 100%;

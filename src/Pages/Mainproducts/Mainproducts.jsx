@@ -223,7 +223,7 @@ const MainProducts = () => {
                 )}
                 <div className="product-details">
                   <h3>{product.name || 'Unnamed Product'}</h3>
-                  <p className="description">{product.description || 'No description available'}</p>
+                  {/* <p className="description">{product.description || 'No description available'}</p> */}
                   <p className="price">
                     {product.colors?.length > 0
                       ? `$${product.colors[0].price}`

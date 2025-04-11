@@ -82,15 +82,13 @@ const NewProduct = () => {
 
     if (categoryFilter !== 'all') {
       result = result.filter(product => {
-        // Check different possible category structures
-        const categoryId =
-          product.category_id || // Direct property
-          product.category?.category_id || // Nested object
-          product.category; // Could be just the ID
-
-        console.log(`Product ${product.product_id} category:`, categoryId); // Debug log
-
-        return categoryId && categoryId.toString() === categoryFilter.toString();
+        // Get the selected category object
+        const selectedCategory = categories.find(
+          cat => cat.category_id.toString() === categoryFilter.toString()
+        );
+        
+        // Compare the category names
+        return product.category === selectedCategory?.name;
       });
     }
 
@@ -123,12 +121,12 @@ const NewProduct = () => {
           return bPrice - aPrice;
         });
         break;
-      case 'newest':
-        result.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-        break;
-      case 'oldest':
-        result.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-        break;
+      // case 'newest':
+      //   result.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      //   break;
+      // case 'oldest':
+      //   result.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      //   break;
       default:
         break;
     }
@@ -537,7 +535,7 @@ const NewProduct = () => {
       // 4. Handle colors (for single products)
       if (formData.product_type === 'single') {
         await Promise.all(formData.colors.map(async (color, colorIndex) => {
-          // Update or create color
+          // First save the color to get a color_id
           const colorEndpoint = color.color_id
             ? `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/colors/${color.color_id}`
             : `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/colors`;
@@ -564,7 +562,7 @@ const NewProduct = () => {
 
           const colorId = colorResponse.data.color_id || color.color_id;
 
-          // Handle color images if any - using the product images endpoint with color_id
+          // Now handle color images if any - using the product images endpoint with color_id
           if (color.newImages && color.newImages.length > 0) {
             await Promise.all(color.newImages.map(async file => {
               const formData = new FormData();
@@ -589,7 +587,7 @@ const NewProduct = () => {
       // 5. Handle models and their colors (for variable products)
       if (formData.product_type === 'variable') {
         await Promise.all(formData.models.map(async (model, modelIndex) => {
-          // Update or create model
+          // First save the model to get a model_id
           const modelEndpoint = model.model_id
             ? `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/models/${model.model_id}`
             : `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/models`;
@@ -611,14 +609,13 @@ const NewProduct = () => {
 
           const modelId = modelResponse.data.model_id || model.model_id;
 
-          // Handle model colors
-          // Handle model colors
+          // Then handle model colors
           if (model.colors) {
             await Promise.all(model.colors.map(async (color, colorIndex) => {
-              // Update or create color
+              // First save the color to get a color_id
               const colorEndpoint = color.color_id
-          ? `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/colors/${color.color_id}`
-          : `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/colors`;
+                ? `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/colors/${color.color_id}`
+                : `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/colors`;
 
               const method = color.color_id ? 'PUT' : 'POST';
 
@@ -628,46 +625,40 @@ const NewProduct = () => {
                 original_price: color.original_price,
                 stock_quantity: color.stock_quantity,
                 threshold: color.threshold,
-                model_id: modelId // Include model_id in the request body
-
+                model_id: modelId
               };
 
-              try {
-                const colorResponse = await axios({
-                  method,
-                  url: colorEndpoint,
-                  data: colorData,
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                  }
-                });
-
-                const colorId = colorResponse.data.color_id || color.color_id;
-
-                // Handle color images if any
-                if (color.newImages && color.newImages.length > 0) {
-                  await Promise.all(color.newImages.map(async file => {
-                    const formData = new FormData();
-                    formData.append('image', file);
-                    formData.append('color_id', colorId);
-                    formData.append('model_id', modelId);
-
-                    await axios.post(
-                      `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/images`,
-                      formData,
-                      {
-                        headers: {
-                          'Content-Type': 'multipart/form-data',
-                          'Authorization': `Bearer ${localStorage.getItem('token')}`
-                        }
-                      }
-                    );
-                  }));
+              const colorResponse = await axios({
+                method,
+                url: colorEndpoint,
+                data: colorData,
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${localStorage.getItem('token')}`
                 }
-              } catch (err) {
-                console.error(`Error saving color ${colorIndex} for model ${modelIndex}:`, err);
-                throw err;
+              });
+
+              const colorId = colorResponse.data.color_id || color.color_id;
+
+              // Now handle color images if any
+              if (color.newImages && color.newImages.length > 0) {
+                await Promise.all(color.newImages.map(async file => {
+                  const formData = new FormData();
+                  formData.append('image', file);
+                  formData.append('color_id', colorId);
+                  formData.append('model_id', modelId);
+
+                  await axios.post(
+                    `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/images`,
+                    formData,
+                    {
+                      headers: {
+                        'Content-Type': 'multipart/form-data',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                      }
+                    }
+                  );
+                }));
               }
             }));
           }
@@ -819,20 +810,72 @@ const NewProduct = () => {
   // Handle file uploads for color images
   const handleColorImageChange = async (colorIndex, e) => {
     const files = Array.from(e.target.files);
-    const colorId = formData.colors[colorIndex].color_id;
+    if (files.length === 0) return;
 
-    if (!colorId) {
-      setError("Color must be saved before adding images");
-      return;
-    }
+    setIsLoading(true);
+    setError(null);
 
     try {
-      const uploadPromises = files.map(file => {
+      const color = formData.colors[colorIndex];
+
+      // If color doesn't have an ID yet, we need to save it first
+      if (!color.color_id) {
+        // First save the color to get a color_id
+        const colorResponse = await axios.post(
+          `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/colors`,
+          {
+            name: color.name,
+            price: color.price,
+            original_price: color.original_price,
+            stock_quantity: color.stock_quantity,
+            threshold: color.threshold
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          }
+        );
+
+        const colorId = colorResponse.data.color_id;
+
+        // Update the form data with the new color_id
+        setFormData(prev => {
+          const updatedColors = [...prev.colors];
+          updatedColors[colorIndex] = {
+            ...updatedColors[colorIndex],
+            color_id: colorId
+          };
+          return {
+            ...prev,
+            colors: updatedColors
+          };
+        });
+
+        // Now upload images with the new color_id
+        await uploadColorImages(colorId, files, colorIndex);
+      } else {
+        // Color already has an ID, just upload images
+        await uploadColorImages(color.color_id, files, colorIndex);
+      }
+    } catch (err) {
+      console.error('Error handling color images:', err);
+      setError(err.response?.data?.message || 'Failed to handle color images');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Helper function to upload color images
+  const uploadColorImages = async (colorId, files, colorIndex) => {
+    const uploadedImages = await Promise.all(
+      files.map(async file => {
         const formData = new FormData();
         formData.append('image', file);
-        formData.append('color_id', colorId); // Add color_id to form data
+        formData.append('color_id', colorId);
 
-        return axios.post(
+        const response = await axios.post(
           `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/images`,
           formData,
           {
@@ -842,34 +885,28 @@ const NewProduct = () => {
             }
           }
         );
-      });
+        return response.data;
+      })
+    );
 
-      const responses = await Promise.all(uploadPromises);
-      const newImageUrls = responses.map(res => res.data.image_url);
-
-      // Update state with new images
-      setFormData(prev => {
-        const updatedColors = [...prev.colors];
-        updatedColors[colorIndex] = {
-          ...updatedColors[colorIndex],
-          images: [
-            ...updatedColors[colorIndex].images,
-            ...newImageUrls.map(url => ({
-              image_url: url,
-              image_id: Date.now() // Temporary ID for new images
-            }))
-          ]
-        };
-        return {
-          ...prev,
-          colors: updatedColors
-        };
-      });
-
-    } catch (err) {
-      console.error('Error uploading color images:', err);
-      setError(err.response?.data?.message || 'Failed to upload color images');
-    }
+    // Update state with new images
+    setFormData(prev => {
+      const updatedColors = [...prev.colors];
+      updatedColors[colorIndex] = {
+        ...updatedColors[colorIndex],
+        images: [
+          ...updatedColors[colorIndex].images,
+          ...uploadedImages.map(img => ({
+            image_url: img.image_url,
+            image_id: img.image_id
+          }))
+        ]
+      };
+      return {
+        ...prev,
+        colors: updatedColors
+      };
+    });
   };
 
   // Remove existing color image
@@ -1139,6 +1176,9 @@ const NewProduct = () => {
 
 
   // Add color to a model
+ 
+ 
+ 
   const addModelColor = (modelIndex) => {
     setFormData(prev => {
       const updatedModels = [...prev.models];
@@ -1269,8 +1309,8 @@ const NewProduct = () => {
             <option value="name_desc">Name (Z-A)</option>
             <option value="price_asc">Price (Low to High)</option>
             <option value="price_desc">Price (High to Low)</option>
-            <option value="newest">Newest First</option>
-            <option value="oldest">Oldest First</option>
+            {/* <option value="newest">Newest First</option> */}
+            {/* <option value="oldest">Oldest First</option> */}
           </select>
         </div>
 

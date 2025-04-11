@@ -45,7 +45,7 @@ const AddProducts = () => {
   const [showSubcategoryModal, setShowSubcategoryModal] = useState(false);
   const [selectedMainCategory, setSelectedMainCategory] = useState(null);
   const [categoryImage, setCategoryImage] = useState(null);
-  const setFieldValueRef = useRef(() => {});
+  const setFieldValueRef = useRef(() => { });
   const formValuesRef = useRef(initialValues);
 
   useEffect(() => {
@@ -189,86 +189,77 @@ const AddProducts = () => {
   const handleSubmit = async (values, { setSubmitting, resetForm }) => {
     try {
       const formData = new FormData();
-
+  
       // Add basic product data
       formData.append('name', values.name);
       formData.append('description', values.description);
       formData.append('category_id', values.main_category_id);
       formData.append('subcategory_id', values.sub_category_id);
       formData.append('product_type', values.product_type);
-
+  
       // Handle product images
       values.product_images.forEach((image) => {
         formData.append('product_images', image);
       });
-
+  
       // For single product, ensure model name matches product name
       if (values.product_type === 'single') {
         values.models[0].name = values.name;
-      }
-
-      // Process all models
-      values.models.forEach((model, modelIndex) => {
-        if (values.product_type === 'variable') {
-          formData.append(`model_name_${modelIndex}`, model.name);
-          formData.append(`model_description_${modelIndex}`, model.description);
-        }
-
-        // Add model specifications
-        model.specifications.forEach((spec, specIndex) => {
-          const specKey = values.product_type === 'variable' 
-            ? `model_${modelIndex}_spec_key_${specIndex}`
-            : `spec_key_${specIndex}`;
-          const specValue = values.product_type === 'variable'
-            ? `model_${modelIndex}_spec_value_${specIndex}`
-            : `spec_value_${specIndex}`;
-          
-          formData.append(specKey, spec.key);
-          formData.append(specValue, spec.value);
+        
+        // Handle specifications for single product (ProductSpecification)
+        values.models[0].specifications.forEach((spec, specIndex) => {
+          formData.append(`spec_key_${specIndex}`, spec.key);
+          formData.append(`spec_value_${specIndex}`, spec.value);
         });
-
-        // Add model colors
-        model.colors.forEach((color, colorIndex) => {
-          const colorNameKey = values.product_type === 'variable'
-            ? `model_${modelIndex}_color_name_${colorIndex}`
-            : `color_name_${colorIndex}`;
-          const colorPriceKey = values.product_type === 'variable'
-            ? `model_${modelIndex}_color_price_${colorIndex}`
-            : `color_price_${colorIndex}`;
-          const colorOriginalPriceKey = values.product_type === 'variable'
-            ? `model_${modelIndex}_color_original_price_${colorIndex}`
-            : `color_original_price_${colorIndex}`;
-          const colorStockKey = values.product_type === 'variable'
-            ? `model_${modelIndex}_color_stock_${colorIndex}`
-            : `color_stock_${colorIndex}`;
-          const colorThresholdKey = values.product_type === 'variable'
-            ? `model_${modelIndex}_threshold_${colorIndex}`
-            : `threshold_${colorIndex}`;
-          const colorImagesKey = values.product_type === 'variable'
-            ? `model_${modelIndex}_color_images_${colorIndex}`
-            : `color_images_${colorIndex}`;
-
-          formData.append(colorNameKey, color.name);
-          formData.append(colorPriceKey, color.price);
-          formData.append(colorOriginalPriceKey, color.original_price || '');
-          formData.append(colorStockKey, color.stock_quantity);
-          formData.append(colorThresholdKey, color.threshold || 10);
-
+        formData.append('specs_count', values.models[0].specifications.length);
+        
+        // Handle colors for single product
+        values.models[0].colors.forEach((color, colorIndex) => {
+          formData.append(`color_name_${colorIndex}`, color.name);
+          formData.append(`color_price_${colorIndex}`, color.price);
+          formData.append(`color_original_price_${colorIndex}`, color.original_price || '');
+          formData.append(`color_stock_${colorIndex}`, color.stock_quantity);
+          formData.append(`threshold_${colorIndex}`, color.threshold || 10);
+  
           color.images.forEach((image) => {
-            formData.append(colorImagesKey, image);
+            formData.append(`color_images_${colorIndex}`, image);
           });
         });
-
-        if (values.product_type === 'variable') {
+        
+        formData.append('colors_count', values.models[0].colors.length);
+      } 
+      // Handle variable products
+      else {
+        values.models.forEach((model, modelIndex) => {
+          formData.append(`model_name_${modelIndex}`, model.name);
+          formData.append(`model_description_${modelIndex}`, model.description);
+  
+          // Handle specifications for variable product (ModelSpecification)
+          model.specifications.forEach((spec, specIndex) => {
+            formData.append(`model_${modelIndex}_spec_key_${specIndex}`, spec.key);
+            formData.append(`model_${modelIndex}_spec_value_${specIndex}`, spec.value);
+          });
+  
+          // Handle colors for variable product
+          model.colors.forEach((color, colorIndex) => {
+            formData.append(`model_${modelIndex}_color_name_${colorIndex}`, color.name);
+            formData.append(`model_${modelIndex}_color_price_${colorIndex}`, color.price);
+            formData.append(`model_${modelIndex}_color_original_price_${colorIndex}`, color.original_price || '');
+            formData.append(`model_${modelIndex}_color_stock_${colorIndex}`, color.stock_quantity);
+            formData.append(`model_${modelIndex}_threshold_${colorIndex}`, color.threshold || 10);
+  
+            color.images.forEach((image) => {
+              formData.append(`model_${modelIndex}_color_images_${colorIndex}`, image);
+            });
+          });
+  
           formData.append(`model_colors_count_${modelIndex}`, model.colors.length);
           formData.append(`model_specs_count_${modelIndex}`, model.specifications.length);
-        }
-      });
-
-      formData.append('models_count', values.models.length);
-      formData.append('specs_count', values.models[0]?.specifications.length || 0);
-      formData.append('colors_count', values.models[0]?.colors.length || 0);
-
+        });
+        
+        formData.append('models_count', values.models.length);
+      }
+  
       const response = await axios.post(
         `${import.meta.env.VITE_SERVER_API}/product/add`,
         formData,
@@ -279,7 +270,7 @@ const AddProducts = () => {
           }
         }
       );
-
+  
       toast.success('Product added successfully!');
       resetForm();
     } catch (error) {
@@ -584,7 +575,7 @@ const AddProducts = () => {
                               {({ push: pushColor, remove: removeColor }) => (
                                 <div className="form-section">
                                   <h4>Color Options</h4>
-                                  
+
                                   {model.colors.map((color, colorIndex) => (
                                     <div key={colorIndex} className="color-card">
                                       <div className="color-header">
@@ -757,7 +748,7 @@ const AddProducts = () => {
                               {({ push: pushSpec, remove: removeSpec }) => (
                                 <div className="form-section">
                                   <h4>Specifications</h4>
-                                  
+
                                   {model.specifications.map((spec, specIndex) => (
                                     <div key={specIndex} className="spec-row">
                                       <div className="form-group">

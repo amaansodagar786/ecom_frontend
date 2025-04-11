@@ -33,8 +33,21 @@ const ProductPage = () => {
     const [activeTab, setActiveTab] = useState('description');
     const [selectionsLoading, setSelectionsLoading] = useState(true);
 
+
+    useEffect(() => {
+        if (product) {
+            console.log("Complete Product Object:", product);
+        }
+    }, [product]);
+
     // Fetch product data if not passed via state
     useEffect(() => {
+        console.log("useEffect triggered");
+        console.log("location.state?.product:", location.state?.product);
+        console.log("location.pathname:", location.pathname);
+
+
+
         if (!location.state?.product && location.pathname.includes('/product/')) {
             const productId = location.pathname.split('/product/')[1];
             const fetchProduct = async () => {
@@ -42,6 +55,10 @@ const ProductPage = () => {
                     const response = await axios.get(
                         `${import.meta.env.VITE_SERVER_API}/product/${productId}`
                     );
+
+                    // Log entire product details
+                    console.log("Fetched Product Details:", response.data);
+
                     setProduct(response.data);
                     setLoading(false);
                 } catch (err) {
@@ -114,14 +131,47 @@ const ProductPage = () => {
         }
     }, [product, selectedModel, selectedColor, selectionsLoading]);
 
+
+
+    const getImageUrl = (img) => {
+        if (!img) return null;
+
+        // Case 1: Direct path string (from MainProducts)
+        if (typeof img === 'string') {
+            // Remove leading slash if present to avoid double slashes
+            const cleanPath = img.startsWith('/') ? img.slice(1) : img;
+            return `${import.meta.env.VITE_SERVER_API}/${cleanPath}`;
+        }
+
+        // Case 2: Object with image_url (from HomeProducts)
+        if (typeof img === 'object' && img.image_url) {
+            const cleanPath = img.image_url.startsWith('/')
+                ? img.image_url.slice(1)
+                : img.image_url;
+            return `${import.meta.env.VITE_SERVER_API}/${cleanPath}`;
+        }
+
+        return null;
+    };
+
+
+
     const getFilteredImages = (product, selectedModel, selectedColor) => {
         if (!product) return [];
+
+        console.log('Getting filtered images with:', {
+            productType: product.product_type,
+            selectedModel: selectedModel?.name,
+            selectedColor: selectedColor?.name
+        });
 
         if (product.product_type === 'variable' && selectedModel) {
             return selectedColor?.images ||
                 selectedModel.images ||
                 product.images ||
                 [];
+
+
         }
 
         return selectedColor?.images ||
@@ -195,43 +245,43 @@ const ProductPage = () => {
         }
     };
 
-    
-  const handleWishlistToggle = async () => {
-    if (isWishlisting || !product) return; // Prevent rapid clicks
-    setIsWishlisting(true);
 
-    try {
-      await toggleWishlistItem(product, selectedModel, selectedColor);
-      
-      if (isAuthenticated) {
-        const token = localStorage.getItem('token');
-        const isInWishlist = wishlistItems.some(item =>
-          item.product_id === product.product_id &&
-          item.model_id === (selectedModel?.model_id || null) &&
-          item.color_id === (selectedColor?.color_id || null)
-        );
+    const handleWishlistToggle = async () => {
+        if (isWishlisting || !product) return; // Prevent rapid clicks
+        setIsWishlisting(true);
 
-        const endpoint = isInWishlist
-          ? `${import.meta.env.VITE_SERVER_API}/wishlist/deleteitem`
-          : `${import.meta.env.VITE_SERVER_API}/wishlist/additem`;
+        try {
+            await toggleWishlistItem(product, selectedModel, selectedColor);
 
-        await axios.post(
-          endpoint,
-          {
-            product_id: product.product_id,
-            model_id: selectedModel?.model_id || null,
-            color_id: selectedColor?.color_id || null,
-          },
-          { headers: { 'Authorization': `Bearer ${token}` } }
-        );
-      }
-    } catch (err) {
-      console.error('Error syncing wishlist:', err);
-      toggleWishlistItem(product, selectedModel, selectedColor); // Revert on error
-    } finally {
-      setIsWishlisting(false); // Reset state
-    }
-  };
+            if (isAuthenticated) {
+                const token = localStorage.getItem('token');
+                const isInWishlist = wishlistItems.some(item =>
+                    item.product_id === product.product_id &&
+                    item.model_id === (selectedModel?.model_id || null) &&
+                    item.color_id === (selectedColor?.color_id || null)
+                );
+
+                const endpoint = isInWishlist
+                    ? `${import.meta.env.VITE_SERVER_API}/wishlist/deleteitem`
+                    : `${import.meta.env.VITE_SERVER_API}/wishlist/additem`;
+
+                await axios.post(
+                    endpoint,
+                    {
+                        product_id: product.product_id,
+                        model_id: selectedModel?.model_id || null,
+                        color_id: selectedColor?.color_id || null,
+                    },
+                    { headers: { 'Authorization': `Bearer ${token}` } }
+                );
+            }
+        } catch (err) {
+            console.error('Error syncing wishlist:', err);
+            toggleWishlistItem(product, selectedModel, selectedColor); // Revert on error
+        } finally {
+            setIsWishlisting(false); // Reset state
+        }
+    };
 
     const currentStock = selectedColor?.stock_quantity ||
         selectedModel?.colors?.reduce((acc, color) => acc + color.stock_quantity, 0) ||
@@ -282,30 +332,44 @@ const ProductPage = () => {
             <div className="product-container">
                 <div className="product-gallery">
                     <div className="thumbnail-container">
-                        {filteredImages.map((img, index) => (
-                            <div
-                                key={`${img.image_id}-${index}`}
-                                className={`thumbnail ${selectedImage === index ? 'active' : ''}`}
-                                onClick={() => setSelectedImage(index)}
-                            >
-                                <img
-                                    src={`${import.meta.env.VITE_SERVER_API}/static${img.image_url}`}
-                                    alt={`${product.name} thumbnail ${index + 1}`}
-                                    
-                                />
-                            </div>
-                        ))}
+                        {filteredImages.map((img, index) => {
+                            const imageUrl = getImageUrl(img);
+                            return (
+                                <div
+                                    key={`thumb-${index}`}
+                                    className={`thumbnail ${selectedImage === index ? 'active' : ''}`}
+                                    onClick={() => setSelectedImage(index)}
+                                >
+                                    <img
+                                        src={imageUrl}
+                                        alt={`${product.name} thumbnail ${index + 1}`}
+                                        onError={(e) => {
+                                            e.target.src = '/fallback-image.jpg';
+                                            e.target.style.objectFit = 'contain';
+                                            console.error('Thumbnail load failed:', {
+                                                attemptedUrl: imageUrl,
+                                                imageData: img
+                                            });
+                                        }}
+                                    />
+                                </div>
+                            );
+                        })}
                     </div>
 
                     <div className="main-image">
                         {filteredImages.length > 0 && (
                             <>
                                 <img
-                                    src={`${import.meta.env.VITE_SERVER_API}/static${filteredImages[selectedImage].image_url}`}
+                                    src={getImageUrl(filteredImages[selectedImage])}
                                     alt={product.name}
                                     onError={(e) => {
                                         e.target.src = '/fallback-image.jpg';
-                                        console.error('Main image load failed:', filteredImages[selectedImage].image_url);
+                                        e.target.style.objectFit = 'contain';
+                                        console.error('Image load failed:', {
+                                            attemptedUrl: e.target.src,
+                                            imageData: filteredImages[selectedImage]
+                                        });
                                     }}
                                 />
                                 <div className="image-nav">
@@ -362,18 +426,18 @@ const ProductPage = () => {
                     </div>
 
                     <div className="availability">
-    {inStock ? (
-        selectedColor?.stock_quantity <= 10 ? (
-            <span className="stock-quantity">
-                Only {selectedColor.stock_quantity} left!
-            </span>
-        ) : (
-            <span className="status in-stock">In Stock</span>
-        )
-    ) : (
-        <span className="status out-of-stock">Out of Stock</span>
-    )}
-</div>
+                        {inStock ? (
+                            selectedColor?.stock_quantity <= 10 ? (
+                                <span className="stock-quantity">
+                                    Only {selectedColor.stock_quantity} left!
+                                </span>
+                            ) : (
+                                <span className="status in-stock">In Stock</span>
+                            )
+                        ) : (
+                            <span className="status out-of-stock">Out of Stock</span>
+                        )}
+                    </div>
 
 
 
@@ -548,12 +612,13 @@ const ProductPage = () => {
 
                     {activeTab === 'specifications' && (
                         <div className="specifications-content">
-                            {product.specifications?.length > 0 && (
+                            {/* Show product-level specs for single products */}
+                            {product.product_type === 'single' && product.specifications?.length > 0 && (
                                 <div className="product-specs">
                                     <table>
                                         <tbody>
                                             {product.specifications.map((spec, i) => (
-                                                <tr key={`spec-${i}-${spec.key}`}>
+                                                <tr key={`prod-spec-${i}-${spec.key}`}>
                                                     <td>{spec.key}</td>
                                                     <td>{spec.value}</td>
                                                 </tr>
@@ -563,9 +628,10 @@ const ProductPage = () => {
                                 </div>
                             )}
 
-                            {selectedModel?.specifications?.length > 0 && (
+                            {/* Show model specs for variable products */}
+                            {product.product_type === 'variable' && selectedModel?.specifications?.length > 0 && (
                                 <div className="model-specs">
-                                    <h3>Model Specifications</h3>
+                                    <h3>Specifications</h3>
                                     <table>
                                         <tbody>
                                             {selectedModel.specifications.map((spec, i) => (
@@ -581,14 +647,33 @@ const ProductPage = () => {
                         </div>
                     )}
 
-                    {activeTab === 'modelDetails' && selectedModel?.description && (
-                        <div className="model-details-content">
-                            <p>{selectedModel.description}</p>
+
+                    {/* {selectedModel?.specifications?.length > 0 && (
+                        <div className="model-specs">
+                            <h3>Model Specifications</h3>
+                            <table>
+                                <tbody>
+                                    {selectedModel.specifications.map((spec, i) => (
+                                        <tr key={`model-spec-${i}-${spec.key}`}>
+                                            <td>{spec.key}</td>
+                                            <td>{spec.value}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
-                    )}
+                    )} */}
                 </div>
+
+
+                {activeTab === 'modelDetails' && selectedModel?.description && (
+                    <div className="model-details-content">
+                        <p>{selectedModel.description}</p>
+                    </div>
+                )}
             </div>
         </div>
+
     );
 };
 

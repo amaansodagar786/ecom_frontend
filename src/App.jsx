@@ -95,7 +95,7 @@ function App() {
           <Route path="/admininventory" element={<AdminRoute> <Inventory /> </AdminRoute> } />
           <Route path="/admininpayment" element={<AdminRoute> <Payment /> </AdminRoute> } />
           {/* <Route path="/updateproducts" element={<AdminRoute> <ProductManagement /> </AdminRoute> } /> */}
-          <Route path="/newproducts" element={<AdminRoute> <NewProduct /> </AdminRoute> } />
+          <Route path="/updateproducts" element={<AdminRoute> <NewProduct /> </AdminRoute> } />
 
 
 
