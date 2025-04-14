@@ -112,7 +112,7 @@
   /* Premium Product Grid */
   .product-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr); // 4 columns by default
+    grid-template-columns: repeat(4, minmax(250px, 1fr)); // Ensures 4 columns
     gap: 30px;
     padding: 0 10px;
     align-items: stretch;

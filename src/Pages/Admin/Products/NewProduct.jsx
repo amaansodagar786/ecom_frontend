@@ -48,8 +48,8 @@ const NewProduct = () => {
           axios.get(`${import.meta.env.VITE_SERVER_API}/categories`)
         ]);
 
-        console.log('Fetched Products:', productsRes.data);
-        console.log('Fetched Categories:', categoriesRes.data);
+        // console.log('Fetched Products:', productsRes.data);
+        // console.log('Fetched Categories:', categoriesRes.data);
 
         setProducts(productsRes.data);
         setFilteredProducts(productsRes.data);
@@ -69,8 +69,8 @@ const NewProduct = () => {
   useEffect(() => {
     let result = [...products];
 
-    console.log('Products before filtering:', products); // Debug log
-    console.log('Current category filter:', categoryFilter); // Debug log
+    // console.log('Products before filtering:', products); 
+    // console.log('Current category filter:', categoryFilter); 
 
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
@@ -86,7 +86,7 @@ const NewProduct = () => {
         const selectedCategory = categories.find(
           cat => cat.category_id.toString() === categoryFilter.toString()
         );
-        
+
         // Compare the category names
         return product.category === selectedCategory?.name;
       });
@@ -167,11 +167,17 @@ const NewProduct = () => {
       images: product.images || [],
       colors: product.colors || [],
       models: product.models || [],
-      specifications: product.specifications || [] // Initialize specs for single products
+      specifications: product.specifications?.map(spec => ({
+        key: spec.key,
+        value: spec.value,
+        spec_id: spec.spec_id || spec.id  // Ensure spec_id is included
+      })) || []
     });
 
     setNewImages([]);
     setSpecsToDelete([]);
+    setRemovedModelIds([]);
+    setRemovedSpecIds([]);
 
   };
 
@@ -216,22 +222,40 @@ const NewProduct = () => {
     });
   };
 
+  useEffect(() => {
+    console.log('Current specifications:', {
+      specs: formData.specifications,
+      toDelete: specsToDelete
+    });
+  }, [formData.specifications, specsToDelete]);
+
+
+
+
   const removeProductSpecification = (specIndex) => {
+    console.log('Removing spec at index:', specIndex);
+    console.log('Current specs:', formData.specifications);
+    
     setFormData(prev => {
-      const updatedSpecs = [...prev.specifications];
-      const specToRemove = updatedSpecs[specIndex];
-
+      const specToRemove = prev.specifications[specIndex];
+      console.log('Spec to remove:', specToRemove);
+      
       if (specToRemove?.spec_id) {
+        console.log('Adding to delete list:', specToRemove.spec_id);
         setSpecsToDelete(prev => [...prev, specToRemove.spec_id]);
+      } else {
+        console.log('No spec_id found - was this a new spec?');
       }
-
-      updatedSpecs.splice(specIndex, 1);
+  
       return {
         ...prev,
-        specifications: updatedSpecs
+        specifications: prev.specifications.filter((_, i) => i !== specIndex)
       };
     });
   };
+
+
+
 
   const saveProductSpecifications = async () => {
     if (!editingProduct) return;
@@ -240,61 +264,60 @@ const NewProduct = () => {
     setError(null);
 
     try {
-      // First delete any specs marked for deletion
-      await Promise.all(
-        specsToDelete
-          .filter(specId => specId)
-          .map(async specId => {
-            try {
-              await axios.delete(
-                `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/specifications/${specId}`,
-                {
-                  headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                  }
-                }
-              );
-            } catch (err) {
-              console.error(`Failed to delete spec ${specId}:`, err);
-              throw err;
+      // 1. First delete any specs marked for deletion
+      if (specsToDelete.length > 0) {
+        console.log('Processing deletions for:', specsToDelete);
+        const deleteResults = await Promise.allSettled(
+          specsToDelete.map(specId => {
+            if (!specId) {
+              console.warn('Skipping invalid specId:', specId);
+              return Promise.resolve();
             }
+            return axios.delete(
+              `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/specifications/${specId}`,
+              { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }
+            );
           })
+        );
+
+        const failedDeletions = deleteResults.filter(result =>
+          result.status === 'rejected' && result.reason
+        );
+
+        if (failedDeletions.length > 0) {
+          console.error('Failed deletions:', failedDeletions);
+          throw new Error(`Failed to delete ${failedDeletions.length} specifications`);
+        }
+      }
+
+      // 2. Process remaining specs (create/update)
+      const validSpecs = formData.specifications.filter(
+        spec => spec.key?.trim() && spec.value?.trim()
       );
 
-      // Then handle updates and new specs
       const results = await Promise.all(
-        formData.specifications.map(async (spec) => {
-          if (!spec?.key && !spec?.value) return null;
-
+        validSpecs.map(async (spec) => {
           const specData = {
-            key: spec.key || '',
-            value: spec.value || '',
+            key: spec.key.trim(),
+            value: spec.value.trim(),
             product_id: editingProduct.product_id
           };
 
           try {
-            if (spec?.spec_id) {
+            if (spec.spec_id) {
               // Update existing spec
               const response = await axios.put(
                 `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/specifications/${spec.spec_id}`,
                 specData,
-                {
-                  headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                  }
-                }
+                { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }
               );
               return response.data;
             } else {
-              // Add new spec
+              // Create new spec
               const response = await axios.post(
                 `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/specifications`,
                 specData,
-                {
-                  headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                  }
-                }
+                { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }
               );
               return response.data;
             }
@@ -305,23 +328,17 @@ const NewProduct = () => {
         })
       );
 
-      // Update the form data with new spec IDs
-      setFormData(prev => {
-        const updatedSpecs = prev.specifications
-          .map((spec, idx) => ({
-            ...spec,
-            spec_id: results[idx]?.spec_id || spec.spec_id
-          }))
-          .filter(spec => spec.key || spec.value);
+      // 3. Update state with new spec IDs
+      setFormData(prev => ({
+        ...prev,
+        specifications: validSpecs.map((spec, idx) => ({
+          ...spec,
+          spec_id: results[idx]?.spec_id || spec.spec_id
+        }))
+      }));
 
-        return {
-          ...prev,
-          specifications: updatedSpecs
-        };
-      });
-
+      // 4. Clear deletion queue
       setSpecsToDelete([]);
-      setError(null);
       alert('Specifications saved successfully!');
     } catch (err) {
       console.error('Error saving specifications:', err);
@@ -330,7 +347,6 @@ const NewProduct = () => {
       setIsLoading(false);
     }
   };
-
 
 
 
@@ -443,7 +459,7 @@ const NewProduct = () => {
     } finally {
       setIsLoading(false);
     }
-  };;
+  };
 
 
   // Separate image upload function
@@ -1176,9 +1192,9 @@ const NewProduct = () => {
 
 
   // Add color to a model
- 
- 
- 
+
+
+
   const addModelColor = (modelIndex) => {
     setFormData(prev => {
       const updatedModels = [...prev.models];
@@ -1514,7 +1530,7 @@ const NewProduct = () => {
             </div>
 
             {formData.specifications?.map((spec, specIndex) => (
-              <div key={specIndex} className="specification-item">
+              <div key={spec.spec_id || `new-spec-${specIndex}`} className="specification-item">
                 <input
                   type="text"
                   placeholder="Spec name (e.g., Material)"

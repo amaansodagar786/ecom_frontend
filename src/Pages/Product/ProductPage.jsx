@@ -140,7 +140,7 @@ const ProductPage = () => {
         if (typeof img === 'string') {
             // Remove leading slash if present to avoid double slashes
             const cleanPath = img.startsWith('/') ? img.slice(1) : img;
-            return `${import.meta.env.VITE_SERVER_API}/${cleanPath}`;
+            return `${import.meta.env.VITE_SERVER_API}/static/${cleanPath}`;
         }
 
         // Case 2: Object with image_url (from HomeProducts)
@@ -148,7 +148,7 @@ const ProductPage = () => {
             const cleanPath = img.image_url.startsWith('/')
                 ? img.image_url.slice(1)
                 : img.image_url;
-            return `${import.meta.env.VITE_SERVER_API}/${cleanPath}`;
+            return `${import.meta.env.VITE_SERVER_API}/static/${cleanPath}`;
         }
 
         return null;
@@ -344,7 +344,7 @@ const ProductPage = () => {
                                         src={imageUrl}
                                         alt={`${product.name} thumbnail ${index + 1}`}
                                         onError={(e) => {
-                                            e.target.src = '/fallback-image.jpg';
+                                            // e.target.src = '/fallback-image.jpg';
                                             e.target.style.objectFit = 'contain';
                                             console.error('Thumbnail load failed:', {
                                                 attemptedUrl: imageUrl,
@@ -364,7 +364,7 @@ const ProductPage = () => {
                                     src={getImageUrl(filteredImages[selectedImage])}
                                     alt={product.name}
                                     onError={(e) => {
-                                        e.target.src = '/fallback-image.jpg';
+                                        // e.target.src = '/fallback-image.jpg';
                                         e.target.style.objectFit = 'contain';
                                         console.error('Image load failed:', {
                                             attemptedUrl: e.target.src,
