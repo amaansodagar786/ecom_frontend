@@ -13,6 +13,7 @@ const initialValues = {
   description: '',
   main_category_id: '',
   sub_category_id: '',
+  hsn_id: '',
   product_type: 'single',
   models: [
     {
@@ -38,11 +39,16 @@ const initialValues = {
 
 const AddProducts = () => {
   const [categories, setCategories] = useState([]);
+  const [hsnCodes, setHsnCodes] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
+  const [loadingHsn, setLoadingHsn] = useState(true);
   const [newCategory, setNewCategory] = useState('');
   const [newSubcategory, setNewSubcategory] = useState('');
+  const [newHsnCode, setNewHsnCode] = useState('');
+  const [newHsnDescription, setNewHsnDescription] = useState('');
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showSubcategoryModal, setShowSubcategoryModal] = useState(false);
+  const [showHsnModal, setShowHsnModal] = useState(false);
   const [selectedMainCategory, setSelectedMainCategory] = useState(null);
   const [categoryImage, setCategoryImage] = useState(null);
   const setFieldValueRef = useRef(() => { });
@@ -60,7 +66,21 @@ const AddProducts = () => {
         setLoadingCategories(false);
       }
     };
+
+    const fetchHsnCodes = async () => {
+      try {
+        const response = await axios.get(`${import.meta.env.VITE_SERVER_API}/hsn`);
+        setHsnCodes(response.data);
+        setLoadingHsn(false);
+      } catch (error) {
+        console.error('Error fetching HSN codes:', error);
+        toast.error('Failed to load HSN codes');
+        setLoadingHsn(false);
+      }
+    };
+
     fetchCategories();
+    fetchHsnCodes();
   }, []);
 
   const validationSchema = yup.object().shape({
@@ -68,6 +88,7 @@ const AddProducts = () => {
     description: yup.string().required('Description is required'),
     main_category_id: yup.number().required('Main category is required'),
     sub_category_id: yup.number().required('Subcategory is required'),
+    hsn_id: yup.number().nullable(),
     product_type: yup.string().required('Product type is required'),
     models: yup.array()
       .of(
@@ -186,33 +207,88 @@ const AddProducts = () => {
     }
   };
 
+  const handleAddHsn = async () => {
+    // Check if HSN Code and Description are provided
+    if (!newHsnCode.trim() || !newHsnDescription.trim()) return;
+
+    try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+            toast.error("User is not authenticated");
+            return;
+        }
+
+        // Log the data being sent to the backend
+        console.log("Sending HSN Code and Description to backend:", {
+            hsn_code: newHsnCode,
+            description: newHsnDescription
+        });
+
+        // Make the POST request
+        const response = await axios.post(
+            `${import.meta.env.VITE_SERVER_API}/hsn/add`,
+            {
+                hsn_code: newHsnCode, // Frontend sends only these fields
+                description: newHsnDescription
+            },
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            }
+        );
+
+        // Log the response from the backend
+        console.log("Response from backend:", response.data);
+
+        const hsnResponse = await axios.get(`${import.meta.env.VITE_SERVER_API}/hsn`);
+        setHsnCodes(hsnResponse.data);
+
+        setNewHsnCode("");
+        setNewHsnDescription("");
+        setShowHsnModal(false);
+
+        // Set the newly added HSN code as selected
+        setFieldValueRef.current('hsn_id', response.data.hsn_id);
+
+        toast.success("HSN code added successfully");
+    } catch (error) {
+        console.error("Error adding HSN code:", error.response?.data || error.message);
+        toast.error("Failed to add HSN code");
+    }
+};
+
+
+
+
   const handleSubmit = async (values, { setSubmitting, resetForm }) => {
     try {
       const formData = new FormData();
-  
+
       // Add basic product data
       formData.append('name', values.name);
       formData.append('description', values.description);
       formData.append('category_id', values.main_category_id);
       formData.append('subcategory_id', values.sub_category_id);
+      formData.append('hsn_id', values.hsn_id || '');
       formData.append('product_type', values.product_type);
-  
+
       // Handle product images
       values.product_images.forEach((image) => {
         formData.append('product_images', image);
       });
-  
+
       // For single product, ensure model name matches product name
       if (values.product_type === 'single') {
         values.models[0].name = values.name;
-        
+
         // Handle specifications for single product (ProductSpecification)
         values.models[0].specifications.forEach((spec, specIndex) => {
           formData.append(`spec_key_${specIndex}`, spec.key);
           formData.append(`spec_value_${specIndex}`, spec.value);
         });
         formData.append('specs_count', values.models[0].specifications.length);
-        
+
         // Handle colors for single product
         values.models[0].colors.forEach((color, colorIndex) => {
           formData.append(`color_name_${colorIndex}`, color.name);
@@ -220,26 +296,26 @@ const AddProducts = () => {
           formData.append(`color_original_price_${colorIndex}`, color.original_price || '');
           formData.append(`color_stock_${colorIndex}`, color.stock_quantity);
           formData.append(`threshold_${colorIndex}`, color.threshold || 10);
-  
+
           color.images.forEach((image) => {
             formData.append(`color_images_${colorIndex}`, image);
           });
         });
-        
+
         formData.append('colors_count', values.models[0].colors.length);
-      } 
+      }
       // Handle variable products
       else {
         values.models.forEach((model, modelIndex) => {
           formData.append(`model_name_${modelIndex}`, model.name);
           formData.append(`model_description_${modelIndex}`, model.description);
-  
+
           // Handle specifications for variable product (ModelSpecification)
           model.specifications.forEach((spec, specIndex) => {
             formData.append(`model_${modelIndex}_spec_key_${specIndex}`, spec.key);
             formData.append(`model_${modelIndex}_spec_value_${specIndex}`, spec.value);
           });
-  
+
           // Handle colors for variable product
           model.colors.forEach((color, colorIndex) => {
             formData.append(`model_${modelIndex}_color_name_${colorIndex}`, color.name);
@@ -247,19 +323,19 @@ const AddProducts = () => {
             formData.append(`model_${modelIndex}_color_original_price_${colorIndex}`, color.original_price || '');
             formData.append(`model_${modelIndex}_color_stock_${colorIndex}`, color.stock_quantity);
             formData.append(`model_${modelIndex}_threshold_${colorIndex}`, color.threshold || 10);
-  
+
             color.images.forEach((image) => {
               formData.append(`model_${modelIndex}_color_images_${colorIndex}`, image);
             });
           });
-  
+
           formData.append(`model_colors_count_${modelIndex}`, model.colors.length);
           formData.append(`model_specs_count_${modelIndex}`, model.specifications.length);
         });
-        
+
         formData.append('models_count', values.models.length);
       }
-  
+
       const response = await axios.post(
         `${import.meta.env.VITE_SERVER_API}/product/add`,
         formData,
@@ -270,7 +346,7 @@ const AddProducts = () => {
           }
         }
       );
-  
+
       toast.success('Product added successfully!');
       resetForm();
     } catch (error) {
@@ -364,7 +440,7 @@ const AddProducts = () => {
 
                   {/* Category Selection */}
                   <div className="form-section">
-                    <h3 className="section-title">Category</h3>
+                    <h3 className="section-title">Category & HSN</h3>
                     <div className="form-grid">
                       <div className="form-group">
                         <label className="form-label">Main Category *</label>
@@ -427,6 +503,36 @@ const AddProducts = () => {
                           </button>
                         </div>
                         <ErrorMessage name="sub_category_id" component="div" className="error-message" />
+                      </div>
+
+                      <div className="form-group">
+                        <label className="form-label">HSN Code</label>
+                        <div className="select-with-button">
+                          <Field
+                            as="select"
+                            name="hsn_id"
+                            className="form-input"
+                          >
+                            <option value="">Select HSN Code</option>
+                            {loadingHsn ? (
+                              <option disabled>Loading HSN codes...</option>
+                            ) : (
+                              hsnCodes.map(hsn => (
+                                <option key={hsn.hsn_id} value={hsn.hsn_id}>
+                                  {hsn.hsn_code} - {hsn.description}
+                                </option>
+                              ))
+                            )}
+                          </Field>
+                          <button
+                            type="button"
+                            className="add-button"
+                            onClick={() => setShowHsnModal(true)}
+                          >
+                            <FaPlus /> Add
+                          </button>
+                        </div>
+                        <ErrorMessage name="hsn_id" component="div" className="error-message" />
                       </div>
 
                       <div className="form-group">
@@ -962,6 +1068,57 @@ const AddProducts = () => {
             </div>
           </div>
         )}
+
+{/* HSN Code Modal */}
+{showHsnModal && (
+          <div className="modal-overlay">
+            <div className="modal">
+              <h3>Add New HSN Code</h3>
+              <div className="form-group">
+                <label className="form-label">HSN Code *</label>
+                <input
+                  type="text"
+                  value={newHsnCode}
+                  onChange={(e) => setNewHsnCode(e.target.value)}
+                  placeholder="Enter HSN code"
+                  className="form-input"
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Description *</label>
+                <input
+                  type="text"
+                  value={newHsnDescription}
+                  onChange={(e) => setNewHsnDescription(e.target.value)}
+                  placeholder="Enter description"
+                  className="form-input"
+                />
+              </div>
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="cancel-button"
+                  onClick={() => {
+                    setShowHsnModal(false);
+                    setNewHsnCode('');
+                    setNewHsnDescription('');
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="confirm-button"
+                  onClick={handleAddHsn}
+                  disabled={!newHsnCode.trim() || !newHsnDescription.trim()}
+                >
+                  Add HSN Code
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
 
         <ToastContainer
           position="top-center"
