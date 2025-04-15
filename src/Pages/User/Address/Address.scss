@@ -10,6 +10,21 @@ $border-radius: 8px;
 $box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 $transition: all 0.3s ease;
 
+
+.address-form {
+
+  // Target only inputs within the address form
+  .form-group {
+
+    input,
+    textarea,
+    select {
+      padding: 0.8rem; // Now this will only affect inputs in address forms
+      // Other styles...
+    }
+  }
+}
+
 // Base styles
 .address-container {
   max-width: 1200px;
@@ -146,7 +161,8 @@ $transition: all 0.3s ease;
 }
 
 // Buttons
-.btn-add-address, .btn-add-first-address {
+.btn-add-address,
+.btn-add-first-address {
   background: $secondary-color;
   color: white;
   border: none;
@@ -169,7 +185,8 @@ $transition: all 0.3s ease;
   margin-top: 1rem;
 }
 
-.btn-edit, .btn-delete {
+.btn-edit,
+.btn-delete {
   padding: 0.5rem 1rem;
   border-radius: $border-radius;
   border: none;
@@ -249,6 +266,7 @@ $transition: all 0.3s ease;
     opacity: 0;
     transform: translateY(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -265,7 +283,9 @@ $transition: all 0.3s ease;
     color: $primary-color;
   }
 
-  input, textarea, select {
+  input,
+  textarea,
+  select {
     width: 100%;
     // padding: 0.8rem;
     border: 1px solid #ddd;
@@ -436,7 +456,8 @@ $transition: all 0.3s ease;
 }
 
 // Loading and Error states
-.loading-spinner,  .no-addresses {
+.loading-spinner,
+.no-addresses {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -473,7 +494,9 @@ $transition: all 0.3s ease;
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 // Responsive adjustments

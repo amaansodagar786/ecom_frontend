@@ -40,6 +40,7 @@ import AuthCallback from './Pages/Authentication/Auth/AuthCallback';
 import ProductManagement from './Pages/Admin/Products/ProductManagement';
 import Loader from './Components/Loader/Loader';
 import NewProduct from './Pages/Admin/Products/NewProduct';
+import NewOrders from './Pages/Admin/OfflineOrders/NewOrders';
 
 
 
@@ -91,6 +92,7 @@ function App() {
             } 
           />
           <Route path="/admindashboard" element={<AdminRoute> <Dashboard /> </AdminRoute> } />
+          <Route path="/createorders" element={<AdminRoute> <NewOrders /> </AdminRoute> } />
           <Route path="/adminorders" element={<AdminRoute> <Orders /> </AdminRoute> } />
           <Route path="/admininventory" element={<AdminRoute> <Inventory /> </AdminRoute> } />
           <Route path="/admininpayment" element={<AdminRoute> <Payment /> </AdminRoute> } />
