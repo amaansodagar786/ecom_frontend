@@ -45,13 +45,16 @@ const Adminsignup = () => {
 
   const handleSubmit = async (values, { setSubmitting, resetForm }) => {
     try {
-      console.log('Submitting:', values);
-      const response = await axios.post('http://localhost:5000/admin-signup', values, {
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        withCredentials: true
-      });
+      const response = await axios.post(
+        `${import.meta.env.VITE_SERVER_API}/admin-signup`,
+        values,
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          withCredentials: true
+        }
+      );
 
       toast.success(response.data.message || 'Admin account created successfully!');
 

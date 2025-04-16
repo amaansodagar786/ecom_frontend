@@ -47,7 +47,7 @@ const Navbar = () => {
           </div>
 
           {/* Tagline (Only visible in desktop/laptop) */}
-          <div className="navbar-tagline">Your One Stop Solution For E Commerce Store</div>
+          <div className="navbar-tagline">Your One Stop Solution For E-Commerce Store</div>
 
           {/* Hamburger Menu (For Mobile) */}
           <div className={`hamburger ${isMenuOpen ? 'open' : ''}`} onClick={toggleMenu}>

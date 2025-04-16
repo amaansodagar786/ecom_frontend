@@ -1,52 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminLayout from '../AdminPanel/AdminLayout';
 import { ToastContainer, toast } from 'react-toastify';
+import axios from 'axios';
 import 'react-toastify/dist/ReactToastify.css';
 import './NewOrders.scss';
+import { FaChevronRight, FaCheck } from 'react-icons/fa';
 
 const NewOrders = () => {
-    // State for products from API
     const [products, setProducts] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [categories, setCategories] = useState([]);
-    // Dummy product data
-    // const dummyProducts = [
-    //     {
-    //         id: 1,
-    //         name: 'Wireless Headphones',
-    //         image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e',
-    //         stock: 50,
-    //         price: 99.99
-    //     },
-    //     {
-    //         id: 2,
-    //         name: 'Smart Watch',
-    //         image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30',
-    //         stock: 30,
-    //         price: 199.99
-    //     },
-    //     {
-    //         id: 3,
-    //         name: 'Bluetooth Speaker',
-    //         image: 'https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb',
-    //         stock: 45,
-    //         price: 79.99
-    //     },
-    //     {
-    //         id: 4,
-    //         name: 'Laptop Backpack',
-    //         image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62',
-    //         stock: 60,
-    //         price: 49.99
-    //     },
-    //     {
-    //         id: 5,
-    //         name: 'Wireless Mouse',
-    //         image: 'https://images.unsplash.com/photo-1527814050087-3793815479db',
-    //         stock: 100,
-    //         price: 29.99
-    //     }
-    // ];
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+    const [selectedProducts, setSelectedProducts] = useState([]);
+    const [selectedCustomer, setSelectedCustomer] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [customerSearchTerm, setCustomerSearchTerm] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('all');
+    const [newCustomer, setNewCustomer] = useState({
+        name: '',
+        phone: '',
+        email: '',
+        address: '',
+        pincode: ''
+    });
+    const [selectionStep, setSelectionStep] = useState('product'); // 'product', 'model', 'color'
+    const [selectedProduct, setSelectedProduct] = useState(null);
+    const [selectedModel, setSelectedModel] = useState(null);
+    const [selectedColors, setSelectedColors] = useState([]);
+    const [tempSelections, setTempSelections] = useState([]);
 
     // Dummy customer data with separate pincode
     const dummyCustomers = [
@@ -92,47 +74,28 @@ const NewOrders = () => {
         }
     ];
 
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
-    const [selectedProducts, setSelectedProducts] = useState([]);
-    const [selectedCustomer, setSelectedCustomer] = useState(null);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [customerSearchTerm, setCustomerSearchTerm] = useState('');
-    const [selectedCategory, setSelectedCategory] = useState('all');
-    const [newCustomer, setNewCustomer] = useState({
-        name: '',
-        phone: '',
-        email: '',
-        address: '',
-        pincode: ''
-    });
-
-
     // Fetch products from API
-    // Fetch products from API
-useEffect(() => {
-    const fetchProducts = async () => {
-        try {
-            const response = await axios.get(`${import.meta.env.VITE_SERVER_API}/api/products`);
-            setProducts(response.data);
-            
-            // Extract unique categories
-            const uniqueCategories = [...new Set(
-                response.data.map(p => p.category).filter(Boolean)
-            )];
-            setCategories(['all', ...uniqueCategories]);
-            setIsLoading(false);
-        } catch (error) {
-            console.error('Error fetching products:', error);
-            setIsLoading(false);
-        }
-    };
-    
-    fetchProducts();
-}, []);
+    useEffect(() => {
+        const fetchProducts = async () => {
+            try {
+                const response = await axios.get(`${import.meta.env.VITE_SERVER_API}/products`);
+                setProducts(response.data);
 
+                // Extract unique categories
+                const uniqueCategories = [...new Set(
+                    response.data.map(p => p.category).filter(Boolean)
+                )];
+                setCategories(['all', ...uniqueCategories]);
+                setIsLoading(false);
+            } catch (error) {
+                console.error('Error fetching products:', error);
+                setIsLoading(false);
+            }
+        };
 
-    // Helper functions
+        fetchProducts();
+    }, []);
+
     const showErrorToast = (message) => {
         toast.error(message, {
             position: "top-right",
@@ -160,9 +123,9 @@ useEffect(() => {
             customer: selectedCustomer,
             products: selectedProducts.map(product => ({
                 id: product.id,
-                name: product.name,
+                name: product.full_name,
                 quantity: product.quantity,
-                originalPrice: product.price,
+                originalPrice: product.original_price,
                 finalPrice: product.finalPrice,
                 discountPercentage: product.discountPercentage
             })),
@@ -186,39 +149,146 @@ useEffect(() => {
         });
     };
 
-    const handleModalClose = (e) => {
-        if (e.target === e.currentTarget) {
-            setIsModalOpen(false);
+    const handleProductSelect = (product) => {
+        setSelectedProduct(product);
+        if (product.product_type === 'single') {
+            setSelectionStep('color');
+            setSelectedModel(null);
+        } else {
+            setSelectionStep('model');
+            // setSelectedColors(null);
+            setSelectedColors([]);
         }
     };
 
-    const toggleProductSelection = (product) => {
-        setSelectedProducts(prev => {
-            const isSelected = prev.some(p => p.id === product.id);
+    const handleModelSelect = (model) => {
+        setSelectedModel(model);
+        setSelectionStep('color');
+    };
+
+    const handleColorSelect = (color) => {
+        setSelectedColors(prev => {
+            const isSelected = prev.some(c => c.color_id === color.color_id);
             if (isSelected) {
-                return prev.filter(p => p.id !== product.id);
+                return prev.filter(c => c.color_id !== color.color_id);
             } else {
-                return [...prev, {
-                    ...product,
-                    finalPrice: product.price,
-                    discountPercentage: 0,
-                    quantity: 1
-                }];
+                return [...prev, color];
             }
         });
     };
 
+    const handleAddSelection = () => {
+        if (!selectedProduct) return;
+
+        // For single product type with multiple colors
+        if (selectedProduct.product_type === 'single' && selectedColors.length > 0) {
+            const newSelections = selectedColors.map(color => ({
+                id: color.color_id,
+                product_id: selectedProduct.product_id,
+                type: 'single',
+                name: selectedProduct.name,
+                color_name: color.name,
+                full_name: `${selectedProduct.name} - ${color.name}`,
+                image: color.images?.[0]?.image_url
+                    ? `${import.meta.env.VITE_SERVER_API}/${color.images[0].image_url}`
+                    : selectedProduct.images?.[0]?.image_url
+                        ? `${import.meta.env.VITE_SERVER_API}/${selectedProduct.images[0].image_url}`
+                        : '/placeholder-product.png',
+                stock: color.stock_quantity,
+                price: color.price,
+                original_price: color.original_price || color.price,
+                category: selectedProduct.category,
+                specifications: selectedProduct.specifications
+            }));
+
+            setSelectedProducts(prev => {
+                // Filter out existing selections to avoid duplicates
+                const existingIds = prev.map(p => p.id);
+                const newItems = newSelections.filter(item => !existingIds.includes(item.id));
+
+                return [
+                    ...prev,
+                    ...newItems.map(item => ({
+                        ...item,
+                        finalPrice: item.price,
+                        discountPercentage: 0,
+                        quantity: 1
+                    }))
+                ];
+            });
+        }
+        // For variable product type with model and colors
+        else if (selectedModel && selectedColors.length > 0) {
+            const newSelections = selectedColors.map(color => ({
+                id: `${selectedModel.model_id}-${color.color_id}`,
+                product_id: selectedProduct.product_id,
+                model_id: selectedModel.model_id,
+                type: 'variable',
+                name: `${selectedProduct.name} - ${selectedModel.name}`,
+                color_name: color.name,
+                full_name: `${selectedProduct.name} - ${selectedModel.name} - ${color.name}`,
+                image: color.images?.[0]?.image_url
+                    ? `${import.meta.env.VITE_SERVER_API}/${color.images[0].image_url}`
+                    : selectedModel.images?.[0]?.image_url
+                        ? `${import.meta.env.VITE_SERVER_API}/${selectedModel.images[0].image_url}`
+                        : selectedProduct.images?.[0]?.image_url
+                            ? `${import.meta.env.VITE_SERVER_API}/${selectedProduct.images[0].image_url}`
+                            : '/placeholder-product.png',
+                stock: color.stock_quantity,
+                price: color.price,
+                original_price: color.original_price || color.price,
+                category: selectedProduct.category,
+                specifications: [...selectedProduct.specifications, ...selectedModel.specifications]
+            }));
+
+            setSelectedProducts(prev => {
+                // Filter out existing selections to avoid duplicates
+                const existingIds = prev.map(p => p.id);
+                const newItems = newSelections.filter(item => !existingIds.includes(item.id));
+
+                return [
+                    ...prev,
+                    ...newItems.map(item => ({
+                        ...item,
+                        finalPrice: item.price,
+                        discountPercentage: 0,
+                        quantity: 1
+                    }))
+                ];
+            });
+        }
+
+        // Reset selection process
+        setSelectionStep('product');
+        setSelectedProduct(null);
+        setSelectedModel(null);
+        setSelectedColors([]);
+    };
+
+    const handleModalClose = (e) => {
+        if (e.target === e.currentTarget) {
+            setIsModalOpen(false);
+            setSelectionStep('product');
+            setSelectedProduct(null);
+            setSelectedModel(null);
+            setSelectedColor(null);
+        }
+    };
+
     const handleQuantityChange = (id, newQuantity) => {
+        const product = selectedProducts.find(p => p.id === id);
+        if (!product) return;
+
         const quantity = Math.max(1, Math.min(
-            dummyProducts.find(p => p.id === id).stock,
+            product.stock,
             parseInt(newQuantity) || 1
         ));
 
         setSelectedProducts(prev =>
-            prev.map(product =>
-                product.id === id
-                    ? { ...product, quantity }
-                    : product
+            prev.map(p =>
+                p.id === id
+                    ? { ...p, quantity }
+                    : p
             )
         );
     };
@@ -307,6 +377,225 @@ useEffect(() => {
         }
     };
 
+    const renderProductSelection = () => {
+        return (
+            <div className="product-list">
+                {products
+                    .filter(product => {
+                        const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
+                        const matchesCategory = selectedCategory === 'all' ||
+                            (product.category &&
+                                product.category.toLowerCase() === selectedCategory.toLowerCase());
+                        return matchesSearch && matchesCategory;
+                    })
+                    .map(product => (
+                        <div
+                            key={product.product_id}
+                            className="product-list-item"
+                            onClick={() => handleProductSelect(product)}
+                        >
+                            <div className="product-select-box"></div>
+                            <div className="product-image">
+                                <img
+                                    src={product.images?.[0]?.image_url
+                                        ? `${import.meta.env.VITE_SERVER_API}/${product.images[0].image_url}`
+                                        : '/placeholder-product.png'}
+                                    alt={product.name}
+                                />
+                            </div>
+                            <div className="product-info">
+                                <label>{product.name}</label>
+                                <div className="product-type">
+                                    {product.product_type === 'single' ? 'Single Product' : 'Variable Product'}
+                                </div>
+                                {product.specifications && product.specifications.length > 0 && (
+                                    <div className="product-specs">
+                                        {product.specifications.slice(0, 2).map(spec => (
+                                            <span key={spec.spec_id}>{spec.key}: {spec.value}</span>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+            </div>
+        );
+    };
+
+    const renderModelSelection = () => {
+        if (!selectedProduct || selectedProduct.product_type !== 'variable') return null;
+
+        return (
+            <div className="model-selection">
+                <button
+                    className="back-button"
+                    onClick={() => setSelectionStep('product')}
+                >
+                    ← Back to Products
+                </button>
+                <h4>Select Model for {selectedProduct.name}</h4>
+                <div className="model-list" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                    {selectedProduct.models.map(model => (
+                        <div
+                            key={model.model_id}
+                            className={`model-item ${selectedModel?.model_id === model.model_id ? 'selected' : ''}`}
+                            onClick={() => handleModelSelect(model)}
+                        >
+                            <div className="model-select-box">
+                                {selectedModel?.model_id === model.model_id && <FaCheck className="check-icon" />}
+                            </div>
+                            <div className="model-image">
+                                <img
+                                    src={model.images?.[0]?.image_url
+                                        ? `${import.meta.env.VITE_SERVER_API}/${model.images[0].image_url}`
+                                        : selectedProduct.images?.[0]?.image_url
+                                            ? `${import.meta.env.VITE_SERVER_API}/${selectedProduct.images[0].image_url}`
+                                            : '/placeholder-product.png'}
+                                    alt={model.name}
+                                />
+                            </div>
+                            <div className="model-info">
+                                <h5>{model.name}</h5>
+                                <div className="model-specs">
+                                    {model.specifications?.map(spec => (
+                                        <span key={spec.spec_id}>{spec.key}: {spec.value}</span>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                <div className="selection-actions">
+                    <button
+                        className="cancel-btn"
+                        onClick={() => {
+                            setSelectionStep('product');
+                            setSelectedModel(null);
+                        }}
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        className="confirm-btn"
+                        onClick={() => {
+                            if (selectedModel) {
+                                setSelectionStep('color');
+                            } else {
+                                showErrorToast('Please select a model');
+                            }
+                        }}
+                        disabled={!selectedModel}
+                    >
+                        Next: Select Color
+                    </button>
+                </div>
+            </div>
+        );
+    };
+
+    const renderColorSelection = () => {
+        if (!selectedProduct) return null;
+    
+        let colors = [];
+        if (selectedProduct.product_type === 'single') {
+            colors = selectedProduct.colors;
+        } else if (selectedModel) {
+            colors = selectedModel.colors;
+        } else {
+            return null;
+        }
+    
+        return (
+            <div className="color-selection">
+                <button
+                    className="back-button"
+                    onClick={() => {
+                        selectedProduct.product_type === 'single'
+                            ? setSelectionStep('product')
+                            : setSelectionStep('model');
+                        setSelectedColors([]);
+                    }}
+                >
+                    ← Back to {selectedProduct.product_type === 'single' ? 'Products' : 'Models'}
+                </button>
+                <h4>
+                    Select Color for {selectedProduct.name}
+                    {selectedModel && ` - ${selectedModel.name}`}
+                </h4>
+                <div className="color-list" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                    {colors.map(color => {
+                        // Determine the image source with proper fallbacks
+                        const imageSrc = color.images?.[0]?.image_url
+                            ? `${import.meta.env.VITE_SERVER_API}/${color.images[0].image_url}`
+                            : selectedModel?.images?.[0]?.image_url
+                                ? `${import.meta.env.VITE_SERVER_API}/${selectedModel.images[0].image_url}`
+                                : selectedProduct.images?.[0]?.image_url
+                                    ? `${import.meta.env.VITE_SERVER_API}/${selectedProduct.images[0].image_url}`
+                                    : '/placeholder-product.png';
+    
+                        return (
+                            <div
+                                key={color.color_id}
+                                className={`color-item ${color.stock_quantity <= 0 ? 'out-of-stock' : ''} ${
+                                    selectedColors.some(c => c.color_id === color.color_id) ? 'selected' : ''
+                                }`}
+                                onClick={() => color.stock_quantity > 0 && handleColorSelect(color)}
+                            >
+                                <div className="color-select-box">
+                                    {selectedColors.some(c => c.color_id === color.color_id) && (
+                                        <FaCheck className="check-icon" />
+                                    )}
+                                </div>
+                                <div className="color-image-container">
+                                    <img 
+                                        src={imageSrc} 
+                                        alt={color.name}
+                                        className="color-image"
+                                    />
+                                </div>
+                                <div className="color-swatch" style={{ backgroundColor: color.hex_code || '#ccc' }}></div>
+                                <div className="color-info">
+                                    <span>{color.name}</span>
+                                    <span>₹{color.price.toFixed(2)}</span>
+                                    <span className="stock-info">
+                                        {color.stock_quantity <= 0 ? 'Out of stock' : `Stock: ${color.stock_quantity}`}
+                                    </span>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+                <div className="selection-actions">
+                    <button
+                        className="cancel-btn"
+                        onClick={() => {
+                            selectedProduct.product_type === 'single'
+                                ? setSelectionStep('product')
+                                : setSelectionStep('model');
+                            setSelectedColors([]);
+                        }}
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        className="confirm-btn"
+                        onClick={() => {
+                            if (selectedColors.length > 0) {
+                                handleAddSelection();
+                                setIsModalOpen(false);
+                            } else {
+                                showErrorToast('Please select at least one color');
+                            }
+                        }}
+                        disabled={selectedColors.length === 0}
+                    >
+                        {selectedColors.length > 1 ? 'Add All to Order' : 'Add to Order'}
+                    </button>
+                </div>
+            </div>
+        );
+    };
+
     return (
         <AdminLayout>
             <ToastContainer />
@@ -348,71 +637,76 @@ useEffect(() => {
                 </div>
 
                 <div className="selected-products-list">
-                    {selectedProducts.length === 0 ? (
-                        <div className="no-products-selected">
-                            <p>No products selected. Click "Browse Products" to add items.</p>
+    {selectedProducts.length === 0 ? (
+        <div className="no-products-selected">
+            <p>No products selected. Click "Browse Products" to add items.</p>
+        </div>
+    ) : (
+        selectedProducts.map(product => {
+            // const imageUrl = `${import.meta.env.VITE_SERVER_API}/${product.image}`;
+            const imageUrl = product.image;
+
+            console.log('Image URL:', imageUrl); // ✅ Log image URL here
+
+            return (
+                <div key={product.id} className="selected-product-item">
+                    <div className="product-image">
+                        <img src={imageUrl} alt={product.full_name} />
+                    </div>
+                    <div className="product-details">
+                        <h4 className="product-name">{product.full_name}</h4>
+                        <div className="stock-info">Available: {product.stock}</div>
+                        <div className="quantity-control">
+                            <label>Qty:</label>
+                            <input
+                                type="number"
+                                min="1"
+                                max={product.stock}
+                                value={product.quantity}
+                                onChange={(e) => handleQuantityChange(product.id, e.target.value)}
+                                className="quantity-input"
+                            />
                         </div>
-                    ) : (
-                        selectedProducts.map(product => {
-                            const availableStock = dummyProducts.find(p => p.id === product.id)?.stock || 0;
-                            return (
-                                <div key={product.id} className="selected-product-item">
-                                    <div className="product-image">
-                                        <img src={product.image} alt={product.name} />
-                                    </div>
-                                    <div className="product-details">
-                                        <h4 className="product-name">{product.name}</h4>
-                                        <div className="stock-info">Available: {availableStock}</div>
-                                        <div className="quantity-control">
-                                            <label>Qty:</label>
-                                            <input
-                                                type="number"
-                                                min="1"
-                                                max={availableStock}
-                                                value={product.quantity}
-                                                onChange={(e) => handleQuantityChange(product.id, e.target.value)}
-                                                className="quantity-input"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="price-editor">
-                                        <div className="original-price">₹{product.price.toFixed(2)}</div>
-                                        <div className="price-edit-options">
-                                            <div className="discount-option">
-                                                <label>Discount %</label>
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    max="100"
-                                                    className="discount-percentage-input"
-                                                    value={product.discountPercentage || 0}
-                                                    onChange={(e) => handleDiscountPercentageChange(product.id, e.target.value)}
-                                                />
-                                            </div>
-                                            <div className="manual-price-option">
-                                                <label>Final Price</label>
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    step="0.01"
-                                                    className="final-price-input"
-                                                    value={product.finalPrice || product.price}
-                                                    onChange={(e) => handlePriceChange(product.id, e.target.value)}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <button
-                                        className="remove-product-btn"
-                                        onClick={() => removeProduct(product.id)}
-                                    >
-                                        ×
-                                    </button>
-                                </div>
-                            );
-                        })
-                    )}
+                    </div>
+                    <div className="price-editor">
+                        <div className="original-price">₹{product.price.toFixed(2)}</div>
+                        <div className="price-edit-options">
+                            <div className="discount-option">
+                                <label>Discount %</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    className="discount-percentage-input"
+                                    value={product.discountPercentage || 0}
+                                    onChange={(e) => handleDiscountPercentageChange(product.id, e.target.value)}
+                                />
+                            </div>
+                            <div className="manual-price-option">
+                                <label>Final Price</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    className="final-price-input"
+                                    value={product.finalPrice || product.price}
+                                    onChange={(e) => handlePriceChange(product.id, e.target.value)}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                    <button
+                        className="remove-product-btn"
+                        onClick={() => removeProduct(product.id)}
+                    >
+                        ×
+                    </button>
                 </div>
+            );
+        })
+    )}
+</div>
+
 
                 {selectedCustomer && (
                     <div className="customer-details-section">
@@ -481,81 +775,57 @@ useEffect(() => {
                         <div className="modal-overlay"></div>
                         <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                             <div className="modal-header">
-                                <h3>Select Products</h3>
+                                <h3>
+                                    {selectionStep === 'product' && 'Select Products'}
+                                    {selectionStep === 'model' && 'Select Model'}
+                                    {selectionStep === 'color' && 'Select Color'}
+                                </h3>
                                 <button
                                     className="close-modal-btn"
-                                    onClick={() => setIsModalOpen(false)}
+                                    onClick={() => {
+                                        setIsModalOpen(false);
+                                        setSelectionStep('product');
+                                        setSelectedProduct(null);
+                                        setSelectedModel(null);
+                                        setSelectedColor(null);
+                                    }}
                                 >
                                     ×
                                 </button>
                             </div>
                             <div className="modal-body">
-                                <div className="product-search-section">
-                                    <input
-                                        type="text"
-                                        placeholder="Search products..."
-                                        className="modal-search-input"
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                    />
-                                    <div className="product-list">
-                                        {dummyProducts
-                                            .filter(product =>
-                                                product.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-                                                (selectedCategory === 'all' ||
-                                                    product.category === selectedCategory)
-                                            )
-                                            .map(product => (
-                                                <div key={product.id} className="product-list-item">
-                                                    <div className="product-select-checkbox">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={selectedProducts.some(p => p.id === product.id)}
-                                                            onChange={() => toggleProductSelection(product)}
-                                                        />
-                                                    </div>
-                                                    <div className="product-image">
-                                                        <img src={product.image} alt={product.name} />
-                                                    </div>
-                                                    <div className="product-info">
-                                                        <label>{product.name}</label>
-                                                        <div className="product-price-stock">
-                                                            <span>₹{product.price.toFixed(2)}</span>
-                                                            <span>Stock: {product.stock}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                    </div>
-                                </div>
-                                <div className="category-filter-section">
-                                    <h4>Categories</h4>
-                                    <ul className="category-list">
-                                        {['all', 'Electronics', 'Accessories', 'Bags', 'Others'].map(category => (
-                                            <li
-                                                key={category}
-                                                className={`category-item ${selectedCategory === category.toLowerCase() ? 'active' : ''}`}
-                                                onClick={() => setSelectedCategory(category.toLowerCase())}
-                                            >
-                                                {category}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            </div>
-                            <div className="modal-footer">
-                                <button
-                                    className="cancel-btn"
-                                    onClick={() => setIsModalOpen(false)}
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    className="add-products-btn"
-                                    onClick={() => setIsModalOpen(false)}
-                                >
-                                    Add Selected Products
-                                </button>
+                                {selectionStep === 'product' && (
+                                    <>
+                                        <div className="product-search-section">
+                                            <input
+                                                type="text"
+                                                placeholder="Search products..."
+                                                className="modal-search-input"
+                                                value={searchTerm}
+                                                onChange={(e) => setSearchTerm(e.target.value)}
+                                            />
+                                            {isLoading ? (
+                                                <div className="loading-products">Loading products...</div>
+                                            ) : renderProductSelection()}
+                                        </div>
+                                        <div className="category-filter-section">
+                                            <h4>Categories</h4>
+                                            <ul className="category-list">
+                                                {categories.map(category => (
+                                                    <li
+                                                        key={category}
+                                                        className={`category-item ${selectedCategory === category.toLowerCase() ? 'active' : ''}`}
+                                                        onClick={() => setSelectedCategory(category.toLowerCase())}
+                                                    >
+                                                        {category}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    </>
+                                )}
+                                {selectionStep === 'model' && renderModelSelection()}
+                                {selectionStep === 'color' && renderColorSelection()}
                             </div>
                         </div>
                     </div>

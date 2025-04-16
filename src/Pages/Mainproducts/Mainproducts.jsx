@@ -226,7 +226,7 @@ const MainProducts = () => {
                   {/* <p className="description">{product.description || 'No description available'}</p> */}
                   <p className="price">
                     {product.colors?.length > 0
-                      ? `$${product.colors[0].price}`
+                      ? `₹${product.colors[0].price}`
                       : 'Price unavailable'}
                   </p>
                   <button 

@@ -59,8 +59,6 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/allproducts" element={<AllProducts />} />
           <Route path="/product/:id" element={<ProductPage />} />
-
-
           <Route path="/products/by-category/:categoryId" element={<MainProducts />} />
 
           {/* USER PAGES  */}
