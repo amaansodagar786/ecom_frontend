@@ -29,8 +29,9 @@ const Cart = ({ isOpen, onClose }) => {
   const [snackbar, setSnackbar] = useState({ id: null, message: "" });
 
   useEffect(() => {
-    console.log('Current cart itemss:', cartItems);
+    console.log('Current cart items:', cartItems);
   }, [cartItems]);
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -45,12 +46,14 @@ const Cart = ({ isOpen, onClose }) => {
 
   const calculateTotals = (items) => {
     const subtotal = items.reduce((sum, item) => sum + ((item.price || 0) * item.quantity), 0);
+    const originalSubtotal = items.reduce((sum, item) => sum + ((item.original_price || item.price) * item.quantity), 0);
+    const discount = originalSubtotal - subtotal;
+    
     return {
       subtotal,
-      discount: 0,
-      tax: subtotal * 0.1,
-      shipping: subtotal > 50 ? 0 : 5.99,
-      total: subtotal + (subtotal * 0.1) + (subtotal > 50 ? 0 : 5.99)
+      discount,
+      originalSubtotal,
+      total: subtotal
     };
   };
 
@@ -148,15 +151,15 @@ const Cart = ({ isOpen, onClose }) => {
           <div className="cart-header">
             <h2>Your Cart ({cartItems.length})</h2>
             <div className="header-actions">
-    {cartItems.length > 0 && (
-      <button className="clear-cart-btn" onClick={handleClearCart}>
-        Clear Cart
-      </button>
-    )}
-            <button className="close-cart" onClick={onClose}>
-              <FiX size={24} />
-            </button>
-          </div>
+              {cartItems.length > 0 && (
+                <button className="clear-cart-btn" onClick={handleClearCart}>
+                  Clear Cart
+                </button>
+              )}
+              <button className="close-cart" onClick={onClose}>
+                <FiX size={24} />
+              </button>
+            </div>
           </div>
 
           {loading ? (
@@ -166,87 +169,111 @@ const Cart = ({ isOpen, onClose }) => {
           ) : cartItems.length > 0 ? (
             <>
               <div className="cart-items">
-                {cartItems.map((item) => (
-                  <div
-                    key={`${item.product_id}-${item.color || 'none'}-${item.model || 'none'}`}
-                    className="cart-item"
-                  >
-                    <img
-                      src={`${import.meta.env.VITE_SERVER_API}/static/${item.image}`}
-                      alt={item.name}
-                      className="product-image"
-                      // onError={(e) => (e.target.src = "/fallback-image.jpg")}
-                    />
-                    <div className="product-info">
-                      <h3>{item.name}</h3>
-                      {item.color && <p>Color: {item.color}</p>}
-                      {item.model && <p>Model: {item.model}</p>}
-                      <div className="price">₹{(item.price || 0).toFixed(2)}</div>
-                      <div className="quantity-controls">
-                        <button
-                          onClick={() => handleUpdateQuantity(item, item.quantity - 1)}
-                          className="quantity-btn"
-                          disabled={item.quantity <= 1}
-                        >
-                          <FiMinus size={14} />
-                        </button>
-                        <span className="quantity">{item.quantity}</span>
-                        <button
-                          onClick={() => handleUpdateQuantity(item, item.quantity + 1)}
-                          className="quantity-btn"
-                        >
-                          <FiPlus size={14} />
-                        </button>
-                      </div>
-                      {snackbar.id === item.product_id && (
-                        <div className="item-snackbar">{snackbar.message}</div>
-                      )}
-                    </div>
-                    <button
-                      className="remove-btn"
-                      onClick={() => handleRemoveItem(item)}
+                {cartItems.map((item) => {
+                  const originalPrice = item.original_price || item.price;
+                  const hasDiscount = originalPrice > item.price;
+                  
+                  return (
+                    <div
+                      key={`${item.product_id}-${item.color || 'none'}-${item.model || 'none'}`}
+                      className="cart-item"
                     >
-                      <FiTrash2 size={18} />
-                    </button>
-                  </div>
-                ))}
+                      <img
+                        src={`${import.meta.env.VITE_SERVER_API}/static/${item.image}`}
+                        alt={item.name}
+                        className="product-image"
+                      />
+                      <div className="product-info">
+                        <h3>{item.name}</h3>
+                        {item.color && <p>Color: {item.color}</p>}
+                        {item.model && <p>Model: {item.model}</p>}
+                        <div className="price-container">
+                          {hasDiscount ? (
+                            <>
+                              <span className="original-price">
+                                ₹{originalPrice.toFixed(2)}
+                              </span>
+                              <span className="discounted-price">
+                                ₹{(item.price || 0).toFixed(2)}
+                              </span>
+                              <span className="discount-badge">
+                                Save ₹{(originalPrice - item.price).toFixed(2)}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="price">
+                              ₹{(item.price || 0).toFixed(2)}
+                            </span>
+                          )}
+                        </div>
+                        <div className="quantity-controls">
+                          <button
+                            onClick={() => handleUpdateQuantity(item, item.quantity - 1)}
+                            className="quantity-btn"
+                            disabled={item.quantity <= 1}
+                          >
+                            <FiMinus size={14} />
+                          </button>
+                          <span className="quantity">{item.quantity}</span>
+                          <button
+                            onClick={() => handleUpdateQuantity(item, item.quantity + 1)}
+                            className="quantity-btn"
+                          >
+                            <FiPlus size={14} />
+                          </button>
+                        </div>
+                        {snackbar.id === item.product_id && (
+                          <div className="item-snackbar">{snackbar.message}</div>
+                        )}
+                      </div>
+                      <button
+                        className="remove-btn"
+                        onClick={() => handleRemoveItem(item)}
+                      >
+                        <FiTrash2 size={18} />
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
 
               <div className="cart-summary">
-                <div className="summary-row">
-                  <span>Subtotal</span>
-                  <span>₹{totals.subtotal.toFixed(2)}</span>
-                </div>
+                {totals.originalSubtotal > totals.subtotal && (
+                  <div className="summary-row original-price-row">
+                    <span>Original Price</span>
+                    <span>₹{totals.originalSubtotal.toFixed(2)}</span>
+                  </div>
+                )}
                 {totals.discount > 0 && (
-                  <div className="summary-row">
+                  <div className="summary-row discount-row">
                     <span>Discount</span>
                     <span>-₹{totals.discount.toFixed(2)}</span>
                   </div>
                 )}
-                {totals.tax > 0 && (
-                  <div className="summary-row">
-                    <span>Tax</span>
-                    <span>₹{totals.tax.toFixed(2)}</span>
-                  </div>
-                )}
-                {totals.shipping > 0 && (
-                  <div className="summary-row">
-                    <span>Shipping</span>
-                    <span>₹{totals.shipping.toFixed(2)}</span>
-                  </div>
-                )}
+                <div className="summary-row">
+                  <span>Subtotal</span>
+                  <span>₹{totals.subtotal.toFixed(2)}</span>
+                </div>
                 <div className="summary-row total">
                   <span>Total</span>
                   <span>₹{totals.total.toFixed(2)}</span>
                 </div>
+                {/* {totals.discount > 0 && (
+                  <div className="savings-message">
+                    You're saving ₹{totals.discount.toFixed(2)} on this order!
+                  </div>
+                )} */}
                 <button
                   className="checkout-btn"
-                  onClick={() => navigate("/checkout")}
+                  onClick={() => {
+                    console.log("Items being sent to checkout:", cartItems);
+                    onClose();
+                    navigate("/checkout", { state: { cartItems } });
+                  }}
                 >
                   Checkout Now
                   <FiChevronRight size={18} />
                 </button>
-                
               </div>
             </>
           ) : (

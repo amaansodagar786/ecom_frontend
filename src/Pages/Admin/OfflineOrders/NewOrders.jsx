@@ -12,67 +12,34 @@ const NewOrders = () => {
     const [categories, setCategories] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+    const [isNewCustomerModalOpen, setIsNewCustomerModalOpen] = useState(false);
     const [selectedProducts, setSelectedProducts] = useState([]);
     const [selectedCustomer, setSelectedCustomer] = useState(null);
+    const [selectedAddress, setSelectedAddress] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [customerSearchTerm, setCustomerSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
+    const [states, setStates] = useState([]);
     const [newCustomer, setNewCustomer] = useState({
         name: '',
         phone: '',
         email: '',
-        address: '',
-        pincode: ''
+        addresses: [{
+            address_line1: '',
+            address_line2: '',
+            city: '',
+            state_id: '',
+            pincode: '',
+            country: 'India',
+            is_default: true
+        }]
     });
-    const [selectionStep, setSelectionStep] = useState('product'); // 'product', 'model', 'color'
+    const [customers, setCustomers] = useState([]);
+    const [isCustomerLoading, setIsCustomerLoading] = useState(false);
+    const [selectionStep, setSelectionStep] = useState('product');
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [selectedModel, setSelectedModel] = useState(null);
     const [selectedColors, setSelectedColors] = useState([]);
-    const [tempSelections, setTempSelections] = useState([]);
-
-    // Dummy customer data with separate pincode
-    const dummyCustomers = [
-        {
-            id: 1,
-            name: 'Rahul Sharma',
-            phone: '9876543210',
-            email: 'rahul@example.com',
-            address: '123 Main St, Bangalore, Karnataka',
-            pincode: '560001'
-        },
-        {
-            id: 2,
-            name: 'Priya Patel',
-            phone: '8765432109',
-            email: 'priya@example.com',
-            address: '456 Oak Ave, Mumbai, Maharashtra',
-            pincode: '400001'
-        },
-        {
-            id: 3,
-            name: 'Amit Singh',
-            phone: '7654321098',
-            email: 'amit@example.com',
-            address: '789 Pine Rd, Delhi',
-            pincode: '110001'
-        },
-        {
-            id: 4,
-            name: 'Neha Gupta',
-            phone: '6543210987',
-            email: 'neha@example.com',
-            address: '321 Elm St, Hyderabad, Telangana',
-            pincode: '500001'
-        },
-        {
-            id: 5,
-            name: 'Vikram Joshi',
-            phone: '5432109876',
-            email: 'vikram@example.com',
-            address: '654 Maple Ave, Pune, Maharashtra',
-            pincode: '411001'
-        }
-    ];
 
     // Fetch products from API
     useEffect(() => {
@@ -83,8 +50,8 @@ const NewOrders = () => {
 
                 // Extract unique categories
                 const uniqueCategories = [...new Set(
-                    response.data.map(p => p.category).filter(Boolean)
-                )];
+                    response.data.map(p => p.category).filter(Boolean))
+                ];
                 setCategories(['all', ...uniqueCategories]);
                 setIsLoading(false);
             } catch (error) {
@@ -96,9 +63,105 @@ const NewOrders = () => {
         fetchProducts();
     }, []);
 
+    useEffect(() => {
+        const fetchStates = async () => {
+            try {
+                const response = await axios.get(`${import.meta.env.VITE_SERVER_API}/states`);
+                setStates(response.data.states || []);
+            } catch (error) {
+                console.error('Error fetching states:', error);
+            }
+        };
+
+        fetchStates();
+    }, []);
+
+
+    useEffect(() => {
+        if (isModalOpen || isCustomerModalOpen || isNewCustomerModalOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'auto';
+        }
+
+        return () => {
+            document.body.style.overflow = 'auto';
+        };
+    }, [isModalOpen, isCustomerModalOpen, isNewCustomerModalOpen]);
+
+
+    const getStateName = (stateId) => {
+        const state = states.find(s => s.state_id == stateId);
+        return state ? state.name : '';
+    };
+
+    // Fetch customers from API when customer modal opens
+    useEffect(() => {
+        if (isCustomerModalOpen) {
+            fetchCustomers(); // This will fetch all customers immediately
+            setCustomerSearchTerm(''); // Reset search term
+        }
+    }, [isCustomerModalOpen]);
+
+    const fetchCustomers = async (searchQuery = '') => {
+        setIsCustomerLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get(`${import.meta.env.VITE_SERVER_API}/offline-customers`, {
+                params: { search: searchQuery },
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            // Convert backend customers to frontend format
+            const frontendCustomers = response.data.map(backendCustomer => {
+                // Ensure addresses is always an array
+                const addresses = backendCustomer.addresses || [];
+
+                return {
+                    id: backendCustomer.customer_id,
+                    name: backendCustomer.name,
+                    phone: backendCustomer.mobile,
+                    email: backendCustomer.email,
+                    addresses: addresses.map(addr => ({
+                        id: addr.address_id,
+                        address_line1: addr.address_line ? addr.address_line.split(',')[0].trim() : '',
+                        address_line2: addr.address_line && addr.address_line.split(',').length > 1 ?
+                            addr.address_line.split(',').slice(1).join(',').trim() : '',
+                        city: addr.city || '',
+                        state: addr.state_name || addr.state_abbreviation || '',
+                        pincode: addr.pincode || '',
+                        country: 'India',
+                        is_default: addr.is_default || false  // Ensure this is always boolean
+                    }))
+                };
+            });
+
+            setCustomers(frontendCustomers);
+        } catch (error) {
+            console.error('Error fetching customers:', error);
+            toast.error(error.response?.data?.message || 'Failed to load customers');
+        } finally {
+            setIsCustomerLoading(false);
+        }
+    };
+
     const showErrorToast = (message) => {
         toast.error(message, {
-            position: "top-right",
+            position: "top-center",
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+        });
+    };
+
+    const showSuccessToast = (message) => {
+        toast.success(message, {
+            position: "top-center",
             autoClose: 3000,
             hideProgressBar: false,
             closeOnClick: true,
@@ -114,13 +177,14 @@ const NewOrders = () => {
             return;
         }
 
-        if (!selectedCustomer) {
-            showErrorToast('Please select a customer');
+        if (!selectedCustomer || !selectedAddress) {
+            showErrorToast('Please select a customer and address');
             return;
         }
 
         const orderData = {
-            customer: selectedCustomer,
+            customer_id: selectedCustomer.id,
+            address_id: selectedAddress.id,
             products: selectedProducts.map(product => ({
                 id: product.id,
                 name: product.full_name,
@@ -138,15 +202,7 @@ const NewOrders = () => {
 
         console.log('Order Details:', orderData);
 
-        toast.success('Order placed successfully!', {
-            position: "top-right",
-            autoClose: 3000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-            progress: undefined,
-        });
+        showSuccessToast('Order placed successfully!');
     };
 
     const handleProductSelect = (product) => {
@@ -156,7 +212,6 @@ const NewOrders = () => {
             setSelectedModel(null);
         } else {
             setSelectionStep('model');
-            // setSelectedColors(null);
             setSelectedColors([]);
         }
     };
@@ -180,7 +235,6 @@ const NewOrders = () => {
     const handleAddSelection = () => {
         if (!selectedProduct) return;
 
-        // For single product type with multiple colors
         if (selectedProduct.product_type === 'single' && selectedColors.length > 0) {
             const newSelections = selectedColors.map(color => ({
                 id: color.color_id,
@@ -202,7 +256,6 @@ const NewOrders = () => {
             }));
 
             setSelectedProducts(prev => {
-                // Filter out existing selections to avoid duplicates
                 const existingIds = prev.map(p => p.id);
                 const newItems = newSelections.filter(item => !existingIds.includes(item.id));
 
@@ -217,7 +270,6 @@ const NewOrders = () => {
                 ];
             });
         }
-        // For variable product type with model and colors
         else if (selectedModel && selectedColors.length > 0) {
             const newSelections = selectedColors.map(color => ({
                 id: `${selectedModel.model_id}-${color.color_id}`,
@@ -242,7 +294,6 @@ const NewOrders = () => {
             }));
 
             setSelectedProducts(prev => {
-                // Filter out existing selections to avoid duplicates
                 const existingIds = prev.map(p => p.id);
                 const newItems = newSelections.filter(item => !existingIds.includes(item.id));
 
@@ -258,7 +309,6 @@ const NewOrders = () => {
             });
         }
 
-        // Reset selection process
         setSelectionStep('product');
         setSelectedProduct(null);
         setSelectedModel(null);
@@ -271,7 +321,7 @@ const NewOrders = () => {
             setSelectionStep('product');
             setSelectedProduct(null);
             setSelectedModel(null);
-            setSelectedColor(null);
+            setSelectedColors([]);
         }
     };
 
@@ -355,28 +405,171 @@ const NewOrders = () => {
         return 850;
     };
 
+    const handleCustomerSearch = (e) => {
+        const query = e.target.value.toLowerCase();
+        setCustomerSearchTerm(query);
+    };
+
     const handleCustomerSelect = (customer) => {
-        setSelectedCustomer(customer);
+        // Map the addresses to include both state and state_id
+        const mappedCustomer = {
+            ...customer,
+            addresses: customer.addresses.map(addr => ({
+                ...addr,
+                state_id: addr.state_id || states.find(s => s.name === addr.state)?.state_id || ''
+            }))
+        };
+
+        console.log('Selected customer:', mappedCustomer);
+        console.log('Customer addresses:', mappedCustomer.addresses);
+        setSelectedCustomer(mappedCustomer);
+        setSelectedAddress(null);
+    };
+
+    const handleAddressSelect = (address) => {
+        setSelectedAddress(address);
+    };
+
+    const handleConfirmCustomer = () => {
+        if (!selectedCustomer) {
+            showErrorToast('Please select a customer');
+            return;
+        }
+
+        // If customer has addresses but none selected, try to select default
+        if (selectedCustomer.addresses?.length > 0 && !selectedAddress) {
+            const defaultAddress = selectedCustomer.addresses.find(addr => addr.is_default);
+            if (defaultAddress) {
+                setSelectedAddress(defaultAddress);
+            } else {
+                // If no default address, select the first one
+                setSelectedAddress(selectedCustomer.addresses[0]);
+            }
+        }
+
         setIsCustomerModalOpen(false);
+
+        // Show success message if customer was selected
+        if (selectedCustomer) {
+            showSuccessToast(`Customer ${selectedCustomer.name} selected`);
+        }
     };
 
     const handleNewCustomerChange = (e) => {
         const { name, value } = e.target;
-        setNewCustomer(prev => ({ ...prev, [name]: value }));
+        setNewCustomer(prev => ({
+            ...prev,
+            [name]: value
+        }));
     };
 
-    const handleAddNewCustomer = () => {
-        if (newCustomer.name && newCustomer.phone && newCustomer.address && newCustomer.pincode) {
-            const customer = {
-                id: Date.now(),
-                ...newCustomer
+    const handleAddressChange = (e, index) => {
+        const { name, value } = e.target;
+        setNewCustomer(prev => {
+            const updatedAddresses = [...prev.addresses];
+            updatedAddresses[index] = {
+                ...updatedAddresses[index],
+                [name]: value
             };
-            setSelectedCustomer(customer);
-            setNewCustomer({ name: '', phone: '', email: '', address: '', pincode: '' });
-            setIsCustomerModalOpen(false);
+            return {
+                ...prev,
+                addresses: updatedAddresses
+            };
+        });
+    };
+
+    const handleAddNewCustomer = async () => {
+        if (!newCustomer.name || !newCustomer.phone || !newCustomer.addresses[0].address_line1 ||
+            !newCustomer.addresses[0].city || !newCustomer.addresses[0].pincode || !newCustomer.addresses[0].state_id) {
+            showErrorToast('Please fill all required fields');
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem('token');
+            const selectedState = states.find(state => state.state_id == newCustomer.addresses[0].state_id);
+
+            const backendData = {
+                name: newCustomer.name,
+                mobile: newCustomer.phone,
+                email: newCustomer.email || '',
+                address: {
+                    name: newCustomer.name,
+                    mobile: newCustomer.phone,
+                    pincode: newCustomer.addresses[0].pincode,
+                    locality: newCustomer.addresses[0].address_line1,
+                    address_line: newCustomer.addresses[0].address_line1 +
+                        (newCustomer.addresses[0].address_line2 ?
+                            ', ' + newCustomer.addresses[0].address_line2 : ''),
+                    city: newCustomer.addresses[0].city,
+                    state_id: newCustomer.addresses[0].state_id,
+                    landmark: '',
+                    alternate_phone: '',
+                    address_type: 'Home'
+                }
+            };
+
+            const response = await axios.post(
+                `${import.meta.env.VITE_SERVER_API}/offline-customers`,
+                backendData,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+
+            // Check if the response indicates pincode is not serviceable
+            if (response.data.success === false) {
+                // Reset form
+                setNewCustomer({
+                    name: '',
+                    phone: '',
+                    email: '',
+                    addresses: [{
+                        address_line1: '',
+                        address_line2: '',
+                        city: '',
+                        state_id: '',
+                        pincode: '',
+                        country: 'India',
+                        is_default: true
+                    }]
+                });
+                showErrorToast(response.data.message || 'Service not available for this pincode. Please choose a different pincode.');
+                return;
+            }
+
+            // If we get here, customer was created successfully
+            showSuccessToast('Customer added successfully!');
+            setNewCustomer({
+                name: '',
+                phone: '',
+                email: '',
+                addresses: [{
+                    address_line1: '',
+                    address_line2: '',
+                    city: '',
+                    state_id: '',
+                    pincode: '',
+                    country: 'India',
+                    is_default: true
+                }]
+            });
+            setIsNewCustomerModalOpen(false);
+            fetchCustomers();
+        } catch (error) {
+            console.error('Error adding customer:', error);
+
+            // Handle pincode service error specifically if it comes from backend
+            if (error.response?.data?.message?.includes('pincode')) {
+                showErrorToast('Service not available for this pincode. Please choose a different pincode.');
+            } else {
+                showErrorToast(error.response?.data?.message || 'Failed to add customer');
+            }
         }
     };
-
     const renderProductSelection = () => {
         return (
             <div className="product-list">
@@ -398,7 +591,7 @@ const NewOrders = () => {
                             <div className="product-image">
                                 <img
                                     src={product.images?.[0]?.image_url
-                                        ? `${import.meta.env.VITE_SERVER_API}/${product.images[0].image_url}`
+                                        ? `${import.meta.env.VITE_SERVER_API}/static/${product.images[0].image_url}`
                                         : '/placeholder-product.png'}
                                     alt={product.name}
                                 />
@@ -495,7 +688,7 @@ const NewOrders = () => {
 
     const renderColorSelection = () => {
         if (!selectedProduct) return null;
-    
+
         let colors = [];
         if (selectedProduct.product_type === 'single') {
             colors = selectedProduct.colors;
@@ -504,7 +697,7 @@ const NewOrders = () => {
         } else {
             return null;
         }
-    
+
         return (
             <div className="color-selection">
                 <button
@@ -524,7 +717,6 @@ const NewOrders = () => {
                 </h4>
                 <div className="color-list" style={{ maxHeight: '400px', overflowY: 'auto' }}>
                     {colors.map(color => {
-                        // Determine the image source with proper fallbacks
                         const imageSrc = color.images?.[0]?.image_url
                             ? `${import.meta.env.VITE_SERVER_API}/${color.images[0].image_url}`
                             : selectedModel?.images?.[0]?.image_url
@@ -532,13 +724,12 @@ const NewOrders = () => {
                                 : selectedProduct.images?.[0]?.image_url
                                     ? `${import.meta.env.VITE_SERVER_API}/${selectedProduct.images[0].image_url}`
                                     : '/placeholder-product.png';
-    
+
                         return (
                             <div
                                 key={color.color_id}
-                                className={`color-item ${color.stock_quantity <= 0 ? 'out-of-stock' : ''} ${
-                                    selectedColors.some(c => c.color_id === color.color_id) ? 'selected' : ''
-                                }`}
+                                className={`color-item ${color.stock_quantity <= 0 ? 'out-of-stock' : ''} ${selectedColors.some(c => c.color_id === color.color_id) ? 'selected' : ''
+                                    }`}
                                 onClick={() => color.stock_quantity > 0 && handleColorSelect(color)}
                             >
                                 <div className="color-select-box">
@@ -547,8 +738,8 @@ const NewOrders = () => {
                                     )}
                                 </div>
                                 <div className="color-image-container">
-                                    <img 
-                                        src={imageSrc} 
+                                    <img
+                                        src={imageSrc}
                                         alt={color.name}
                                         className="color-image"
                                     />
@@ -637,103 +828,106 @@ const NewOrders = () => {
                 </div>
 
                 <div className="selected-products-list">
-    {selectedProducts.length === 0 ? (
-        <div className="no-products-selected">
-            <p>No products selected. Click "Browse Products" to add items.</p>
-        </div>
-    ) : (
-        selectedProducts.map(product => {
-            // const imageUrl = `${import.meta.env.VITE_SERVER_API}/${product.image}`;
-            const imageUrl = product.image;
-
-            console.log('Image URL:', imageUrl); // ✅ Log image URL here
-
-            return (
-                <div key={product.id} className="selected-product-item">
-                    <div className="product-image">
-                        <img src={imageUrl} alt={product.full_name} />
-                    </div>
-                    <div className="product-details">
-                        <h4 className="product-name">{product.full_name}</h4>
-                        <div className="stock-info">Available: {product.stock}</div>
-                        <div className="quantity-control">
-                            <label>Qty:</label>
-                            <input
-                                type="number"
-                                min="1"
-                                max={product.stock}
-                                value={product.quantity}
-                                onChange={(e) => handleQuantityChange(product.id, e.target.value)}
-                                className="quantity-input"
-                            />
+                    {selectedProducts.length === 0 ? (
+                        <div className="no-products-selected">
+                            <p>No products selected. Click "Browse Products" to add items.</p>
                         </div>
-                    </div>
-                    <div className="price-editor">
-                        <div className="original-price">₹{product.price.toFixed(2)}</div>
-                        <div className="price-edit-options">
-                            <div className="discount-option">
-                                <label>Discount %</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    max="100"
-                                    className="discount-percentage-input"
-                                    value={product.discountPercentage || 0}
-                                    onChange={(e) => handleDiscountPercentageChange(product.id, e.target.value)}
-                                />
-                            </div>
-                            <div className="manual-price-option">
-                                <label>Final Price</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    step="0.01"
-                                    className="final-price-input"
-                                    value={product.finalPrice || product.price}
-                                    onChange={(e) => handlePriceChange(product.id, e.target.value)}
-                                />
-                            </div>
-                        </div>
-                    </div>
-                    <button
-                        className="remove-product-btn"
-                        onClick={() => removeProduct(product.id)}
-                    >
-                        ×
-                    </button>
+                    ) : (
+                        selectedProducts.map(product => {
+                            const imageUrl = product.image;
+                            return (
+                                <div key={product.id} className="selected-product-item">
+                                    <div className="product-image">
+                                        <img src={imageUrl} alt={product.full_name} />
+                                    </div>
+                                    <div className="product-details">
+                                        <h4 className="product-name">{product.full_name}</h4>
+                                        <div className="stock-info">Available: {product.stock}</div>
+                                        <div className="quantity-control">
+                                            <label>Qty:</label>
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                max={product.stock}
+                                                value={product.quantity}
+                                                onChange={(e) => handleQuantityChange(product.id, e.target.value)}
+                                                className="quantity-input"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="price-editor">
+                                        <div className="original-price">₹{product.price.toFixed(2)}</div>
+                                        <div className="price-edit-options">
+                                            <div className="discount-option">
+                                                <label>Discount %</label>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    max="100"
+                                                    className="discount-percentage-input"
+                                                    value={product.discountPercentage || 0}
+                                                    onChange={(e) => handleDiscountPercentageChange(product.id, e.target.value)}
+                                                />
+                                            </div>
+                                            <div className="manual-price-option">
+                                                <label>Final Price</label>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    step="0.01"
+                                                    className="final-price-input"
+                                                    value={product.finalPrice || product.price}
+                                                    onChange={(e) => handlePriceChange(product.id, e.target.value)}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button
+                                        className="remove-product-btn"
+                                        onClick={() => removeProduct(product.id)}
+                                    >
+                                        ×
+                                    </button>
+                                </div>
+                            );
+                        })
+                    )}
                 </div>
-            );
-        })
-    )}
-</div>
 
-
-                {selectedCustomer && (
+                {(selectedCustomer || selectedAddress) && (
                     <div className="customer-details-section">
                         <h3 className="section-title">Customer Details</h3>
                         <div className="customer-details">
-                            <div className="detail-row">
-                                <span className="detail-label">Name:</span>
-                                <span className="detail-value">{selectedCustomer.name}</span>
-                            </div>
-                            <div className="detail-row">
-                                <span className="detail-label">Phone:</span>
-                                <span className="detail-value">{selectedCustomer.phone}</span>
-                            </div>
-                            {selectedCustomer.email && (
-                                <div className="detail-row">
-                                    <span className="detail-label">Email:</span>
-                                    <span className="detail-value">{selectedCustomer.email}</span>
-                                </div>
+                            {selectedCustomer && (
+                                <>
+                                    <div className="detail-row">
+                                        <span className="detail-label">Name:</span>
+                                        <span className="detail-value">{selectedCustomer.name}</span>
+                                    </div>
+                                    <div className="detail-row">
+                                        <span className="detail-label">Phone:</span>
+                                        <span className="detail-value">{selectedCustomer.phone}</span>
+                                    </div>
+                                    {selectedCustomer.email && (
+                                        <div className="detail-row">
+                                            <span className="detail-label">Email:</span>
+                                            <span className="detail-value">{selectedCustomer.email}</span>
+                                        </div>
+                                    )}
+                                </>
                             )}
-                            <div className="detail-row">
-                                <span className="detail-label">Address:</span>
-                                <span className="detail-value">{selectedCustomer.address}</span>
-                            </div>
-                            <div className="detail-row">
-                                <span className="detail-label">Pincode:</span>
-                                <span className="detail-value">{selectedCustomer.pincode}</span>
-                            </div>
+                            {selectedAddress && (
+                                <>
+                                    <div className="detail-row">
+                                        <span className="detail-label">Address:</span>
+                                        <span className="detail-value">
+                                            {selectedAddress.address_line1}
+                                            {selectedAddress.address_line2 && `, ${selectedAddress.address_line2}`}
+                                            {`, ${selectedAddress.city}, ${selectedAddress.state_id ? getStateName(selectedAddress.state_id) : selectedAddress.state} - ${selectedAddress.pincode}`}
+                                        </span>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
                 )}
@@ -764,6 +958,7 @@ const NewOrders = () => {
                         <button
                             className="place-order-btn"
                             onClick={handlePlaceOrder}
+                            disabled={!selectedCustomer || !selectedAddress}
                         >
                             Place Order
                         </button>
@@ -787,7 +982,7 @@ const NewOrders = () => {
                                         setSelectionStep('product');
                                         setSelectedProduct(null);
                                         setSelectedModel(null);
-                                        setSelectedColor(null);
+                                        setSelectedColors([]);
                                     }}
                                 >
                                     ×
@@ -834,7 +1029,14 @@ const NewOrders = () => {
                 {isCustomerModalOpen && (
                     <div className="customer-selection-modal" onClick={() => setIsCustomerModalOpen(false)}>
                         <div className="modal-overlay"></div>
-                        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-content" onClick={(e) => e.stopPropagation()}
+                            style={{
+                                width: '80%',
+                                maxWidth: '800px',
+                                maxHeight: '90vh',
+                                display: 'flex',
+                                flexDirection: 'column'
+                            }}>
                             <div className="modal-header">
                                 <h3>{selectedCustomer ? 'Change Customer' : 'Select Customer'}</h3>
                                 <button
@@ -844,46 +1046,141 @@ const NewOrders = () => {
                                     ×
                                 </button>
                             </div>
-                            <div className="modal-body">
+                            <div
+                                className="modal-body-container"
+                                style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    height: '70vh',
+                                    maxHeight: '700px',
+                                    overflow: 'auto',
+                                    padding: '0 20px'
+                                }}
+                            >
                                 <div className="search-section">
                                     <input
                                         type="text"
-                                        placeholder="Search customers..."
+                                        placeholder="Search customers by name or phone..."
                                         className="modal-search-input"
                                         value={customerSearchTerm}
-                                        onChange={(e) => setCustomerSearchTerm(e.target.value)}
+                                        onChange={handleCustomerSearch}
                                     />
+                                    <button
+                                        className="add-customer-btn"
+                                        onClick={() => {
+                                            setIsNewCustomerModalOpen(true);
+                                        }}
+                                    >
+                                        + Add New Customer
+                                    </button>
                                 </div>
 
-                                <div className="customer-list">
-                                    {dummyCustomers
-                                        .filter(customer =>
-                                            customer.name.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
-                                            customer.phone.includes(customerSearchTerm)
-                                        )
-                                        .map(customer => (
-                                            <div
-                                                key={customer.id}
-                                                className={`customer-list-item ${selectedCustomer?.id === customer.id ? 'selected' : ''}`}
-                                                onClick={() => handleCustomerSelect(customer)}
-                                            >
-                                                <div className="customer-info">
-                                                    <h4>{customer.name}</h4>
-                                                    <div className="customer-contact">
-                                                        <span>{customer.phone}</span>
-                                                        {customer.email && <span>{customer.email}</span>}
+                                {isCustomerLoading ? (
+                                    <div className="loading-customers">Loading customers...</div>
+                                ) : (
+                                    <>
+                                        <div className="customer-list">
+                                            {customers
+                                                .filter(customer => {
+                                                    const name = customer.name || '';
+                                                    const phone = customer.phone || '';
+                                                    return customerSearchTerm === '' ||
+                                                        name.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
+                                                        phone.includes(customerSearchTerm);
+                                                })
+                                                .map(customer => (
+                                                    <div
+                                                        key={customer.id}
+                                                        className={`customer-list-item ${selectedCustomer?.id === customer.id ? 'selected' : ''}`}
+                                                        onClick={() => handleCustomerSelect(customer)}
+                                                    >
+                                                        <div className="customer-info">
+                                                            <h4>{customer.name}</h4>
+                                                            <div className="customer-contact">
+                                                                <span>{customer.phone}</span>
+                                                                {customer.email && <span>{customer.email}</span>}
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                    <div className="customer-address">
-                                                        {customer.address}, {customer.pincode}
+                                                ))}
+                                        </div>
+
+                                        {selectedCustomer && (
+                                            <div className="address-selection-section">
+                                                <h4>Select Address</h4>
+                                                {selectedCustomer.addresses && selectedCustomer.addresses.length === 0 ? (
+                                                    <p>No addresses found for this customer.</p>
+                                                ) : (
+                                                    <div className="address-list">
+                                                        {selectedCustomer.addresses?.map(address => {
+                                                            console.log("Rendering address:", address); // Add this
+                                                            console.log("State from state_id", address.state_id, getStateName(address.state_id)); // 🔥 ADD THIS HERE
+
+
+                                                            return (
+                                                                <div
+                                                                    key={address.id}
+                                                                    className={`address-item ${selectedAddress?.id === address.id ? 'selected' : ''}`}
+                                                                    onClick={() => handleAddressSelect(address)}
+                                                                >
+                                                                    <div className="address-select-box">
+                                                                        {selectedAddress?.id === address.id && <FaCheck className="check-icon" />}
+                                                                    </div>
+                                                                    <div className="address-details">
+                                                                        <p>{address.address_line1}</p>
+                                                                        {address.address_line2 && <p>{address.address_line2}</p>}
+                                                                        <p>
+                                                                            {address.city},
+                                                                            {address.state_id ? getStateName(address.state_id) : address.state} - {address.pincode}
+                                                                        </p>
+                                                                        {address.is_default && <span className="default-tag">Default</span>}
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
                                                     </div>
-                                                </div>
+                                                )}
                                             </div>
-                                        ))}
-                                </div>
+                                        )}
+                                        <div className="customer-modal-actions">
+                                            <button
+                                                className="cancel-btn"
+                                                onClick={() => setIsCustomerModalOpen(false)}
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                className="confirm-btn"
+                                                onClick={handleConfirmCustomer}
+                                                disabled={!selectedCustomer || (selectedCustomer.addresses.length > 0 && !selectedAddress)}
+                                            >
+                                                Confirm Customer
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
 
-                                <div className="new-customer-section">
-                                    <h4>Add New Customer</h4>
-                                    <div className="new-customer-form">
+                {isNewCustomerModalOpen && (
+                    <div className="new-customer-modal" >
+                        <div className="modal-overlay" onClick={() => setIsNewCustomerModalOpen(false)}></div>
+                        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                            <div className="modal-header">
+                                <h3>Add New Customer</h3>
+                                <button
+                                    className="close-modal-btn"
+                                    onClick={() => setIsNewCustomerModalOpen(false)}
+                                >
+                                    ×
+                                </button>
+                            </div>
+                            <div className="modal-body " style={{ overflowY: 'auto', flex: 1 }}>
+                                <div className="new-customer-form">
+                                    <div className="form-section">
+                                        <h4>Basic Information</h4>
                                         <div className="form-group">
                                             <label>Name*</label>
                                             <input
@@ -914,31 +1211,101 @@ const NewOrders = () => {
                                                 placeholder="Email (optional)"
                                             />
                                         </div>
-                                        <div className="form-group">
-                                            <label>Address*</label>
-                                            <textarea
-                                                name="address"
-                                                value={newCustomer.address}
-                                                onChange={handleNewCustomerChange}
-                                                placeholder="Full Address"
-                                            />
-                                        </div>
-                                        <div className="form-group">
-                                            <label>Pincode*</label>
-                                            <input
-                                                type="text"
-                                                name="pincode"
-                                                value={newCustomer.pincode}
-                                                onChange={handleNewCustomerChange}
-                                                placeholder="Pincode"
-                                            />
-                                        </div>
+                                    </div>
+
+                                    <div className="form-section">
+                                        <h4>Address Information</h4>
+                                        {newCustomer.addresses.map((address, index) => (
+                                            <div key={index} className="address-form">
+                                                <div className="form-group">
+                                                    <label>Address Line 1*</label>
+                                                    <input
+                                                        type="text"
+                                                        name="address_line1"
+                                                        value={address.address_line1}
+                                                        onChange={(e) => handleAddressChange(e, index)}
+                                                        placeholder="Street address, P.O. box, company name"
+                                                    />
+                                                </div>
+                                                <div className="form-group">
+                                                    <label>Address Line 2</label>
+                                                    <input
+                                                        type="text"
+                                                        name="address_line2"
+                                                        value={address.address_line2}
+                                                        onChange={(e) => handleAddressChange(e, index)}
+                                                        placeholder="Apartment, suite, unit, building, floor, etc."
+                                                    />
+                                                </div>
+                                                <div className="form-row">
+                                                    <div className="form-group">
+                                                        <label>City*</label>
+                                                        <input
+                                                            type="text"
+                                                            name="city"
+                                                            value={address.city}
+                                                            onChange={(e) => handleAddressChange(e, index)}
+                                                            placeholder="City"
+                                                        />
+                                                    </div>
+                                                    <div className="form-group">
+                                                        <label>State*</label>
+                                                        <select
+                                                            name="state_id"
+                                                            value={newCustomer.addresses[0].state_id || ''}
+                                                            onChange={(e) => handleAddressChange(e, 0)}
+                                                            required
+                                                        >
+                                                            <option value="">Select State</option>
+                                                            {states.map(state => (
+                                                                <option key={state.state_id} value={state.state_id}>
+                                                                    {state.name} ({state.abbreviation})
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                    <div className="form-group">
+                                                        <label>Pincode*</label>
+                                                        <input
+                                                            type="text"
+                                                            name="pincode"
+                                                            value={address.pincode}
+                                                            onChange={(e) => handleAddressChange(e, index)}
+                                                            placeholder="Pincode"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="form-group">
+                                                    <label>Country</label>
+                                                    <input
+                                                        type="text"
+                                                        name="country"
+                                                        value={address.country}
+                                                        onChange={(e) => handleAddressChange(e, index)}
+                                                        placeholder="Country"
+                                                        disabled
+                                                    />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="form-actions">
                                         <button
-                                            className="add-customer-btn"
-                                            onClick={handleAddNewCustomer}
-                                            disabled={!newCustomer.name || !newCustomer.phone || !newCustomer.address || !newCustomer.pincode}
+                                            className="cancel-btn"
+                                            onClick={() => setIsNewCustomerModalOpen(false)}
                                         >
-                                            Add Customer
+                                            Cancel
+                                        </button>
+                                        <button
+                                            className="save-btn"
+                                            onClick={handleAddNewCustomer}
+                                            disabled={!newCustomer.name || !newCustomer.phone ||
+                                                !newCustomer.addresses[0].address_line1 ||
+                                                !newCustomer.addresses[0].city ||
+                                                !newCustomer.addresses[0].pincode}
+                                        >
+                                            Save Customer
                                         </button>
                                     </div>
                                 </div>

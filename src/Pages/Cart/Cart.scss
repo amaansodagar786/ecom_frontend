@@ -6,6 +6,8 @@ $light-gray: #f7fafc;
 $border-color: #e2e8f0;
 $shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
 $transition: all 0.3s ease;
+$success-color: green;
+$border-radius: 8px;
 
 // Overlay styles
 .cart-overlay {
@@ -350,3 +352,65 @@ body.cart-open {
     border-radius: 0;
   }
 }
+
+// Add these styles to your existing Cart.scss
+
+.price-container {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 0.5rem 0;
+  
+  .original-price {
+    text-decoration: line-through;
+    color: #888;
+    font-size: 0.9rem;
+  }
+
+  .discounted-price {
+    font-weight: 600;
+    color: $primary-color;
+  }
+
+  .discount-badge {
+    background: rgba($success-color, 0.1);
+    color: $success-color;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+}
+
+.summary-row {
+  &.original-price-row {
+    span:last-child {
+      text-decoration: line-through;
+      color: #888;
+    }
+  }
+
+  &.discount-row {
+    color: $success-color;
+    font-weight: 600;
+    
+    span:last-child {
+      color: $success-color;
+    }
+  }
+}
+
+.savings-message {
+  margin-top: 1rem;
+  padding: 0.8rem;
+  background: rgba($success-color, 0.1);
+  color: $success-color;
+  border-radius: $border-radius;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+// Make sure to add this variable if not already present
+$success-color: #00b894;

@@ -184,15 +184,15 @@ const ProductPage = () => {
             setCartStatus({ error: 'Product not loaded', success: false, loading: false });
             return;
         }
-
+    
         if (!isAuthenticated) {
             setCartStatus({ error: 'Please login to add items to cart', success: false, loading: false });
             navigate('/login', { state: { from: location.pathname } });
             return;
         }
-
+    
         setCartStatus({ loading: true, error: null, success: false });
-
+    
         try {
             const payload = {
                 product_id: product.product_id,
@@ -200,14 +200,14 @@ const ProductPage = () => {
                 color_id: selectedColor?.color_id || null,
                 quantity: quantity
             };
-
+    
             const response = await axios.post(
                 `${import.meta.env.VITE_SERVER_API}/cart/additem`,
                 payload,
                 {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                 });
-
+    
             if (response.data.success) {
                 const cartItem = {
                     product_id: product.product_id,
@@ -216,16 +216,20 @@ const ProductPage = () => {
                         selectedModel?.colors?.[0]?.price ||
                         product.price ||
                         0,
+                    original_price: selectedColor?.original_price || // Add original price here
+                        selectedModel?.colors?.[0]?.original_price ||
+                        product.original_price ||
+                        null,
                     image: filteredImages[0]?.image_url ||
                         product.images?.[0]?.image_url,
                     color: selectedColor?.name,
                     model: selectedModel?.name,
                     quantity
                 };
-
+    
                 addToCart(cartItem);
                 setCartStatus({ loading: false, error: null, success: true });
-
+    
                 window.dispatchEvent(new CustomEvent('openCart'));
                 setTimeout(() => setCartStatus(prev => ({ ...prev, success: false })), 3000);
             } else {
@@ -233,14 +237,14 @@ const ProductPage = () => {
             }
         } catch (err) {
             let errorMessage = err.response?.data?.error || err.message;
-
+    
             if (err.response?.status === 403) {
                 errorMessage = 'Session expired. Please login again.';
                 localStorage.removeItem('token');
                 localStorage.removeItem('user');
                 navigate('/login');
             }
-
+    
             setCartStatus({ loading: false, error: errorMessage, success: false });
         }
     };

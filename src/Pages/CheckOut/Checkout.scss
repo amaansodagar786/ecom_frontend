@@ -1,0 +1,809 @@
+// Checkout.scss - Premium Design
+
+// Variables
+$primary-color: #4a6cf7;
+$secondary-color: #6c5ce7;
+$success-color: #00b894;
+$error-color: #d63031;
+$text-color: #2d3436;
+$light-text: #636e72;
+$bg-color: #f9f9ff;
+$card-bg: rgba(255, 255, 255, 0.95);
+$border-radius: 12px;
+$box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1);
+$transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+
+// Base Styles
+.checkout-container {
+  max-width: 1200px;
+  margin: 7rem auto auto;
+  padding: 0 1.5rem;
+  font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+  color: $text-color;
+  background: $bg-color;
+  min-height: 100vh;
+
+  @media (max-width: 768px) {
+    padding: 0 1rem;
+    margin-top: 5rem;
+  }
+}
+
+// Stepper - Premium Design
+.checkout-stepper {
+  display: flex;
+  justify-content: space-between;
+  margin: 3rem 0;
+  position: relative;
+  padding: 0 2rem;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, $primary-color, $secondary-color);
+    background-size: 200% 200%;
+    animation: gradient 3s ease infinite;
+    z-index: 1;
+    opacity: 0.2;
+  }
+
+  .step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+
+    span {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: white;
+      color: $light-text;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 0.8rem;
+      font-weight: 600;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      border: 2px solid #e0e0e0;
+      transition: $transition;
+    }
+
+    p {
+      color: $light-text;
+      font-size: 0.95rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: $transition;
+    }
+
+    &.active {
+      span {
+        background: linear-gradient(135deg, $primary-color, $secondary-color);
+        color: white;
+        border-color: $primary-color;
+        box-shadow: 0 4px 15px rgba($primary-color, 0.3);
+        transform: scale(1.1);
+      }
+
+      p {
+        color: $primary-color;
+        font-weight: 600;
+      }
+    }
+
+    @media (max-width: 576px) {
+      p {
+        font-size: 0.7rem;
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    padding: 0;
+    margin: 2rem 0;
+  }
+}
+
+// Address Step - Premium Design
+.address-step {
+  background: $card-bg;
+  padding: 2.5rem;
+  border-radius: $border-radius;
+  box-shadow: $box-shadow;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  margin-bottom: 3rem;
+
+  h2 {
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+    color: $text-color;
+    font-weight: 700;
+    position: relative;
+    padding-bottom: 0.5rem;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 60px;
+      height: 3px;
+      background: linear-gradient(90deg, $primary-color, $secondary-color);
+      border-radius: 3px;
+    }
+  }
+
+  .loading, .error {
+    text-align: center;
+    padding: 2rem;
+    font-size: 1.1rem;
+  }
+
+  .error {
+    color: $error-color;
+  }
+
+  .address-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
+
+    .address-card {
+      background: white;
+      padding: 1.5rem;
+      border-radius: $border-radius;
+      cursor: pointer;
+      transition: $transition;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      position: relative;
+      overflow: hidden;
+    //   padding: 20px;
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: #e0e0e0;
+        transition: $transition;
+      }
+
+      &:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+
+        &::before {
+          background: $primary-color;
+        }
+      }
+
+      &.selected {
+        border: 1px solid rgba($primary-color, 0.3);
+        background: rgba($primary-color, 0.03);
+        box-shadow: 0 5px 15px rgba($primary-color, 0.1);
+
+        &::before {
+          background: $success-color;
+        }
+
+        &::after {
+          content: '✓';
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          width: 24px;
+          height: 24px;
+          background: $success-color;
+          color: white;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 0.8rem;
+        }
+      }
+
+      h3 {
+        margin: 0 0 0.8rem 0;
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: $text-color;
+      }
+
+      p {
+        margin: 0.4rem 0;
+        color: $light-text;
+        font-size: 0.95rem;
+        line-height: 1.5;
+      }
+    }
+
+    @media (max-width: 576px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .no-addresses {
+    text-align: center;
+    padding: 3rem;
+    border: 1px dashed rgba(0, 0, 0, 0.1);
+    margin: 2rem 0;
+    border-radius: $border-radius;
+    background: rgba(255, 255, 255, 0.5);
+
+    p {
+      color: $light-text;
+      margin-bottom: 1.5rem;
+    }
+  }
+
+  .address-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 2.5rem;
+
+    button {
+      padding: 0.9rem 2rem;
+      border: none;
+      border-radius: $border-radius;
+      font-weight: 600;
+      cursor: pointer;
+      transition: $transition;
+      font-size: 0.95rem;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+
+      &:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba($primary-color, 0.2);
+      }
+    }
+
+    .add-address-btn {
+      background: white;
+      color: $primary-color;
+      border: 1px solid $primary-color;
+
+      &:hover {
+        background: rgba($primary-color, 0.05);
+      }
+    }
+
+    .continue-btn {
+      background: linear-gradient(135deg, $primary-color, $secondary-color);
+      color: white;
+      box-shadow: 0 4px 15px rgba($primary-color, 0.3);
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba($primary-color, 0.4);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 576px) {
+      flex-direction: column;
+      gap: 1rem;
+
+      button {
+        width: 100%;
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    padding: 1.5rem;
+  }
+}
+
+// Order Review Step - Premium Design
+.order-review-step {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2.5rem;
+  background: $card-bg;
+  padding: 2.5rem;
+  border-radius: $border-radius;
+  box-shadow: $box-shadow;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+
+  @media (min-width: 992px) {
+    grid-template-columns: 1fr 350px;
+  }
+
+  h2, h3 {
+    font-weight: 700;
+    color: $text-color;
+    position: relative;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1.5rem;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 60px;
+      height: 3px;
+      background: linear-gradient(90deg, $primary-color, $secondary-color);
+      border-radius: 3px;
+    }
+  }
+
+  .order-items {
+    grid-column: 1;
+    .order-item {
+      display: flex;
+      gap: 1.5rem;
+      padding: 1.5rem 0;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      transition: $transition;
+
+      &:hover {
+        background: rgba(0, 0, 0, 0.01);
+      }
+
+      img {
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        transition: $transition;
+
+        &:hover {
+          transform: scale(1.03);
+        }
+      }
+
+      .item-details {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+
+        h3 {
+          margin: 0 0 0.5rem 0;
+          font-size: 1.1rem;
+          padding: 0;
+          
+          &::after {
+            display: none;
+          }
+        }
+
+        p {
+          margin: 0.2rem 0;
+          color: $light-text;
+          font-size: 0.9rem;
+        }
+      }
+    }
+  }
+
+  .order-right-section {
+    grid-column: 1;
+    
+    @media (min-width: 992px) {
+      grid-column: 2;
+      grid-row: 1 / span 2;
+    }
+  }
+
+  .selected-address {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: white;
+    border-radius: $border-radius;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+
+    h3 {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+    }
+
+    .address-card {
+        padding: 20px;
+      h3 {
+        margin: 0 0 0.5rem 0;
+        font-size: 1rem;
+      }
+
+      p {
+        margin: 0.3rem 0;
+        color: $light-text;
+        font-size: 0.9rem;
+        line-height: 1.5;
+      }
+    }
+  }
+
+  .price-breakdown {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: white;
+    border-radius: $border-radius;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+
+    .price-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+      font-size: 0.95rem;
+
+      span:last-child {
+        font-weight: 500;
+      }
+
+      &.total {
+        font-weight: 700;
+        font-size: 1.1rem;
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid rgba(0, 0, 0, 0.1);
+      }
+    }
+  }
+
+  .order-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 2.5rem;
+    grid-column: 1 / -1;
+
+    button {
+      padding: 0.9rem 2rem;
+      border: none;
+      border-radius: $border-radius;
+      font-weight: 600;
+      cursor: pointer;
+      transition: $transition;
+      font-size: 0.95rem;
+      letter-spacing: 0.5px;
+
+      &:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba($primary-color, 0.2);
+      }
+    }
+
+    .back-btn {
+      background: white;
+      color: $primary-color;
+      border: 1px solid $primary-color;
+
+      &:hover {
+        background: rgba($primary-color, 0.05);
+      }
+    }
+
+    .proceed-btn {
+      background: linear-gradient(135deg, $primary-color, $secondary-color);
+      color: white;
+      box-shadow: 0 4px 15px rgba($primary-color, 0.3);
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba($primary-color, 0.4);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 768px) {
+      flex-direction: column-reverse;
+      gap: 1rem;
+
+      button {
+        width: 100%;
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    padding: 1.5rem;
+    gap: 1.5rem;
+  }
+}
+
+// Payment Step - Premium Design
+.payment-step {
+  background: $card-bg;
+  padding: 2.5rem;
+  border-radius: $border-radius;
+  box-shadow: $box-shadow;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  margin-bottom: 3rem;
+
+  h2 {
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+    color: $text-color;
+    font-weight: 700;
+    position: relative;
+    padding-bottom: 0.5rem;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 60px;
+      height: 3px;
+      background: linear-gradient(90deg, $primary-color, $secondary-color);
+      border-radius: 3px;
+    }
+  }
+
+  .payment-methods {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+
+    .payment-option {
+      background: white;
+      padding: 1.5rem;
+      border-radius: $border-radius;
+      cursor: pointer;
+      transition: $transition;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 120px;
+      position: relative;
+      overflow: hidden;
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: #e0e0e0;
+        transition: $transition;
+      }
+
+      &:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+
+        &::before {
+          background: $primary-color;
+        }
+      }
+
+      &.selected {
+        border: 1px solid rgba($primary-color, 0.3);
+        background: rgba($primary-color, 0.03);
+        box-shadow: 0 5px 15px rgba($primary-color, 0.1);
+
+        &::before {
+          background: $success-color;
+        }
+
+        &::after {
+          content: '✓';
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          width: 24px;
+          height: 24px;
+          background: $success-color;
+          color: white;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 0.8rem;
+        }
+      }
+    }
+
+    @media (max-width: 576px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .final-order-summary {
+    margin-top: 3rem;
+    padding: 1.5rem;
+    background: white;
+    border-radius: $border-radius;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+
+    h3 {
+      font-size: 1.3rem;
+      margin-bottom: 1rem;
+      color: $text-color;
+    }
+
+    p {
+      color: $light-text;
+      margin-bottom: 1.5rem;
+    }
+
+    .place-order-btn {
+      width: 100%;
+      padding: 1rem;
+      background: linear-gradient(135deg, $primary-color, $secondary-color);
+      color: white;
+      border: none;
+      border-radius: $border-radius;
+      font-weight: 600;
+      cursor: pointer;
+      transition: $transition;
+      font-size: 1rem;
+      box-shadow: 0 4px 15px rgba($primary-color, 0.2);
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba($primary-color, 0.3);
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    padding: 1.5rem;
+  }
+}
+
+// Empty Cart Message
+.empty-cart-message {
+  text-align: center;
+  padding: 4rem;
+  background: white;
+  border-radius: $border-radius;
+  box-shadow: $box-shadow;
+  max-width: 600px;
+  margin: 3rem auto;
+
+  h2 {
+    font-size: 1.8rem;
+    color: $text-color;
+    margin-bottom: 1.5rem;
+  }
+
+  button {
+    padding: 0.9rem 2.5rem;
+    background: linear-gradient(135deg, $primary-color, $secondary-color);
+    color: white;
+    border: none;
+    border-radius: $border-radius;
+    font-weight: 600;
+    cursor: pointer;
+    transition: $transition;
+    font-size: 1rem;
+    margin-top: 1.5rem;
+    box-shadow: 0 4px 15px rgba($primary-color, 0.2);
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba($primary-color, 0.3);
+    }
+  }
+}
+
+// Animations
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+// Responsive Adjustments
+@media (max-width: 768px) {
+  .checkout-stepper {
+    margin: 2rem 0;
+    
+    .step {
+      span {
+        width: 32px;
+        height: 32px;
+        font-size: 0.9rem;
+      }
+    }
+  }
+}
+
+@media (max-width: 576px) {
+  .checkout-stepper {
+    .step {
+      p {
+        display: none;
+      }
+    }
+  }
+}
+
+
+// Add these styles to your existing SCSS
+
+.price-display {
+    margin-top: 0.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  
+    .original-price {
+      text-decoration: line-through;
+      color: $light-text;
+      font-size: 0.9rem;
+    }
+  
+    .discounted-price {
+      font-weight: 600;
+      color: $text-color;
+      font-size: 1rem;
+    }
+  
+    .price {
+      font-weight: 600;
+      color: $text-color;
+      font-size: 1rem;
+    }
+  
+    .discount-badge {
+      background: rgba($success-color, 0.1);
+      color: $success-color;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+  }
+  
+  .discount-row {
+    color: $success-color;
+    font-weight: 600;
+    
+    span:last-child {
+      color: $success-color;
+    }
+  }
+  
+  .savings-message {
+    margin-top: 1rem;
+    padding: 0.8rem;
+    background: rgba($success-color, 0.1);
+    color: $success-color;
+    border-radius: $border-radius;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }

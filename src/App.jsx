@@ -41,6 +41,7 @@ import ProductManagement from './Pages/Admin/Products/ProductManagement';
 import Loader from './Components/Loader/Loader';
 import NewProduct from './Pages/Admin/Products/NewProduct';
 import NewOrders from './Pages/Admin/OfflineOrders/NewOrders';
+import Checkout from './Pages/CheckOut/Checkout';
 
 
 
@@ -72,6 +73,11 @@ function App() {
           <Route path="/support" element={<Support />} />
           <Route path="/auth-callback" element={<AuthCallback />} />
           {/* <Route path="/loader" element={<Loader />} /> */}
+
+          {/* CHECKOUT  */}
+          <Route path="/checkout" element={<Checkout />} />
+
+
 
 
           {/* ADMIN PAGES  */}
