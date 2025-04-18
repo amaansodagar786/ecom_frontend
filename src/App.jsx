@@ -87,13 +87,7 @@ function App() {
           <Route path="/wishlist" element={<Wishlist />} />
           {/* <Route path="/sidebar" element={<AdminSidebar />} /> */}
 
-          <Route 
-            path="/addproducts" 
-            element={
-              <AdminRoute>
-                <AddProducts />
-              </AdminRoute>
-            } 
+          <Route  path="/addproducts" element={ <AdminRoute> <AddProducts /> </AdminRoute>} 
           />
           <Route path="/admindashboard" element={<AdminRoute> <Dashboard /> </AdminRoute> } />
           <Route path="/createorders" element={<AdminRoute> <NewOrders /> </AdminRoute> } />

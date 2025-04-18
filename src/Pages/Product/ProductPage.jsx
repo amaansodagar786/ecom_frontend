@@ -249,43 +249,55 @@ const ProductPage = () => {
         }
     };
 
-
     const handleWishlistToggle = async () => {
-        if (isWishlisting || !product) return; // Prevent rapid clicks
+        if (isWishlisting || !product) return;
         setIsWishlisting(true);
-
+        
         try {
-            await toggleWishlistItem(product, selectedModel, selectedColor);
-
-            if (isAuthenticated) {
-                const token = localStorage.getItem('token');
-                const isInWishlist = wishlistItems.some(item =>
-                    item.product_id === product.product_id &&
-                    item.model_id === (selectedModel?.model_id || null) &&
-                    item.color_id === (selectedColor?.color_id || null)
-                );
-
-                const endpoint = isInWishlist
-                    ? `${import.meta.env.VITE_SERVER_API}/wishlist/deleteitem`
-                    : `${import.meta.env.VITE_SERVER_API}/wishlist/additem`;
-
-                await axios.post(
-                    endpoint,
-                    {
-                        product_id: product.product_id,
-                        model_id: selectedModel?.model_id || null,
-                        color_id: selectedColor?.color_id || null,
-                    },
-                    { headers: { 'Authorization': `Bearer ${token}` } }
-                );
-            }
+          await toggleWishlistItem(product, selectedModel, selectedColor);
         } catch (err) {
-            console.error('Error syncing wishlist:', err);
-            toggleWishlistItem(product, selectedModel, selectedColor); // Revert on error
+          console.error('Error toggling wishlist:', err);
         } finally {
-            setIsWishlisting(false); // Reset state
+          setIsWishlisting(false);
         }
-    };
+      };
+      
+    // const handleWishlistToggle = async () => {
+    //     if (isWishlisting || !product) return; // Prevent rapid clicks
+    //     setIsWishlisting(true);
+
+    //     try {
+    //         await toggleWishlistItem(product, selectedModel, selectedColor);
+
+    //         if (isAuthenticated) {
+    //             const token = localStorage.getItem('token');
+    //             const isInWishlist = wishlistItems.some(item =>
+    //                 item.product_id === product.product_id &&
+    //                 item.model_id === (selectedModel?.model_id || null) &&
+    //                 item.color_id === (selectedColor?.color_id || null)
+    //             );
+
+    //             const endpoint = isInWishlist
+    //                 ? `${import.meta.env.VITE_SERVER_API}/wishlist/deleteitem`
+    //                 : `${import.meta.env.VITE_SERVER_API}/wishlist/additem`;
+
+    //             await axios.post(
+    //                 endpoint,
+    //                 {
+    //                     product_id: product.product_id,
+    //                     model_id: selectedModel?.model_id || null,
+    //                     color_id: selectedColor?.color_id || null,
+    //                 },
+    //                 { headers: { 'Authorization': `Bearer ${token}` } }
+    //             );
+    //         }
+    //     } catch (err) {
+    //         console.error('Error syncing wishlist:', err);
+    //         toggleWishlistItem(product, selectedModel, selectedColor); // Revert on error
+    //     } finally {
+    //         setIsWishlisting(false); // Reset state
+    //     }
+    // };
 
     const currentStock = selectedColor?.stock_quantity ||
         selectedModel?.colors?.reduce((acc, color) => acc + color.stock_quantity, 0) ||

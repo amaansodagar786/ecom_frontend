@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import Loader from "../../../Components/Loader/Loader";
@@ -13,9 +13,10 @@ const NewProduct = () => {
   const [editingProduct, setEditingProduct] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [removedModelIds, setRemovedModelIds] = useState([]);  // NEW 
-  const [removedSpecIds, setRemovedSpecIds] = useState([]); // NEW
-
+  const [removedModelIds, setRemovedModelIds] = useState([]);
+  const [removedSpecIds, setRemovedSpecIds] = useState([]);
+  const [validationErrors, setValidationErrors] = useState({});
+  const formRef = useRef(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -26,14 +27,12 @@ const NewProduct = () => {
     images: [],
     colors: [],
     models: [],
-    specifications: [] // NEW: For single product specs
-
+    specifications: []
   });
+
   const [newImages, setNewImages] = useState([]);
   const [activeTab, setActiveTab] = useState('products');
   const [specsToDelete, setSpecsToDelete] = useState([]);
-
-
 
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
@@ -47,9 +46,6 @@ const NewProduct = () => {
           axios.get(`${import.meta.env.VITE_SERVER_API}/products`),
           axios.get(`${import.meta.env.VITE_SERVER_API}/categories`)
         ]);
-
-        // console.log('Fetched Products:', productsRes.data);
-        // console.log('Fetched Categories:', categoriesRes.data);
 
         setProducts(productsRes.data);
         setFilteredProducts(productsRes.data);
@@ -69,9 +65,6 @@ const NewProduct = () => {
   useEffect(() => {
     let result = [...products];
 
-    // console.log('Products before filtering:', products); 
-    // console.log('Current category filter:', categoryFilter); 
-
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       result = result.filter(product =>
@@ -82,12 +75,9 @@ const NewProduct = () => {
 
     if (categoryFilter !== 'all') {
       result = result.filter(product => {
-        // Get the selected category object
         const selectedCategory = categories.find(
           cat => cat.category_id.toString() === categoryFilter.toString()
         );
-
-        // Compare the category names
         return product.category === selectedCategory?.name;
       });
     }
@@ -121,19 +111,102 @@ const NewProduct = () => {
           return bPrice - aPrice;
         });
         break;
-      // case 'newest':
-      //   result.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-      //   break;
-      // case 'oldest':
-      //   result.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-      //   break;
       default:
         break;
     }
-    console.log('Filtered products:', result); // Debug log
 
     setFilteredProducts(result);
   }, [searchTerm, sortOption, categoryFilter, products]);
+
+  // Validate form before submission
+  const validateForm = () => {
+    const errors = {};
+    
+    // Basic product info validation
+    if (!formData.name.trim()) errors.name = 'Product name is required';
+    if (!formData.description.trim()) errors.description = 'Description is required';
+    if (!formData.category_id) errors.category_id = 'Category is required';
+    
+    // Image validation
+    if (formData.images.length === 0 && newImages.length === 0) {
+      errors.images = 'At least one product image is required';
+    }
+
+    // Validate specifications for single products
+    if (formData.product_type === 'single') {
+      formData.specifications.forEach((spec, index) => {
+        if (!spec.key.trim()) errors[`spec_key_${index}`] = 'Specification name is required';
+        if (!spec.value.trim()) errors[`spec_value_${index}`] = 'Specification value is required';
+      });
+    }
+
+    // Validate colors for single products
+    if (formData.product_type === 'single') {
+      if (formData.colors.length === 0) {
+        errors.colors = 'At least one color variant is required';
+      } else {
+        formData.colors.forEach((color, colorIndex) => {
+          if (!color.name.trim()) errors[`color_name_${colorIndex}`] = 'Color name is required';
+          if (color.price <= 0) errors[`color_price_${colorIndex}`] = 'Price must be greater than 0';
+          if (color.stock_quantity < 0) errors[`color_stock_${colorIndex}`] = 'Stock cannot be negative';
+          if (color.threshold < 0) errors[`color_threshold_${colorIndex}`] = 'Threshold cannot be negative';
+          
+          // Validate color images
+          if ((color.images?.length || 0) === 0 && (color.newImages?.length || 0) === 0) {
+            errors[`color_images_${colorIndex}`] = 'At least one color image is required';
+          }
+        });
+      }
+    }
+
+    // Validate models and their colors for variable products
+    if (formData.product_type === 'variable') {
+      if (formData.models.length === 0) {
+        errors.models = 'At least one model is required';
+      } else {
+        formData.models.forEach((model, modelIndex) => {
+          if (!model.name.trim()) errors[`model_name_${modelIndex}`] = 'Model name is required';
+          
+          // Validate model specifications
+          (model.specifications || []).forEach((spec, specIndex) => {
+            if (!spec.key.trim()) errors[`model_${modelIndex}_spec_key_${specIndex}`] = 'Specification name is required';
+            if (!spec.value.trim()) errors[`model_${modelIndex}_spec_value_${specIndex}`] = 'Specification value is required';
+          });
+
+          // Validate model colors
+          if (model.colors.length === 0) {
+            errors[`model_${modelIndex}_colors`] = 'At least one color variant is required';
+          } else {
+            model.colors.forEach((color, colorIndex) => {
+              if (!color.name.trim()) errors[`model_${modelIndex}_color_name_${colorIndex}`] = 'Color name is required';
+              if (color.price <= 0) errors[`model_${modelIndex}_color_price_${colorIndex}`] = 'Price must be greater than 0';
+              if (color.stock_quantity < 0) errors[`model_${modelIndex}_color_stock_${colorIndex}`] = 'Stock cannot be negative';
+              if (color.threshold < 0) errors[`model_${modelIndex}_color_threshold_${colorIndex}`] = 'Threshold cannot be negative';
+              
+              // Validate color images
+              if ((color.images?.length || 0) === 0 && (color.newImages?.length || 0) === 0) {
+                errors[`model_${modelIndex}_color_images_${colorIndex}`] = 'At least one color image is required';
+              }
+            });
+          }
+        });
+      }
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  // Scroll to first error field
+  const scrollToFirstError = () => {
+    if (formRef.current) {
+      const firstErrorElement = formRef.current.querySelector('.error-field');
+      if (firstErrorElement) {
+        firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        firstErrorElement.focus();
+      }
+    }
+  };
 
   // Handle input changes
   const handleInputChange = (e) => {
@@ -148,9 +221,6 @@ const NewProduct = () => {
   const startEditProduct = (product) => {
     const matchedCategory = categories.find(c => c.name === product.category);
     const matchedSubcategory = matchedCategory?.subcategories?.find(sc => sc.name === product.subcategory);
-
-    console.log("Resolved category:", matchedCategory);
-    console.log("Resolved subcategory:", matchedSubcategory);
 
     setEditingProduct({
       ...product,
@@ -170,7 +240,7 @@ const NewProduct = () => {
       specifications: product.specifications?.map(spec => ({
         key: spec.key,
         value: spec.value,
-        spec_id: spec.spec_id || spec.id  // Ensure spec_id is included
+        spec_id: spec.spec_id || spec.id
       })) || []
     });
 
@@ -178,7 +248,7 @@ const NewProduct = () => {
     setSpecsToDelete([]);
     setRemovedModelIds([]);
     setRemovedSpecIds([]);
-
+    setValidationErrors({});
   };
 
   // Cancel editing
@@ -192,298 +262,24 @@ const NewProduct = () => {
       subcategory_id: '',
       images: [],
       colors: [],
-      models: []
+      models: [],
+      specifications: []
     });
     setNewImages([]);
     setSpecsToDelete([]);
-
-  };
-
-  // UPDATE SINGLE PRODUCT SPECIFICATIONS
-  // Add these functions for single product specifications
-  const addProductSpecification = () => {
-    setFormData(prev => ({
-      ...prev,
-      specifications: [...prev.specifications, { key: '', value: '' }]
-    }));
-  };
-
-  const updateProductSpecification = (specIndex, field, value) => {
-    setFormData(prev => {
-      const updatedSpecs = [...prev.specifications];
-      updatedSpecs[specIndex] = {
-        ...updatedSpecs[specIndex],
-        [field]: value
-      };
-      return {
-        ...prev,
-        specifications: updatedSpecs
-      };
-    });
-  };
-
-  useEffect(() => {
-    console.log('Current specifications:', {
-      specs: formData.specifications,
-      toDelete: specsToDelete
-    });
-  }, [formData.specifications, specsToDelete]);
-
-
-
-
-  const removeProductSpecification = (specIndex) => {
-    console.log('Removing spec at index:', specIndex);
-    console.log('Current specs:', formData.specifications);
-    
-    setFormData(prev => {
-      const specToRemove = prev.specifications[specIndex];
-      console.log('Spec to remove:', specToRemove);
-      
-      if (specToRemove?.spec_id) {
-        console.log('Adding to delete list:', specToRemove.spec_id);
-        setSpecsToDelete(prev => [...prev, specToRemove.spec_id]);
-      } else {
-        console.log('No spec_id found - was this a new spec?');
-      }
-  
-      return {
-        ...prev,
-        specifications: prev.specifications.filter((_, i) => i !== specIndex)
-      };
-    });
-  };
-
-
-
-
-  const saveProductSpecifications = async () => {
-    if (!editingProduct) return;
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // 1. First delete any specs marked for deletion
-      if (specsToDelete.length > 0) {
-        console.log('Processing deletions for:', specsToDelete);
-        const deleteResults = await Promise.allSettled(
-          specsToDelete.map(specId => {
-            if (!specId) {
-              console.warn('Skipping invalid specId:', specId);
-              return Promise.resolve();
-            }
-            return axios.delete(
-              `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/specifications/${specId}`,
-              { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }
-            );
-          })
-        );
-
-        const failedDeletions = deleteResults.filter(result =>
-          result.status === 'rejected' && result.reason
-        );
-
-        if (failedDeletions.length > 0) {
-          console.error('Failed deletions:', failedDeletions);
-          throw new Error(`Failed to delete ${failedDeletions.length} specifications`);
-        }
-      }
-
-      // 2. Process remaining specs (create/update)
-      const validSpecs = formData.specifications.filter(
-        spec => spec.key?.trim() && spec.value?.trim()
-      );
-
-      const results = await Promise.all(
-        validSpecs.map(async (spec) => {
-          const specData = {
-            key: spec.key.trim(),
-            value: spec.value.trim(),
-            product_id: editingProduct.product_id
-          };
-
-          try {
-            if (spec.spec_id) {
-              // Update existing spec
-              const response = await axios.put(
-                `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/specifications/${spec.spec_id}`,
-                specData,
-                { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }
-              );
-              return response.data;
-            } else {
-              // Create new spec
-              const response = await axios.post(
-                `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/specifications`,
-                specData,
-                { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }
-              );
-              return response.data;
-            }
-          } catch (err) {
-            console.error('Error saving specification:', err);
-            throw err;
-          }
-        })
-      );
-
-      // 3. Update state with new spec IDs
-      setFormData(prev => ({
-        ...prev,
-        specifications: validSpecs.map((spec, idx) => ({
-          ...spec,
-          spec_id: results[idx]?.spec_id || spec.spec_id
-        }))
-      }));
-
-      // 4. Clear deletion queue
-      setSpecsToDelete([]);
-      alert('Specifications saved successfully!');
-    } catch (err) {
-      console.error('Error saving specifications:', err);
-      setError(err.response?.data?.error || err.message || 'Failed to save specifications');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-
-
-  // Save specifications for a model
-  const saveModelSpecifications = async (modelIndex) => {
-    if (!editingProduct) return;
-
-    const model = formData.models[modelIndex];
-    if (!model || !model.model_id) {
-      setError('Model must be saved before adding specifications');
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // First delete any specs marked for deletion
-      await Promise.all(
-        specsToDelete
-          .filter(specId => specId) // Filter out any undefined/null values
-          .map(async specId => {
-            try {
-              await axios.delete(
-                `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/models/${model.model_id}/specifications/${specId}`,
-                {
-                  headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                  }
-                }
-              );
-            } catch (err) {
-              console.error(`Failed to delete spec ${specId}:`, err);
-              throw err;
-            }
-          })
-      );
-
-      // Then handle updates and new specs
-      const results = await Promise.all(
-        (model.specifications || []).map(async (spec) => {
-          if (!spec?.key && !spec?.value) return null; // Skip empty specs
-
-          const specData = {
-            key: spec.key || '',
-            value: spec.value || '',
-            model_id: model.model_id
-          };
-
-          try {
-            if (spec?.spec_id) {
-              // Update existing spec
-              const response = await axios.put(
-                `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/models/${model.model_id}/specifications/${spec.spec_id}`,
-                specData,
-                {
-                  headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                  }
-                }
-              );
-              return response.data;
-            } else {
-              // Add new spec
-              const response = await axios.post(
-                `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/models/${model.model_id}/specifications`,
-                specData,
-                {
-                  headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                  }
-                }
-              );
-              return response.data;
-            }
-          } catch (err) {
-            console.error('Error saving specification:', err);
-            throw err;
-          }
-        })
-      );
-
-      // Filter out null results from empty specs
-      const validResults = results.filter(result => result !== null);
-
-      // Update the form data with the new spec IDs
-      setFormData(prev => {
-        const updatedModels = [...prev.models];
-        const updatedSpecs = (updatedModels[modelIndex].specifications || [])
-          .map((spec, idx) => ({
-            ...spec,
-            spec_id: validResults[idx]?.spec_id || spec.spec_id
-          }))
-          .filter(spec => spec.key || spec.value); // Remove empty specs
-
-        updatedModels[modelIndex].specifications = updatedSpecs;
-
-        return {
-          ...prev,
-          models: updatedModels
-        };
-      });
-
-      setSpecsToDelete([]);
-      setError(null);
-      alert('Specifications saved successfully!');
-    } catch (err) {
-      console.error('Error saving specifications:', err);
-      setError(err.response?.data?.error || err.message || 'Failed to save specifications');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-
-  // Separate image upload function
-  const uploadImage = async (file) => {
-    const formData = new FormData();
-    formData.append('image', file);
-
-    const response = await axios.post(
-      `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/images`,
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      }
-    );
-
-    return response.data.image_url; // Make sure your backend returns this
+    setValidationErrors({});
   };
 
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setValidationErrors({});
+    
+    if (!validateForm()) {
+      scrollToFirstError();
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
@@ -551,7 +347,6 @@ const NewProduct = () => {
       // 4. Handle colors (for single products)
       if (formData.product_type === 'single') {
         await Promise.all(formData.colors.map(async (color, colorIndex) => {
-          // First save the color to get a color_id
           const colorEndpoint = color.color_id
             ? `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/colors/${color.color_id}`
             : `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/colors`;
@@ -578,7 +373,7 @@ const NewProduct = () => {
 
           const colorId = colorResponse.data.color_id || color.color_id;
 
-          // Now handle color images if any - using the product images endpoint with color_id
+          // Handle color images
           if (color.newImages && color.newImages.length > 0) {
             await Promise.all(color.newImages.map(async file => {
               const formData = new FormData();
@@ -603,7 +398,6 @@ const NewProduct = () => {
       // 5. Handle models and their colors (for variable products)
       if (formData.product_type === 'variable') {
         await Promise.all(formData.models.map(async (model, modelIndex) => {
-          // First save the model to get a model_id
           const modelEndpoint = model.model_id
             ? `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/models/${model.model_id}`
             : `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/models`;
@@ -625,10 +419,9 @@ const NewProduct = () => {
 
           const modelId = modelResponse.data.model_id || model.model_id;
 
-          // Then handle model colors
+          // Handle model colors
           if (model.colors) {
             await Promise.all(model.colors.map(async (color, colorIndex) => {
-              // First save the color to get a color_id
               const colorEndpoint = color.color_id
                 ? `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/colors/${color.color_id}`
                 : `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/colors`;
@@ -656,7 +449,7 @@ const NewProduct = () => {
 
               const colorId = colorResponse.data.color_id || color.color_id;
 
-              // Now handle color images if any
+              // Handle color images
               if (color.newImages && color.newImages.length > 0) {
                 await Promise.all(color.newImages.map(async file => {
                   const formData = new FormData();
@@ -695,6 +488,25 @@ const NewProduct = () => {
     }
   };
 
+  // Separate image upload function
+  const uploadImage = async (file) => {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const response = await axios.post(
+      `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/images`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      }
+    );
+
+    return response.data.image_url;
+  };
+
   // Add specification to a model
   const addSpecification = (modelIndex) => {
     setFormData(prev => {
@@ -712,6 +524,7 @@ const NewProduct = () => {
       };
     });
   };
+
   // Update specification
   const updateSpecification = (modelIndex, specIndex, field, value) => {
     setFormData(prev => {
@@ -735,19 +548,16 @@ const NewProduct = () => {
     setFormData(prev => {
       const updatedModels = [...prev.models];
 
-      // Safely access specifications array
       if (!updatedModels[modelIndex].specifications) {
-        return prev; // No specifications to remove
+        return prev;
       }
 
       const specToRemove = updatedModels[modelIndex].specifications[specIndex];
 
-      // Only add to delete list if spec exists and has an ID
       if (specToRemove?.spec_id) {
         setSpecsToDelete(prev => [...prev, specToRemove.spec_id]);
       }
 
-      // Remove the specification from the array
       updatedModels[modelIndex].specifications.splice(specIndex, 1);
 
       return {
@@ -757,44 +567,14 @@ const NewProduct = () => {
     });
   };
 
-
   // Handle file uploads for product images
   const handleProductImageChange = async (e) => {
     const files = Array.from(e.target.files);
+    if (files.length === 0) return;
 
     try {
-      // Upload each new image
-      const uploadPromises = files.map(file => {
-        const formData = new FormData();
-        formData.append('image', file);
-
-        return axios.post(
-          `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/images`,
-          formData,
-          {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-              'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-          }
-        );
-      });
-
-      const responses = await Promise.all(uploadPromises);
-      const newImageUrls = responses.map(res => res.data.image_url);
-
-      // Update state with new images
-      setFormData(prev => ({
-        ...prev,
-        images: [
-          ...prev.images,
-          ...newImageUrls.map(url => ({
-            image_url: url,
-            image_id: Date.now() // Temporary ID for new images
-          }))
-        ]
-      }));
-
+      setNewImages(prev => [...prev, ...files]);
+      setValidationErrors(prev => ({ ...prev, images: undefined }));
     } catch (err) {
       console.error('Error uploading images:', err);
       setError(err.response?.data?.message || 'Failed to upload images');
@@ -836,7 +616,6 @@ const NewProduct = () => {
 
       // If color doesn't have an ID yet, we need to save it first
       if (!color.color_id) {
-        // First save the color to get a color_id
         const colorResponse = await axios.post(
           `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/colors`,
           {
@@ -856,73 +635,39 @@ const NewProduct = () => {
 
         const colorId = colorResponse.data.color_id;
 
-        // Update the form data with the new color_id
         setFormData(prev => {
           const updatedColors = [...prev.colors];
           updatedColors[colorIndex] = {
             ...updatedColors[colorIndex],
-            color_id: colorId
+            color_id: colorId,
+            newImages: [...(updatedColors[colorIndex].newImages || []), ...files]
           };
           return {
             ...prev,
             colors: updatedColors
           };
         });
-
-        // Now upload images with the new color_id
-        await uploadColorImages(colorId, files, colorIndex);
       } else {
-        // Color already has an ID, just upload images
-        await uploadColorImages(color.color_id, files, colorIndex);
+        setFormData(prev => {
+          const updatedColors = [...prev.colors];
+          updatedColors[colorIndex] = {
+            ...updatedColors[colorIndex],
+            newImages: [...(updatedColors[colorIndex].newImages || []), ...files]
+          };
+          return {
+            ...prev,
+            colors: updatedColors
+          };
+        });
       }
+
+      setValidationErrors(prev => ({ ...prev, [`color_images_${colorIndex}`]: undefined }));
     } catch (err) {
       console.error('Error handling color images:', err);
       setError(err.response?.data?.message || 'Failed to handle color images');
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // Helper function to upload color images
-  const uploadColorImages = async (colorId, files, colorIndex) => {
-    const uploadedImages = await Promise.all(
-      files.map(async file => {
-        const formData = new FormData();
-        formData.append('image', file);
-        formData.append('color_id', colorId);
-
-        const response = await axios.post(
-          `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/images`,
-          formData,
-          {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-              'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-          }
-        );
-        return response.data;
-      })
-    );
-
-    // Update state with new images
-    setFormData(prev => {
-      const updatedColors = [...prev.colors];
-      updatedColors[colorIndex] = {
-        ...updatedColors[colorIndex],
-        images: [
-          ...updatedColors[colorIndex].images,
-          ...uploadedImages.map(img => ({
-            image_url: img.image_url,
-            image_id: img.image_id
-          }))
-        ]
-      };
-      return {
-        ...prev,
-        colors: updatedColors
-      };
-    });
   };
 
   // Remove existing color image
@@ -954,54 +699,22 @@ const NewProduct = () => {
 
   const handleModelColorImageChange = async (modelIndex, colorIndex, e) => {
     const files = Array.from(e.target.files);
+    if (files.length === 0) return;
 
     try {
-      const modelId = formData.models[modelIndex].model_id;
-      const colorId = formData.models[modelIndex].colors[colorIndex].color_id;
-
-      if (!modelId || !colorId) {
-        throw new Error("Model and color must be saved before adding images");
-      }
-
-      const uploadedImages = await Promise.all(
-        files.map(file => {
-          const formData = new FormData();
-          formData.append('image', file);
-          formData.append('color_id', colorId);
-          formData.append('model_id', modelId); // Add model_id to form data
-
-          return axios.post(
-            `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/images`,
-            formData,
-            {
-              headers: {
-                'Content-Type': 'multipart/form-data',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-              }
-            }
-          );
-        })
-      );
-
-      const imageUrls = uploadedImages.map(res => res.data.image_url);
-
       setFormData(prev => {
         const updatedModels = [...prev.models];
         updatedModels[modelIndex].colors[colorIndex] = {
           ...updatedModels[modelIndex].colors[colorIndex],
-          images: [
-            ...updatedModels[modelIndex].colors[colorIndex].images,
-            ...imageUrls.map(url => ({
-              image_url: url,
-              image_id: Date.now() // Temporary ID for new images
-            }))
-          ]
+          newImages: [...(updatedModels[modelIndex].colors[colorIndex].newImages || []), ...files]
         };
         return {
           ...prev,
           models: updatedModels
         };
       });
+
+      setValidationErrors(prev => ({ ...prev, [`model_${modelIndex}_color_images_${colorIndex}`]: undefined }));
     } catch (err) {
       console.error('Error uploading model color images:', err);
       setError(err.response?.data?.message || 'Failed to upload model color images');
@@ -1069,6 +782,9 @@ const NewProduct = () => {
         colors: updatedColors
       };
     });
+
+    // Clear validation error for this field
+    setValidationErrors(prev => ({ ...prev, [`color_${field}_${index}`]: undefined }));
   };
 
   // Remove a color variant
@@ -1109,15 +825,22 @@ const NewProduct = () => {
         models: updatedModels
       };
     });
+
+    // Clear validation error for this field
+    setValidationErrors(prev => ({ ...prev, [`model_${field}_${modelIndex}`]: undefined }));
   };
 
   // Remove a model
   const removeModel = (modelIndex) => {
+    if (formData.models.length <= 1) {
+      setError("A variable product must have at least one model");
+      return;
+    }
+
     setFormData(prev => {
       const updatedModels = [...prev.models];
       const removedModel = updatedModels.splice(modelIndex, 1)[0];
 
-      // Track removed model ID if it exists
       if (removedModel.model_id) {
         setRemovedModelIds(prevIds => [...prevIds, removedModel.model_id]);
       }
@@ -1129,72 +852,7 @@ const NewProduct = () => {
     });
   };
 
-  // // Add specification to a model
-  // const addSpecification = (modelIndex) => {
-  //   setFormData(prev => {
-  //     const updatedModels = [...prev.models];
-  //     updatedModels[modelIndex].specifications = [
-  //       ...(updatedModels[modelIndex].specifications || []),
-  //       { key: '', value: '' }
-  //     ];
-  //     return {
-  //       ...prev,
-  //       models: updatedModels
-  //     };
-  //   });
-  // };
-
-  // Update specification
-  // Update specification
-  //  const updateSpecification = (modelIndex, specIndex, field, value) => {
-  //   setFormData(prev => {
-  //     const updatedModels = [...prev.models];
-  //     updatedModels[modelIndex].specifications[specIndex][field] = value;
-  //     return {
-  //       ...prev,
-  //       models: updatedModels
-  //     };
-  //   });
-  // };
-
-  // Remove specification (marks for deletion if it exists in DB)
-  // const removeSpecification = (modelIndex, specIndex) => {
-  //   setFormData(prev => {
-  //     const updatedModels = [...prev.models];
-  //     const model = updatedModels[modelIndex];
-
-  //     if (!model.specifications || specIndex >= model.specifications.length) {
-  //       return prev;
-  //     }
-
-  //     const removedSpec = model.specifications[specIndex];
-
-  //     // Remove from local state
-  //     model.specifications.splice(specIndex, 1);
-
-  //     // Track deletion if it has an ID (exists in DB)
-  //     if (removedSpec?.spec_id) {
-  //       setRemovedSpecIds(prev => [
-  //         ...prev,
-  //         {
-  //           model_id: model.model_id,
-  //           spec_id: removedSpec.spec_id
-  //         }
-  //       ]);
-  //     }
-
-  //     return {
-  //       ...prev,
-  //       models: updatedModels
-  //     };
-  //   });
-  // };
-
-
   // Add color to a model
-
-
-
   const addModelColor = (modelIndex) => {
     setFormData(prev => {
       const updatedModels = [...prev.models];
@@ -1232,6 +890,12 @@ const NewProduct = () => {
         models: updatedModels
       };
     });
+
+    // Clear validation error for this field
+    setValidationErrors(prev => ({ 
+      ...prev, 
+      [`model_${modelIndex}_color_${field}_${colorIndex}`]: undefined 
+    }));
   };
 
   // Remove model color
@@ -1244,6 +908,236 @@ const NewProduct = () => {
         models: updatedModels
       };
     });
+  };
+
+  // Add product specification
+  const addProductSpecification = () => {
+    setFormData(prev => ({
+      ...prev,
+      specifications: [...prev.specifications, { key: '', value: '' }]
+    }));
+  };
+
+  // Update product specification
+  const updateProductSpecification = (specIndex, field, value) => {
+    setFormData(prev => {
+      const updatedSpecs = [...prev.specifications];
+      updatedSpecs[specIndex] = {
+        ...updatedSpecs[specIndex],
+        [field]: value
+      };
+      return {
+        ...prev,
+        specifications: updatedSpecs
+      };
+    });
+
+    // Clear validation error for this field
+    setValidationErrors(prev => ({ 
+      ...prev, 
+      [`spec_${field}_${specIndex}`]: undefined 
+    }));
+  };
+
+  // Remove product specification
+  const removeProductSpecification = (specIndex) => {
+    setFormData(prev => {
+      const specToRemove = prev.specifications[specIndex];
+
+      if (specToRemove?.spec_id) {
+        setSpecsToDelete(prev => [...prev, specToRemove.spec_id]);
+      }
+
+      return {
+        ...prev,
+        specifications: prev.specifications.filter((_, i) => i !== specIndex)
+      };
+    });
+  };
+
+  // Save product specifications
+  const saveProductSpecifications = async () => {
+    if (!editingProduct) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // 1. First delete any specs marked for deletion
+      if (specsToDelete.length > 0) {
+        await Promise.all(
+          specsToDelete.map(specId => {
+            if (!specId) return Promise.resolve();
+            return axios.delete(
+              `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/specifications/${specId}`,
+              { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }
+            );
+          })
+        );
+      }
+
+      // 2. Process remaining specs (create/update)
+      const validSpecs = formData.specifications.filter(
+        spec => spec.key?.trim() && spec.value?.trim()
+      );
+
+      const results = await Promise.all(
+        validSpecs.map(async (spec) => {
+          const specData = {
+            key: spec.key.trim(),
+            value: spec.value.trim(),
+            product_id: editingProduct.product_id
+          };
+
+          if (spec.spec_id) {
+            // Update existing spec
+            const response = await axios.put(
+              `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/specifications/${spec.spec_id}`,
+              specData,
+              { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }
+            );
+            return response.data;
+          } else {
+            // Create new spec
+            const response = await axios.post(
+              `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/specifications`,
+              specData,
+              { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }
+            );
+            return response.data;
+          }
+        })
+      );
+
+      // 3. Update state with new spec IDs
+      setFormData(prev => ({
+        ...prev,
+        specifications: validSpecs.map((spec, idx) => ({
+          ...spec,
+          spec_id: results[idx]?.spec_id || spec.spec_id
+        }))
+      }));
+
+      // 4. Clear deletion queue
+      setSpecsToDelete([]);
+      alert('Specifications saved successfully!');
+    } catch (err) {
+      console.error('Error saving specifications:', err);
+      setError(err.response?.data?.error || err.message || 'Failed to save specifications');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Save model specifications
+  const saveModelSpecifications = async (modelIndex) => {
+    if (!editingProduct) return;
+
+    const model = formData.models[modelIndex];
+    if (!model || !model.model_id) {
+      setError("Model must be saved before adding specifications");
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // First delete any specs marked for deletion
+      await Promise.all(
+        specsToDelete
+          .filter(specId => specId)
+          .map(async specId => {
+            try {
+              await axios.delete(
+                `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/models/${model.model_id}/specifications/${specId}`,
+                {
+                  headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                  }
+                }
+              );
+            } catch (err) {
+              console.error(`Failed to delete spec ${specId}:`, err);
+              throw err;
+            }
+          })
+      );
+
+      // Then handle updates and new specs
+      const results = await Promise.all(
+        (model.specifications || []).map(async (spec) => {
+          if (!spec?.key && !spec?.value) return null;
+
+          const specData = {
+            key: spec.key || '',
+            value: spec.value || '',
+            model_id: model.model_id
+          };
+
+          try {
+            if (spec?.spec_id) {
+              // Update existing spec
+              const response = await axios.put(
+                `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/models/${model.model_id}/specifications/${spec.spec_id}`,
+                specData,
+                {
+                  headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                  }
+                }
+              );
+              return response.data;
+            } else {
+              // Add new spec
+              const response = await axios.post(
+                `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/models/${model.model_id}/specifications`,
+                specData,
+                {
+                  headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                  }
+                }
+              );
+              return response.data;
+            }
+          } catch (err) {
+            console.error('Error saving specification:', err);
+            throw err;
+          }
+        })
+      );
+
+      // Filter out null results from empty specs
+      const validResults = results.filter(result => result !== null);
+
+      // Update the form data with the new spec IDs
+      setFormData(prev => {
+        const updatedModels = [...prev.models];
+        const updatedSpecs = (updatedModels[modelIndex].specifications || [])
+          .map((spec, idx) => ({
+            ...spec,
+            spec_id: validResults[idx]?.spec_id || spec.spec_id
+          }))
+          .filter(spec => spec.key || spec.value);
+
+        updatedModels[modelIndex].specifications = updatedSpecs;
+
+        return {
+          ...prev,
+          models: updatedModels
+        };
+      });
+
+      setSpecsToDelete([]);
+      setError(null);
+      alert('Specifications saved successfully!');
+    } catch (err) {
+      console.error('Error saving specifications:', err);
+      setError(err.response?.data?.error || err.message || 'Failed to save specifications');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Delete a product
@@ -1325,8 +1219,6 @@ const NewProduct = () => {
             <option value="name_desc">Name (Z-A)</option>
             <option value="price_asc">Price (Low to High)</option>
             <option value="price_desc">Price (High to Low)</option>
-            {/* <option value="newest">Newest First</option> */}
-            {/* <option value="oldest">Oldest First</option> */}
           </select>
         </div>
 
@@ -1400,9 +1292,18 @@ const NewProduct = () => {
   // Render product form
   const renderProductForm = () => (
     <div className="product-form-container">
-      <h2>{editingProduct ? 'Edit Product' : 'Add New Product'}</h2>
-      <form onSubmit={handleSubmit} className="product-form">
-        <div className="form-group">
+      <div className="form-header">
+        <button 
+          className="btn-back"
+          onClick={cancelEdit}
+        >
+          &larr; Back to Products
+        </button>
+        <h2>Edit Product</h2>
+      </div>
+      
+      <form onSubmit={handleSubmit} className="product-form" ref={formRef}>
+        <div className={`form-group ${validationErrors.name ? 'error-field' : ''}`}>
           <label>Product Name:</label>
           <input
             type="text"
@@ -1412,9 +1313,12 @@ const NewProduct = () => {
             placeholder="Enter product name"
             required
           />
+          {validationErrors.name && (
+            <span className="error-message">{validationErrors.name}</span>
+          )}
         </div>
 
-        <div className="form-group">
+        <div className={`form-group ${validationErrors.description ? 'error-field' : ''}`}>
           <label>Description:</label>
           <textarea
             name="description"
@@ -1423,17 +1327,16 @@ const NewProduct = () => {
             placeholder="Enter detailed product description"
             required
           />
+          {validationErrors.description && (
+            <span className="error-message">{validationErrors.description}</span>
+          )}
         </div>
 
-        {/* Display Category (based on formData.category_id) */}
         <div className="form-group">
           <label>Category:</label>
           <p>
             {
               (() => {
-                console.log("Editing Product Category ID:", editingProduct?.category_id);
-                console.log("All Categories IDs:", categories.map(c => c.category_id));
-
                 const matchedCategory = categories.find(c => c.category_id == editingProduct?.category_id);
                 return matchedCategory?.name || 'No category';
               })()
@@ -1442,7 +1345,6 @@ const NewProduct = () => {
           <input type="hidden" name="category_id" value={editingProduct?.category_id || ''} />
         </div>
 
-        {/* Display Subcategory (based on formData.subcategory_id) */}
         <div className="form-group">
           <label>Subcategory:</label>
           <p>
@@ -1472,7 +1374,7 @@ const NewProduct = () => {
           )}
         </div>
 
-        <div className="form-group">
+        <div className={`form-group ${validationErrors.images ? 'error-field' : ''}`}>
           <label>Product Images:</label>
           <input
             type="file"
@@ -1481,6 +1383,9 @@ const NewProduct = () => {
             accept="image/*"
             className="file-input"
           />
+          {validationErrors.images && (
+            <span className="error-message">{validationErrors.images}</span>
+          )}
           <div className="image-preview-container">
             <h4>Existing Images</h4>
             <div className="image-preview">
@@ -1530,19 +1435,31 @@ const NewProduct = () => {
             </div>
 
             {formData.specifications?.map((spec, specIndex) => (
-              <div key={spec.spec_id || `new-spec-${specIndex}`} className="specification-item">
-                <input
-                  type="text"
-                  placeholder="Spec name (e.g., Material)"
-                  value={spec.key}
-                  onChange={(e) => updateProductSpecification(specIndex, 'key', e.target.value)}
-                />
-                <input
-                  type="text"
-                  placeholder="Spec value (e.g., Cotton)"
-                  value={spec.value}
-                  onChange={(e) => updateProductSpecification(specIndex, 'value', e.target.value)}
-                />
+              <div key={spec.spec_id || `new-spec-${specIndex}`} className={`specification-item ${
+                validationErrors[`spec_key_${specIndex}`] || validationErrors[`spec_value_${specIndex}`] ? 'error-field' : ''
+              }`}>
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Spec name (e.g., Material)"
+                    value={spec.key}
+                    onChange={(e) => updateProductSpecification(specIndex, 'key', e.target.value)}
+                  />
+                  {validationErrors[`spec_key_${specIndex}`] && (
+                    <span className="error-message">{validationErrors[`spec_key_${specIndex}`]}</span>
+                  )}
+                </div>
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Spec value (e.g., Cotton)"
+                    value={spec.value}
+                    onChange={(e) => updateProductSpecification(specIndex, 'value', e.target.value)}
+                  />
+                  {validationErrors[`spec_value_${specIndex}`] && (
+                    <span className="error-message">{validationErrors[`spec_value_${specIndex}`]}</span>
+                  )}
+                </div>
                 <button
                   type="button"
                   className="btn-remove"
@@ -1565,48 +1482,91 @@ const NewProduct = () => {
         {formData.product_type === 'single' && (
           <div className="form-group">
             <h3>Colors/Variants</h3>
+            {validationErrors.colors && (
+              <span className="error-message">{validationErrors.colors}</span>
+            )}
             {formData.colors.map((color, colorIndex) => (
-              <div key={colorIndex} className="color-variant">
-                <div className="color-details">
-                  <input
-                    type="text"
-                    placeholder="Color name (e.g., Red)"
-                    value={color.name}
-                    onChange={(e) => updateColor(colorIndex, 'name', e.target.value)}
-                  />
-                  <input
-                    type="number"
-                    placeholder="Price"
-                    value={color.price}
-                    onChange={(e) => updateColor(colorIndex, 'price', e.target.value)}
-                    min="0"
-                    step="0.01"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Original Price (optional)"
-                    value={color.original_price || ''}
-                    onChange={(e) => updateColor(colorIndex, 'original_price', e.target.value)}
-                    min="0"
-                    step="0.01"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Stock quantity"
-                    value={color.stock_quantity}
-                    onChange={(e) => updateColor(colorIndex, 'stock_quantity', e.target.value)}
-                    min="0"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Low stock threshold"
-                    value={color.threshold}
-                    onChange={(e) => updateColor(colorIndex, 'threshold', e.target.value)}
-                    min="0"
-                  />
+              <div className="color-variant">
+                <h4>Color Variant #{colorIndex + 1}</h4>
+
+                <div className="color-details-grid">
+                  <div className={`form-field ${validationErrors[`color_name_${colorIndex}`] ? 'error-field' : ''}`}>
+                    <label>Color Name *</label>
+                    <input
+                      type="text"
+                      placeholder="e.g., Red, Blue, etc."
+                      value={color.name}
+                      onChange={(e) => updateColor(colorIndex, 'name', e.target.value)}
+                      required
+                    />
+                    {validationErrors[`color_name_${colorIndex}`] && (
+                      <span className="error-message">{validationErrors[`color_name_${colorIndex}`]}</span>
+                    )}
+                  </div>
+
+                  <div className={`form-field ${validationErrors[`color_price_${colorIndex}`] ? 'error-field' : ''}`}>
+                    <label>Current Price *</label>
+                    <input
+                      type="number"
+                      placeholder="Selling price"
+                      value={color.price}
+                      onChange={(e) => updateColor(colorIndex, 'price', e.target.value)}
+                      min="0"
+                      step="0.01"
+                      required
+                    />
+                    {validationErrors[`color_price_${colorIndex}`] && (
+                      <span className="error-message">{validationErrors[`color_price_${colorIndex}`]}</span>
+                    )}
+                  </div>
+
+                  <div className={`form-field ${validationErrors[`color_original_price_${colorIndex}`] ? 'error-field' : ''}`}>
+                    <label>Original Price</label>
+                    <input
+                      type="number"
+                      placeholder="Original price (optional)"
+                      value={color.original_price || ''}
+                      onChange={(e) => updateColor(colorIndex, 'original_price', e.target.value)}
+                      min="0"
+                      step="0.01"
+                    />
+                    {validationErrors[`color_original_price_${colorIndex}`] && (
+                      <span className="error-message">{validationErrors[`color_original_price_${colorIndex}`]}</span>
+                    )}
+                  </div>
+
+                  <div className={`form-field ${validationErrors[`color_stock_${colorIndex}`] ? 'error-field' : ''}`}>
+                    <label>Stock Quantity *</label>
+                    <input
+                      type="number"
+                      placeholder="Available quantity"
+                      value={color.stock_quantity}
+                      onChange={(e) => updateColor(colorIndex, 'stock_quantity', e.target.value)}
+                      min="0"
+                      required
+                    />
+                    {validationErrors[`color_stock_${colorIndex}`] && (
+                      <span className="error-message">{validationErrors[`color_stock_${colorIndex}`]}</span>
+                    )}
+                  </div>
+
+                  <div className={`form-field ${validationErrors[`color_threshold_${colorIndex}`] ? 'error-field' : ''}`}>
+                    <label>Low Stock Threshold *</label>
+                    <input
+                      type="number"
+                      placeholder="Alert when stock reaches"
+                      value={color.threshold}
+                      onChange={(e) => updateColor(colorIndex, 'threshold', e.target.value)}
+                      min="0"
+                      required
+                    />
+                    {validationErrors[`color_threshold_${colorIndex}`] && (
+                      <span className="error-message">{validationErrors[`color_threshold_${colorIndex}`]}</span>
+                    )}
+                  </div>
                 </div>
 
-                <div className="color-images">
+                <div className={`color-images ${validationErrors[`color_images_${colorIndex}`] ? 'error-field' : ''}`}>
                   <label>Color Images:</label>
                   <input
                     type="file"
@@ -1615,6 +1575,9 @@ const NewProduct = () => {
                     accept="image/*"
                     className="file-input"
                   />
+                  {validationErrors[`color_images_${colorIndex}`] && (
+                    <span className="error-message">{validationErrors[`color_images_${colorIndex}`]}</span>
+                  )}
                   <div className="image-preview-container">
                     <h4>Existing Images</h4>
                     <div className="image-preview">
@@ -1671,16 +1634,24 @@ const NewProduct = () => {
         {formData.product_type === 'variable' && (
           <div className="form-group">
             <h3>Models</h3>
+            {validationErrors.models && (
+              <span className="error-message">{validationErrors.models}</span>
+            )}
             {formData.models.map((model, modelIndex) => (
               <div key={modelIndex} className="product-model">
                 <h4>Model {modelIndex + 1}</h4>
-                <div className="model-details">
-                  <input
-                    type="text"
-                    placeholder="Model name (e.g., Pro Version)"
-                    value={model.name}
-                    onChange={(e) => updateModel(modelIndex, 'name', e.target.value)}
-                  />
+                <div className={`model-details ${validationErrors[`model_name_${modelIndex}`] ? 'error-field' : ''}`}>
+                  <div>
+                    <input
+                      type="text"
+                      placeholder="Model name (e.g., Pro Version)"
+                      value={model.name}
+                      onChange={(e) => updateModel(modelIndex, 'name', e.target.value)}
+                    />
+                    {validationErrors[`model_name_${modelIndex}`] && (
+                      <span className="error-message">{validationErrors[`model_name_${modelIndex}`]}</span>
+                    )}
+                  </div>
                   <textarea
                     placeholder="Model description"
                     value={model.description}
@@ -1702,19 +1673,32 @@ const NewProduct = () => {
                   </div>
 
                   {model.specifications?.map((spec, specIndex) => (
-                    <div key={specIndex} className="specification-item">
-                      <input
-                        type="text"
-                        placeholder="Spec name (e.g., Weight)"
-                        value={spec.key}
-                        onChange={(e) => updateSpecification(modelIndex, specIndex, 'key', e.target.value)}
-                      />
-                      <input
-                        type="text"
-                        placeholder="Spec value (e.g., 1.2kg)"
-                        value={spec.value}
-                        onChange={(e) => updateSpecification(modelIndex, specIndex, 'value', e.target.value)}
-                      />
+                    <div key={specIndex} className={`specification-item ${
+                      validationErrors[`model_${modelIndex}_spec_key_${specIndex}`] || 
+                      validationErrors[`model_${modelIndex}_spec_value_${specIndex}`] ? 'error-field' : ''
+                    }`}>
+                      <div>
+                        <input
+                          type="text"
+                          placeholder="Spec name (e.g., Weight)"
+                          value={spec.key}
+                          onChange={(e) => updateSpecification(modelIndex, specIndex, 'key', e.target.value)}
+                        />
+                        {validationErrors[`model_${modelIndex}_spec_key_${specIndex}`] && (
+                          <span className="error-message">{validationErrors[`model_${modelIndex}_spec_key_${specIndex}`]}</span>
+                        )}
+                      </div>
+                      <div>
+                        <input
+                          type="text"
+                          placeholder="Spec value (e.g., 1.2kg)"
+                          value={spec.value}
+                          onChange={(e) => updateSpecification(modelIndex, specIndex, 'value', e.target.value)}
+                        />
+                        {validationErrors[`model_${modelIndex}_spec_value_${specIndex}`] && (
+                          <span className="error-message">{validationErrors[`model_${modelIndex}_spec_value_${specIndex}`]}</span>
+                        )}
+                      </div>
                       <button
                         type="button"
                         className="btn-remove"
@@ -1735,48 +1719,76 @@ const NewProduct = () => {
 
                 <div className="model-colors">
                   <h5>Colors/Variants</h5>
+                  {validationErrors[`model_${modelIndex}_colors`] && (
+                    <span className="error-message">{validationErrors[`model_${modelIndex}_colors`]}</span>
+                  )}
                   {model.colors?.map((color, colorIndex) => (
                     <div key={colorIndex} className="color-variant">
                       <div className="color-details">
-                        <input
-                          type="text"
-                          placeholder="Color name"
-                          value={color.name}
-                          onChange={(e) => updateModelColor(modelIndex, colorIndex, 'name', e.target.value)}
-                        />
-                        <input
-                          type="number"
-                          placeholder="Price"
-                          value={color.price}
-                          onChange={(e) => updateModelColor(modelIndex, colorIndex, 'price', e.target.value)}
-                          min="0"
-                          step="0.01"
-                        />
-                        <input
-                          type="number"
-                          placeholder="Original Price"
-                          value={color.original_price || ''}
-                          onChange={(e) => updateModelColor(modelIndex, colorIndex, 'original_price', e.target.value)}
-                          min="0"
-                          step="0.01"
-                        />
-                        <input
-                          type="number"
-                          placeholder="Stock quantity"
-                          value={color.stock_quantity}
-                          onChange={(e) => updateModelColor(modelIndex, colorIndex, 'stock_quantity', e.target.value)}
-                          min="0"
-                        />
-                        <input
-                          type="number"
-                          placeholder="Low stock threshold"
-                          value={color.threshold}
-                          onChange={(e) => updateModelColor(modelIndex, colorIndex, 'threshold', e.target.value)}
-                          min="0"
-                        />
+                        <div className={`form-field ${validationErrors[`model_${modelIndex}_color_name_${colorIndex}`] ? 'error-field' : ''}`}>
+                          <input
+                            type="text"
+                            placeholder="Color name"
+                            value={color.name}
+                            onChange={(e) => updateModelColor(modelIndex, colorIndex, 'name', e.target.value)}
+                          />
+                          {validationErrors[`model_${modelIndex}_color_name_${colorIndex}`] && (
+                            <span className="error-message">{validationErrors[`model_${modelIndex}_color_name_${colorIndex}`]}</span>
+                          )}
+                        </div>
+                        <div className={`form-field ${validationErrors[`model_${modelIndex}_color_price_${colorIndex}`] ? 'error-field' : ''}`}>
+                          <input
+                            type="number"
+                            placeholder="Price"
+                            value={color.price}
+                            onChange={(e) => updateModelColor(modelIndex, colorIndex, 'price', e.target.value)}
+                            min="0"
+                            step="0.01"
+                          />
+                          {validationErrors[`model_${modelIndex}_color_price_${colorIndex}`] && (
+                            <span className="error-message">{validationErrors[`model_${modelIndex}_color_price_${colorIndex}`]}</span>
+                          )}
+                        </div>
+                        <div className={`form-field ${validationErrors[`model_${modelIndex}_color_original_price_${colorIndex}`] ? 'error-field' : ''}`}>
+                          <input
+                            type="number"
+                            placeholder="Original Price"
+                            value={color.original_price || ''}
+                            onChange={(e) => updateModelColor(modelIndex, colorIndex, 'original_price', e.target.value)}
+                            min="0"
+                            step="0.01"
+                          />
+                          {validationErrors[`model_${modelIndex}_color_original_price_${colorIndex}`] && (
+                            <span className="error-message">{validationErrors[`model_${modelIndex}_color_original_price_${colorIndex}`]}</span>
+                          )}
+                        </div>
+                        <div className={`form-field ${validationErrors[`model_${modelIndex}_color_stock_${colorIndex}`] ? 'error-field' : ''}`}>
+                          <input
+                            type="number"
+                            placeholder="Stock quantity"
+                            value={color.stock_quantity}
+                            onChange={(e) => updateModelColor(modelIndex, colorIndex, 'stock_quantity', e.target.value)}
+                            min="0"
+                          />
+                          {validationErrors[`model_${modelIndex}_color_stock_${colorIndex}`] && (
+                            <span className="error-message">{validationErrors[`model_${modelIndex}_color_stock_${colorIndex}`]}</span>
+                          )}
+                        </div>
+                        <div className={`form-field ${validationErrors[`model_${modelIndex}_color_threshold_${colorIndex}`] ? 'error-field' : ''}`}>
+                          <input
+                            type="number"
+                            placeholder="Low stock threshold"
+                            value={color.threshold}
+                            onChange={(e) => updateModelColor(modelIndex, colorIndex, 'threshold', e.target.value)}
+                            min="0"
+                          />
+                          {validationErrors[`model_${modelIndex}_color_threshold_${colorIndex}`] && (
+                            <span className="error-message">{validationErrors[`model_${modelIndex}_color_threshold_${colorIndex}`]}</span>
+                          )}
+                        </div>
                       </div>
 
-                      <div className="color-images">
+                      <div className={`color-images ${validationErrors[`model_${modelIndex}_color_images_${colorIndex}`] ? 'error-field' : ''}`}>
                         <label>Color Images:</label>
                         <input
                           type="file"
@@ -1785,6 +1797,9 @@ const NewProduct = () => {
                           accept="image/*"
                           className="file-input"
                         />
+                        {validationErrors[`model_${modelIndex}_color_images_${colorIndex}`] && (
+                          <span className="error-message">{validationErrors[`model_${modelIndex}_color_images_${colorIndex}`]}</span>
+                        )}
                         <div className="image-preview-container">
                           <h4>Existing Images</h4>
                           <div className="image-preview">
@@ -1923,4 +1938,3 @@ const NewProduct = () => {
 };
 
 export default NewProduct;
-

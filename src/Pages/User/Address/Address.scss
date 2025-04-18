@@ -553,3 +553,234 @@ $transition: all 0.3s ease;
     margin: 0.5rem;
   }
 }
+
+.address-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 2rem;
+
+  .address-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e0e0e0;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    
+    &:hover {
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .address-summary {
+      padding: 1.5rem;
+      display: grid;
+      grid-template-columns: 80px 1fr 120px;
+      gap: 1.5rem;
+      align-items: center;
+      cursor: pointer;
+
+      @media (max-width: 768px) {
+        grid-template-columns: 60px 1fr;
+        gap: 1rem;
+      }
+
+      .address-type-badge {
+        background: #f5f5f5;
+        padding: 0.5rem;
+        border-radius: 6px;
+        text-align: center;
+        font-weight: 600;
+        font-size: 0.9rem;
+        
+        &.home {
+          color: #2e7d32;
+          background: #e8f5e9;
+        }
+        
+        &.work {
+          color: #1565c0;
+          background: #e3f2fd;
+        }
+      }
+
+      .address-main-info {
+        h3 {
+          margin: 0 0 0.5rem 0;
+          font-size: 1.1rem;
+          color: #333;
+        }
+
+        p {
+          margin: 0.3rem 0;
+          color: #666;
+          font-size: 0.9rem;
+          line-height: 1.4;
+        }
+      }
+
+      .address-meta {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+
+        @media (max-width: 768px) {
+          grid-column: 1 / -1;
+          flex-direction: row;
+          justify-content: space-between;
+          align-items: center;
+          padding-top: 0.5rem;
+          border-top: 1px dashed #eee;
+        }
+
+        .mobile-number {
+          font-weight: 500;
+          color: #333;
+        }
+
+        .expand-icon {
+          color: #666;
+          font-size: 1.2rem;
+          margin-top: 0.5rem;
+        }
+      }
+    }
+
+    .address-details {
+      padding: 0 1.5rem;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, padding 0.3s ease;
+      background: #fafafa;
+      border-top: 1px solid #eee;
+
+      &.expanded {
+        padding: 1.5rem;
+        max-height: 500px;
+      }
+
+      .address-full-details {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+
+        @media (max-width: 576px) {
+          grid-template-columns: 1fr;
+        }
+
+        .detail-group {
+          h4 {
+            margin: 0 0 0.5rem 0;
+            font-size: 0.9rem;
+            color: #666;
+            font-weight: 500;
+          }
+
+          p {
+            margin: 0;
+            font-size: 1rem;
+            color: #333;
+            line-height: 1.5;
+          }
+        }
+      }
+
+      .address-actions {
+        display: flex;
+        gap: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #eee;
+
+        button {
+          flex: 1;
+          padding: 0.7rem;
+          border-radius: 6px;
+          font-weight: 500;
+          font-size: 0.9rem;
+          cursor: pointer;
+          transition: all 0.2s ease;
+
+          &.edit-btn {
+            background: #e3f2fd;
+            color: #1976d2;
+            border: 1px solid #bbdefb;
+
+            &:hover {
+              background: #bbdefb;
+            }
+          }
+
+          &.delete-btn {
+            background: #ffebee;
+            color: #d32f2f;
+            border: 1px solid #ffcdd2;
+
+            &:hover {
+              background: #ffcdd2;
+            }
+          }
+        }
+      }
+
+      .address-map {
+        margin-top: 1.5rem;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid #eee;
+
+        iframe {
+          width: 100%;
+          height: 200px;
+          border: none;
+        }
+      }
+    }
+  }
+}
+
+// No Addresses State
+.no-addresses {
+  text-align: center;
+  padding: 3rem;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px dashed #e0e0e0;
+  margin: 2rem 0;
+
+  p {
+    color: #666;
+    margin-bottom: 1.5rem;
+  }
+
+  .btn-add-first-address {
+    background: #1976d2;
+    color: white;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: #1565c0;
+    }
+  }
+}
+
+// Responsive Adjustments
+@media (max-width: 576px) {
+  .address-summary {
+    padding: 1rem !important;
+  }
+
+  .address-details {
+    padding: 0 1rem !important;
+    
+    &.expanded {
+      padding: 1rem !important;
+    }
+  }
+}

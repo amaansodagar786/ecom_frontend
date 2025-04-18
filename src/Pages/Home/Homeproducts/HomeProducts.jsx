@@ -11,9 +11,9 @@ const HomeProducts = () => {
   const [error, setError] = useState(null);
   const [isWishlisting, setIsWishlisting] = useState(false); // Add this state
 
-  const { 
-    wishlistItems, 
-    toggleWishlistItem, 
+  const {
+    wishlistItems,
+    toggleWishlistItem,
     isAuthenticated,
     getToken
   } = useAuth();
@@ -26,48 +26,48 @@ const HomeProducts = () => {
 
   const getProductInfo = (product) => {
     console.log('Processing product:', product.product_id, product.name); // Debug log
-    
+
     let price = 0;
     let deleted_price = null;
     let inStock = false;
     let mainImage = product.images?.[0]?.image_url;
-  
+
     try {
       if (product.product_type === 'single') {
         console.log('Single product type'); // Debug log
-        
+
         if (product.colors?.length > 0) {
           console.log('Product has colors:', product.colors.length); // Debug log
-          
-          const validColors = product.colors.filter(c => 
+
+          const validColors = product.colors.filter(c =>
             c.price !== undefined && c.price !== null
           );
-          
+
           if (validColors.length === 0) {
             console.warn('No colors with valid prices found'); // Debug log
           }
-  
+
           const colorEntries = validColors.map(c => ({
             price: parseFloat(c.price),
             original: c.original_price ? parseFloat(c.original_price) : null,
             stock: c.stock_quantity > 0,
             images: c.images
           }));
-  
+
           if (colorEntries.length > 0) {
-            const minPriceEntry = colorEntries.reduce((min, current) => 
+            const minPriceEntry = colorEntries.reduce((min, current) =>
               current.price < min.price ? current : min, colorEntries[0]);
-  
+
             price = minPriceEntry.price;
             if (minPriceEntry.original !== null && minPriceEntry.original > price) {
               deleted_price = minPriceEntry.original;
             }
-  
+
             inStock = validColors.some(c => c.stock_quantity > 0);
-  
+
             if (!mainImage) {
-              const firstColorWithImage = minPriceEntry.images?.length > 0 
-                ? minPriceEntry 
+              const firstColorWithImage = minPriceEntry.images?.length > 0
+                ? minPriceEntry
                 : validColors.find(c => c.images?.length > 0);
               mainImage = firstColorWithImage?.images?.[0]?.image_url;
             }
@@ -75,12 +75,12 @@ const HomeProducts = () => {
         }
       } else {
         console.log('Variable product type'); // Debug log
-        
+
         if (product.models?.length > 0) {
           console.log('Product has models:', product.models.length); // Debug log
-          
+
           // Collect all colors from all models that have valid prices
-          const allColors = product.models.flatMap(model => 
+          const allColors = product.models.flatMap(model =>
             (model.colors || [])
               .filter(color => color.price !== undefined && color.price !== null)
               .map(color => ({
@@ -90,23 +90,23 @@ const HomeProducts = () => {
                 images: color.images
               }))
           );
-  
+
           console.log('Total valid colors found:', allColors.length); // Debug log
-          
+
           if (allColors.length > 0) {
-            const minPriceColor = allColors.reduce((min, current) => 
+            const minPriceColor = allColors.reduce((min, current) =>
               current.price < min.price ? current : min, allColors[0]);
-  
+
             price = minPriceColor.price;
             if (minPriceColor.original !== null && minPriceColor.original > price) {
               deleted_price = minPriceColor.original;
             }
-  
+
             inStock = allColors.some(color => color.stock);
-  
+
             if (!mainImage) {
-              const firstColorWithImage = minPriceColor.images?.length > 0 
-                ? minPriceColor 
+              const firstColorWithImage = minPriceColor.images?.length > 0
+                ? minPriceColor
                 : allColors.find(color => color.images?.length > 0);
               mainImage = firstColorWithImage?.images?.[0]?.image_url;
             }
@@ -118,7 +118,7 @@ const HomeProducts = () => {
     } catch (error) {
       console.error('Error processing product:', product.product_id, error); // Debug log
     }
-  
+
     console.log('Final product info:', { // Debug log
       product_id: product.product_id,
       price,
@@ -126,7 +126,7 @@ const HomeProducts = () => {
       inStock,
       mainImage
     });
-  
+
     return {
       price,
       deleted_price,
@@ -139,13 +139,13 @@ const HomeProducts = () => {
     if (e) e.stopPropagation();
     if (isWishlisting) return;
     setIsWishlisting(true);
-
+  
     if (!isAuthenticated) {
       navigate('/login');
       setIsWishlisting(false);
       return;
     }
-
+  
     try {
       const { price, deleted_price, mainImage } = getProductInfo(product);
       const productData = {
@@ -155,40 +155,14 @@ const HomeProducts = () => {
         image: mainImage,
         category: product.category,
         deleted_price: deleted_price,
+        // Explicitly set model/color to null for home page items
+        model_id: null,
+        color_id: null
       };
-
-      // Optimistic UI update
-      const wasInWishlist = wishlistItems.includes(product.product_id);
-      toggleWishlistItem(productData);
-
-      const token = getToken();
-      if (!token) throw new Error('No authentication token found');
-
-      if (wasInWishlist) {
-        await axios.post(
-          `${import.meta.env.VITE_SERVER_API}/wishlist/deleteitem`,
-          { product_id: product.product_id },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-      } else {
-        await axios.post(
-          `${import.meta.env.VITE_SERVER_API}/wishlist/additem`,
-          { product_id: product.product_id },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-      }
+  
+      await toggleWishlistItem(productData);
     } catch (error) {
       console.error('Error updating wishlist:', error);
-      // Revert the UI if the API call fails
-      const { price, deleted_price, mainImage } = getProductInfo(product);
-      toggleWishlistItem({
-        product_id: product.product_id,
-        name: product.name,
-        price: price,
-        image: mainImage,
-        category: product.category,
-        deleted_price: deleted_price,
-      });
     } finally {
       setIsWishlisting(false);
     }
@@ -222,7 +196,7 @@ const HomeProducts = () => {
       <p>Loading premium products...</p>
     </div>
   );
-  
+
   if (error) return (
     <div className="error-state">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -243,34 +217,35 @@ const HomeProducts = () => {
         </div>
 
         <div className="product-grid">
-         {displayedProducts.length > 0 ? (
-          displayedProducts.map((product) => {
-            const { price, deleted_price, inStock, mainImage } = getProductInfo(product);
-            const isInWishlist = wishlistItems.some(item => 
-              typeof item === 'object' 
-                ? item.product_id === product.product_id 
-                : item === product.product_id
-            );
+          {displayedProducts.length > 0 ? (
+            displayedProducts.map((product) => {
+              const { price, deleted_price, inStock, mainImage } = getProductInfo(product);
+              const isInWishlist = wishlistItems.some(item => 
+                item.product_id === product.product_id && 
+                item.model_id === null && 
+                item.color_id === null
+              );
+              
               return (
                 <div className="product-card" key={product.product_id}>
                   <div className="product-badge">
                     {inStock ? 'In Stock' : 'Pre-Order'}
                   </div>
-                  <div 
-                  className={`wishlist-icon ${isInWishlist ? 'active' : ''}`}
-                  onClick={(e) => handleWishlistClick(product, e)}
-                >
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill={isInWishlist ? "#ff4757" : "none"}
-                    stroke={isInWishlist ? "#ff4757" : "#111"}
-                    strokeWidth="2"
+                  <div
+                    className={`wishlist-icon ${isInWishlist ? 'active' : ''}`}
+                    onClick={(e) => handleWishlistClick(product, e)}
                   >
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                  </svg>
-                </div>
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill={isInWishlist ? "#ff4757" : "none"}
+                      stroke={isInWishlist ? "#ff4757" : "#111"}
+                      strokeWidth="2"
+                    >
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
+                  </div>
 
                   <div className="product-image" onClick={(e) => handleProductClick(product, e)}>
                     {mainImage && (
@@ -293,9 +268,9 @@ const HomeProducts = () => {
                         <span className="original-price">₹{deleted_price.toFixed(2)}</span>
                       )}
                     </div>
-                    <button 
+                    <button
                       className="add-to-cart"
-                      onClick={(e) => handleProductClick(product, e)} 
+                      onClick={(e) => handleProductClick(product, e)}
                     >
                       View Product
                     </button>
@@ -317,7 +292,7 @@ const HomeProducts = () => {
 
         {products.length > 0 && (
           <div className="view-more-container">
-            <button 
+            <button
               className="view-more-btn"
               onClick={() => navigate('/allproducts')}
             >

@@ -53,6 +53,8 @@ const AddProducts = () => {
   const [categoryImage, setCategoryImage] = useState(null);
   const setFieldValueRef = useRef(() => { });
   const formValuesRef = useRef(initialValues);
+  const [submissionAttempted, setSubmissionAttempted] = useState(false);
+  const firstErrorRef = useRef(null);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -126,6 +128,98 @@ const AddProducts = () => {
       }),
     product_images: yup.array().min(1, 'At least one product image is required')
   });
+
+  const scrollToFirstErrorField = (errors, values) => {
+    const errorKeys = Object.keys(errors);
+    if (errorKeys.length === 0) return;
+
+    // Helper function to find the first truly empty field
+    const findFirstEmptyField = () => {
+      // Check top-level fields first
+      const topLevelFields = ['name', 'description', 'main_category_id', 'sub_category_id', 'hsn_id', 'product_type', 'product_images'];
+      for (const field of topLevelFields) {
+        if (errors[field] && (!values[field] || (field === 'product_images' && values[field].length === 0))) {
+          return field;
+        }
+      }
+
+      // Check models
+      if (errors.models) {
+        for (let modelIndex = 0; modelIndex < values.models.length; modelIndex++) {
+          const model = values.models[modelIndex];
+          const modelErrors = errors.models[modelIndex] || {};
+
+          // Check model fields
+          if (modelErrors.name && !model.name) {
+            return `models.${modelIndex}.name`;
+          }
+          if (modelErrors.description && !model.description) {
+            return `models.${modelIndex}.description`;
+          }
+
+          // Check colors
+          if (modelErrors.colors) {
+            for (let colorIndex = 0; colorIndex < model.colors.length; colorIndex++) {
+              const color = model.colors[colorIndex];
+              const colorErrors = modelErrors.colors[colorIndex] || {};
+
+              if (colorErrors.name && !color.name) {
+                return `models.${modelIndex}.colors.${colorIndex}.name`;
+              }
+              if (colorErrors.images && (!color.images || color.images.length === 0)) {
+                return `models.${modelIndex}.colors.${colorIndex}.images`;
+              }
+              // Add other color fields if needed
+            }
+          }
+
+          // Check specifications
+          if (modelErrors.specifications) {
+            for (let specIndex = 0; specIndex < model.specifications.length; specIndex++) {
+              const spec = model.specifications[specIndex];
+              const specErrors = modelErrors.specifications[specIndex] || {};
+
+              if (specErrors.key && !spec.key) {
+                return `models.${modelIndex}.specifications.${specIndex}.key`;
+              }
+              if (specErrors.value && !spec.value) {
+                return `models.${modelIndex}.specifications.${specIndex}.value`;
+              }
+            }
+          }
+        }
+      }
+
+      // Default to first error if we can't find an empty field
+      return errorKeys[0];
+    };
+
+    const firstErrorKey = findFirstEmptyField();
+
+    // Find the element to scroll to
+    let element = document.querySelector(`[name="${firstErrorKey}"]`);
+
+    if (!element) {
+      // Try to find a parent section for nested errors
+      const modelMatch = firstErrorKey.match(/models\.(\d+)/);
+      if (modelMatch) {
+        element = document.querySelector(`[data-model-index="${modelMatch[1]}"]`);
+      }
+    }
+
+    if (element) {
+      // Scroll to the element
+      element.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      });
+
+      // Focus the element if it's an input field
+      if (element.tagName === 'INPUT' || element.tagName === 'SELECT' || element.tagName === 'TEXTAREA') {
+        element.focus();
+      }
+    }
+  };
 
   const handleAddMainCategory = async () => {
     if (!newCategory.trim()) return;
@@ -208,60 +302,46 @@ const AddProducts = () => {
   };
 
   const handleAddHsn = async () => {
-    // Check if HSN Code and Description are provided
     if (!newHsnCode.trim() || !newHsnDescription.trim()) return;
 
     try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-            toast.error("User is not authenticated");
-            return;
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("User is not authenticated");
+        return;
+      }
+
+      const response = await axios.post(
+        `${import.meta.env.VITE_SERVER_API}/hsn/add`,
+        {
+          hsn_code: newHsnCode,
+          description: newHsnDescription
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
+      );
 
-        // Log the data being sent to the backend
-        console.log("Sending HSN Code and Description to backend:", {
-            hsn_code: newHsnCode,
-            description: newHsnDescription
-        });
+      const hsnResponse = await axios.get(`${import.meta.env.VITE_SERVER_API}/hsn`);
+      setHsnCodes(hsnResponse.data);
 
-        // Make the POST request
-        const response = await axios.post(
-            `${import.meta.env.VITE_SERVER_API}/hsn/add`,
-            {
-                hsn_code: newHsnCode, // Frontend sends only these fields
-                description: newHsnDescription
-            },
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            }
-        );
+      setNewHsnCode("");
+      setNewHsnDescription("");
+      setShowHsnModal(false);
 
-        // Log the response from the backend
-        console.log("Response from backend:", response.data);
+      setFieldValueRef.current('hsn_id', response.data.hsn_id);
 
-        const hsnResponse = await axios.get(`${import.meta.env.VITE_SERVER_API}/hsn`);
-        setHsnCodes(hsnResponse.data);
-
-        setNewHsnCode("");
-        setNewHsnDescription("");
-        setShowHsnModal(false);
-
-        // Set the newly added HSN code as selected
-        setFieldValueRef.current('hsn_id', response.data.hsn_id);
-
-        toast.success("HSN code added successfully");
+      toast.success("HSN code added successfully");
     } catch (error) {
-        console.error("Error adding HSN code:", error.response?.data || error.message);
-        toast.error("Failed to add HSN code");
+      console.error("Error adding HSN code:", error.response?.data || error.message);
+      toast.error("Failed to add HSN code");
     }
-};
-
-
-
+  };
 
   const handleSubmit = async (values, { setSubmitting, resetForm }) => {
+    setSubmissionAttempted(true);
     try {
       const formData = new FormData();
 
@@ -282,7 +362,7 @@ const AddProducts = () => {
       if (values.product_type === 'single') {
         values.models[0].name = values.name;
 
-        // Handle specifications for single product (ProductSpecification)
+        // Handle specifications for single product
         values.models[0].specifications.forEach((spec, specIndex) => {
           formData.append(`spec_key_${specIndex}`, spec.key);
           formData.append(`spec_value_${specIndex}`, spec.value);
@@ -310,7 +390,7 @@ const AddProducts = () => {
           formData.append(`model_name_${modelIndex}`, model.name);
           formData.append(`model_description_${modelIndex}`, model.description);
 
-          // Handle specifications for variable product (ModelSpecification)
+          // Handle specifications for variable product
           model.specifications.forEach((spec, specIndex) => {
             formData.append(`model_${modelIndex}_spec_key_${specIndex}`, spec.key);
             formData.append(`model_${modelIndex}_spec_value_${specIndex}`, spec.value);
@@ -349,6 +429,7 @@ const AddProducts = () => {
 
       toast.success('Product added successfully!');
       resetForm();
+      setSubmissionAttempted(false);
     } catch (error) {
       console.error('Error adding product:', error);
       toast.error(error.response?.data?.message || 'Failed to add product');
@@ -376,29 +457,39 @@ const AddProducts = () => {
             initialValues={initialValues}
             validationSchema={validationSchema}
             onSubmit={handleSubmit}
+            validateOnChange={false}
+            validateOnBlur={false}
           >
-            {({ values, setFieldValue, isSubmitting, errors }) => {
-              useEffect(() => {
-                setFieldValueRef.current = setFieldValue;
-                formValuesRef.current = values;
-              }, [setFieldValue, values]);
+            {({
+              values,
+              setFieldValue,
+              isSubmitting,
+              errors,
+              touched,
+              handleSubmit: formikHandleSubmit,
+              validateForm
+            }) => {
+              const formRef = useRef();
 
-              useEffect(() => {
-                if (Object.keys(errors).length > 0) {
-                  const firstErrorKey = Object.keys(errors)[0];
-                  const errorElement = document.querySelector(`[name="${firstErrorKey}"]`);
-                  if (errorElement) {
-                    errorElement.scrollIntoView({
-                      behavior: 'smooth',
-                      block: 'center'
-                    });
-                    errorElement.focus();
-                  }
+              // Handle form submission with error scrolling
+              const handleSubmitWithScroll = async (e) => {
+                e.preventDefault();
+
+                // Use Formik's validateForm function directly
+                const validationErrors = await validateForm();
+
+                if (Object.keys(validationErrors).length > 0) {
+                  // Scroll to the first error
+                  scrollToFirstErrorField(validationErrors, values);
+                  return;
                 }
-              }, [errors]);
+
+                // If no errors, proceed with submission
+                formikHandleSubmit(e);
+              };
 
               return (
-                <Form className="product-form">
+                <Form className="product-form" onSubmit={handleSubmitWithScroll}>
                   {/* Basic Product Information */}
                   <div className="form-section">
                     <h3 className="section-title">Basic Information</h3>
@@ -621,7 +712,7 @@ const AddProducts = () => {
                         </div>
 
                         {values.models.map((model, modelIndex) => (
-                          <div key={modelIndex} className="model-card">
+                          <div key={modelIndex} className="model-card" data-model-index={modelIndex}>
                             {values.product_type === 'variable' && (
                               <div className="model-header">
                                 <h4>Model {modelIndex + 1}</h4>
@@ -1069,8 +1160,8 @@ const AddProducts = () => {
           </div>
         )}
 
-{/* HSN Code Modal */}
-{showHsnModal && (
+        {/* HSN Code Modal */}
+        {showHsnModal && (
           <div className="modal-overlay">
             <div className="modal">
               <h3>Add New HSN Code</h3>
@@ -1118,7 +1209,6 @@ const AddProducts = () => {
             </div>
           </div>
         )}
-
 
         <ToastContainer
           position="top-center"
