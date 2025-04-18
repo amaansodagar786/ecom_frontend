@@ -42,6 +42,7 @@ import Loader from './Components/Loader/Loader';
 import NewProduct from './Pages/Admin/Products/NewProduct';
 import NewOrders from './Pages/Admin/OfflineOrders/NewOrders';
 import Checkout from './Pages/CheckOut/Checkout';
+import ForgotPassword from './Pages/Authentication/ForogtPass/ForgotPassword';
 
 
 
@@ -72,6 +73,7 @@ function App() {
           <Route path="/randr" element={<ReviewandRating />} />
           <Route path="/support" element={<Support />} />
           <Route path="/auth-callback" element={<AuthCallback />} />
+          <Route path="/forgotpassword" element={<ForgotPassword />} />
           {/* <Route path="/loader" element={<Loader />} /> */}
 
           {/* CHECKOUT  */}

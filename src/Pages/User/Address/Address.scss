@@ -784,3 +784,121 @@ $transition: all 0.3s ease;
     }
   }
 }
+
+.address-card {
+  position: relative;
+  transition: all 0.3s ease;
+  overflow: visible; // Changed from hidden to visible
+
+  &.expanded {
+    z-index: 1; // Ensure expanded card is above others
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    
+    .address-details {
+      display: block;
+      max-height: 1000px; // Large enough to show all content
+      opacity: 1;
+      padding: 1rem;
+      visibility: visible;
+    }
+  }
+
+  .address-details {
+    display: block; // Changed from none to block
+    max-height: 0;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    padding: 0 1.5rem;
+    background: white;
+  }
+}
+
+.address-actions {
+  display: flex;
+  width: 50%;
+  gap: 1rem;
+  margin:  0 auto ;
+  
+  button {
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex: 1;
+
+    &.btn-edit {
+      background: #e3f2fd;
+      color: #1976d2;
+      border: 1px solid #bbdefb;
+
+      &:hover {
+        background: #bbdefb;
+      }
+    }
+
+    &.btn-delete {
+      background: #ffebee;
+      color: #d32f2f;
+      border: 1px solid #ffcdd2;
+
+      &:hover {
+        background: #ffcdd2;
+      }
+    }
+  }
+}
+
+.address-summary {
+  position: relative;
+  z-index: 2; // Ensure summary is above details
+  background: white;
+}
+
+.expand-icon {
+  transition: transform 0.3s ease;
+  
+  .address-card.expanded & {
+    transform: rotate(180deg);
+  }
+}
+
+.action-icon {
+  margin-right: 6px;
+  vertical-align: middle;
+  font-size: 1.1em;
+}
+
+.chevron-icon {
+  transition: transform 0.3s ease;
+  font-size: 1.2rem;
+  color: $secondary-color;
+}
+
+.address-card.expanded {
+  .chevron-icon {
+    transform: rotate(180deg);
+  }
+}
+
+.address-actions {
+  button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    &.btn-edit {
+      .action-icon {
+        color: #1976d2;
+      }
+    }
+    
+    &.btn-delete {
+      .action-icon {
+        color: #d32f2f;
+      }
+    }
+  }
+}

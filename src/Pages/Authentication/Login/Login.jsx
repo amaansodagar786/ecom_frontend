@@ -157,7 +157,7 @@ const handleGoogleLogin = async () => {
               </div>
 
               <div className="form-options">
-                <a href="/forgot-password" className="forgot-password">
+                <a href="/forgotpassword" className="forgot-password">
                   Forgot password?
                 </a>
               </div>

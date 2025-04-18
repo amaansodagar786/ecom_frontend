@@ -808,3 +808,102 @@ $transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     font-size: 0.9rem;
   }
 
+// Add these styles to your existing SCSS
+
+.top-navigation {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  
+  button {
+    padding: 0.7rem 1.5rem;
+    border: none;
+    border-radius: $border-radius;
+    font-weight: 600;
+    cursor: pointer;
+    transition: $transition;
+    font-size: 0.9rem;
+    
+    &:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba($primary-color, 0.2);
+    }
+  }
+  
+  .back-to-address-btn {
+    background: white;
+    color: $primary-color;
+    border: 1px solid $primary-color;
+    
+    &:hover {
+      background: rgba($primary-color, 0.05);
+    }
+  }
+  
+  .back-to-review-btn {
+    background: white;
+    color: $secondary-color;
+    border: 1px solid $secondary-color;
+    
+    &:hover {
+      background: rgba($secondary-color, 0.05);
+    }
+  }
+  
+  @media (max-width: 576px) {
+    flex-direction: column;
+    gap: 0.5rem;
+    
+    button {
+      width: 100%;
+    }
+  }
+}
+
+.payment-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  
+  button {
+    flex: 1;
+    padding: 0.9rem;
+    border: none;
+    border-radius: $border-radius;
+    font-weight: 600;
+    cursor: pointer;
+    transition: $transition;
+    font-size: 0.95rem;
+    
+    &:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba($primary-color, 0.2);
+    }
+  }
+  
+  .back-to-review-btn {
+    background: white;
+    color: $primary-color;
+    border: 1px solid $primary-color;
+    
+    &:hover {
+      background: rgba($primary-color, 0.05);
+    }
+  }
+  
+  .place-order-btn {
+    background: linear-gradient(135deg, $primary-color, $secondary-color);
+    color: white;
+    box-shadow: 0 4px 15px rgba($primary-color, 0.3);
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba($primary-color, 0.4);
+    }
+  }
+  
+  @media (max-width: 576px) {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}

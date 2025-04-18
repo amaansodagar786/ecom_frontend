@@ -36,7 +36,7 @@ const MainProducts = () => {
 
         const data = Array.isArray(response.data) ? response.data : [];
         setProducts(data);
-        
+
         // Extract available colors
         const colors = new Set();
         data.forEach(product => {
@@ -47,7 +47,7 @@ const MainProducts = () => {
           }
         });
         setAvailableColors(['all', ...Array.from(colors)]);
-        
+
         setError(null);
       } catch (error) {
         console.error('Error fetching products:', error);
@@ -63,24 +63,24 @@ const MainProducts = () => {
 
   const getImageUrl = (imageData) => {
     if (!imageData) return null;
-    
+
     if (typeof imageData === 'string') {
       return `${import.meta.env.VITE_SERVER_API}/static/${imageData}`;
     }
-    
+
     if (typeof imageData === 'object' && imageData.image_url) {
       return `${import.meta.env.VITE_SERVER_API}/static/${imageData.image_url}`;
     }
-    
+
     if (typeof imageData === 'object' && imageData.url) {
       return `${import.meta.env.VITE_SERVER_API}/static/${imageData.url}`;
     }
-    
+
     if (typeof imageData === 'object') {
       const possibleUrl = Object.values(imageData).find(val => typeof val === 'string');
       return possibleUrl ? `${import.meta.env.VITE_SERVER_API}/static/${possibleUrl}` : null;
     }
-    
+
     return null;
   };
 
@@ -92,27 +92,27 @@ const MainProducts = () => {
 
   const filteredProducts = Array.isArray(products)
     ? products
-        .filter((product) =>
-          product.name?.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-        .filter((product) => {
-          if (colorFilter === 'all') return true;
-          return product.colors?.some(color => color.name === colorFilter);
-        })
-        .sort((a, b) => {
-          switch (sortOption) {
-            case 'price-asc':
-              return (a.colors?.[0]?.price || 0) - (b.colors?.[0]?.price || 0);
-            case 'price-desc':
-              return (b.colors?.[0]?.price || 0) - (a.colors?.[0]?.price || 0);
-            case 'name-asc':
-              return (a.name || '').localeCompare(b.name || '');
-            case 'name-desc':
-              return (b.name || '').localeCompare(a.name || '');
-            default:
-              return 0;
-          }
-        })
+      .filter((product) =>
+        product.name?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+      .filter((product) => {
+        if (colorFilter === 'all') return true;
+        return product.colors?.some(color => color.name === colorFilter);
+      })
+      .sort((a, b) => {
+        switch (sortOption) {
+          case 'price-asc':
+            return (a.colors?.[0]?.price || 0) - (b.colors?.[0]?.price || 0);
+          case 'price-desc':
+            return (b.colors?.[0]?.price || 0) - (a.colors?.[0]?.price || 0);
+          case 'name-asc':
+            return (a.name || '').localeCompare(b.name || '');
+          case 'name-desc':
+            return (b.name || '').localeCompare(a.name || '');
+          default:
+            return 0;
+        }
+      })
     : [];
 
   if (loading) {
@@ -157,7 +157,7 @@ const MainProducts = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <button 
+        <button
           className="filter-toggle"
           onClick={() => setShowFilters(!showFilters)}
         >
@@ -169,7 +169,7 @@ const MainProducts = () => {
         <div className="filters-panel">
           <div className="filter-group">
             <label>Sort by:</label>
-            <select 
+            <select
               value={sortOption}
               onChange={(e) => setSortOption(e.target.value)}
               className="filter-select"
@@ -181,10 +181,10 @@ const MainProducts = () => {
               <option value="name-desc">Name: Z to A</option>
             </select>
           </div>
-          
+
           <div className="filter-group">
             <label>Color:</label>
-            <select 
+            <select
               value={colorFilter}
               onChange={(e) => setColorFilter(e.target.value)}
               className="filter-select"
@@ -207,29 +207,20 @@ const MainProducts = () => {
             const imageUrl = getImageUrl(firstImage);
 
             return (
-              <div 
-                key={product.product_id} 
-                className="product-card"
-                onClick={(e) => handleProductClick(product, e)}
-              >
+              <div className="product-card" onClick={(e) => handleProductClick(product, e)}>
                 {imageUrl ? (
-                  <img
-                    src={imageUrl}
-                    alt={product.name}
-                    className="product-image"
-                  />
+                  <img src={imageUrl} alt={product.name} className="product-image" />
                 ) : (
                   <div className="no-image">No Image Available</div>
                 )}
                 <div className="product-details">
                   <h3>{product.name || 'Unnamed Product'}</h3>
-                  {/* <p className="description">{product.description || 'No description available'}</p> */}
                   <p className="price">
                     {product.colors?.length > 0
                       ? `₹${product.colors[0].price}`
                       : 'Price unavailable'}
                   </p>
-                  <button 
+                  <button
                     className="view-button"
                     onClick={(e) => {
                       e.stopPropagation();

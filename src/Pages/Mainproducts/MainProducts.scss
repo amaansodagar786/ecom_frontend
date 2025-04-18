@@ -1,7 +1,7 @@
 // MainProducts.scss - Premium Redesign
 .home-products {
-  padding: 80px 0;
-  background-color: #fafafa;
+  padding: 100px 0;
+  // background-color: #fafafa;
   min-height: 100vh;
   font-family: 'Helvetica Neue', sans-serif;
   width: 80%; // Added 80% width
@@ -358,44 +358,35 @@
       }
 
       .product-details {
-        flex: 1;
+        padding: 20px;
         display: flex;
         flex-direction: column;
-        gap: 10px;
-        padding: 24px;
+        gap: 12px;
 
-        .product-name {
-          font-size: 1.2rem;
-          font-weight: 400;
-          margin-bottom: 12px;
+        h3 {
+          font-size: 1.1rem;
+          font-weight: 500;
           color: #222;
+          margin: 0;
           line-height: 1.4;
+          height: 2.8em; // 2 lines of text (1.4 line-height * 2)
+          overflow: hidden;
           display: -webkit-box;
           -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
+          text-overflow: ellipsis;
+        }
+
+        .price {
+          font-size: 1.2rem;
+          font-weight: 600;
+          color: #000;
+          margin: 0;
+          white-space: nowrap;
           overflow: hidden;
-          min-height: 3em;
+          text-overflow: ellipsis;
         }
 
-        .product-pricing {
-          display: flex;
-          align-items: center;
-          margin-bottom: 20px;
-          margin-top: auto;
-
-          .current-price {
-            font-size: 1.3rem;
-            font-weight: 500;
-            color: #000;
-          }
-
-          .original-price {
-            font-size: 0.95rem;
-            color: #999;
-            text-decoration: line-through;
-            margin-left: 10px;
-          }
-        }
 
         .view-button {
           width: 100%;
@@ -438,6 +429,7 @@
 
   @media (max-width: 992px) {
     width: 90%;
+
     .product-grid {
       grid-template-columns: repeat(2, 1fr);
       gap: 20px;

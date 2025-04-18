@@ -25,61 +25,34 @@ const HomeProducts = () => {
   };
 
   const getProductInfo = (product) => {
-    console.log('Processing product:', product.product_id, product.name); // Debug log
-
     let price = 0;
     let deleted_price = null;
     let inStock = false;
-    let mainImage = product.images?.[0]?.image_url;
-
+    
+    // ONLY USE PRODUCT-LEVEL IMAGES (color_id = NULL)
+    let mainImage = product.images?.[0]?.image_url; // This already comes from product.images (not color-specific)
+  
     try {
       if (product.product_type === 'single') {
-        console.log('Single product type'); // Debug log
-
         if (product.colors?.length > 0) {
-          console.log('Product has colors:', product.colors.length); // Debug log
-
-          const validColors = product.colors.filter(c =>
+          const validColors = product.colors.filter(c => 
             c.price !== undefined && c.price !== null
           );
-
-          if (validColors.length === 0) {
-            console.warn('No colors with valid prices found'); // Debug log
-          }
-
-          const colorEntries = validColors.map(c => ({
-            price: parseFloat(c.price),
-            original: c.original_price ? parseFloat(c.original_price) : null,
-            stock: c.stock_quantity > 0,
-            images: c.images
-          }));
-
-          if (colorEntries.length > 0) {
-            const minPriceEntry = colorEntries.reduce((min, current) =>
-              current.price < min.price ? current : min, colorEntries[0]);
-
-            price = minPriceEntry.price;
-            if (minPriceEntry.original !== null && minPriceEntry.original > price) {
-              deleted_price = minPriceEntry.original;
+  
+          if (validColors.length > 0) {
+            const minPriceEntry = validColors.reduce((min, current) =>
+              parseFloat(current.price) < parseFloat(min.price) ? current : min, validColors[0]);
+  
+            price = parseFloat(minPriceEntry.price);
+            if (minPriceEntry.original_price && parseFloat(minPriceEntry.original_price) > price) {
+              deleted_price = parseFloat(minPriceEntry.original_price);
             }
-
+  
             inStock = validColors.some(c => c.stock_quantity > 0);
-
-            if (!mainImage) {
-              const firstColorWithImage = minPriceEntry.images?.length > 0
-                ? minPriceEntry
-                : validColors.find(c => c.images?.length > 0);
-              mainImage = firstColorWithImage?.images?.[0]?.image_url;
-            }
           }
         }
       } else {
-        console.log('Variable product type'); // Debug log
-
         if (product.models?.length > 0) {
-          console.log('Product has models:', product.models.length); // Debug log
-
-          // Collect all colors from all models that have valid prices
           const allColors = product.models.flatMap(model =>
             (model.colors || [])
               .filter(color => color.price !== undefined && color.price !== null)
@@ -87,46 +60,26 @@ const HomeProducts = () => {
                 price: parseFloat(color.price),
                 original: color.original_price ? parseFloat(color.original_price) : null,
                 stock: color.stock_quantity > 0,
-                images: color.images
               }))
           );
-
-          console.log('Total valid colors found:', allColors.length); // Debug log
-
+  
           if (allColors.length > 0) {
             const minPriceColor = allColors.reduce((min, current) =>
               current.price < min.price ? current : min, allColors[0]);
-
+  
             price = minPriceColor.price;
             if (minPriceColor.original !== null && minPriceColor.original > price) {
               deleted_price = minPriceColor.original;
             }
-
+  
             inStock = allColors.some(color => color.stock);
-
-            if (!mainImage) {
-              const firstColorWithImage = minPriceColor.images?.length > 0
-                ? minPriceColor
-                : allColors.find(color => color.images?.length > 0);
-              mainImage = firstColorWithImage?.images?.[0]?.image_url;
-            }
-          } else {
-            console.warn('No valid colors with prices found in any model'); // Debug log
           }
         }
       }
     } catch (error) {
-      console.error('Error processing product:', product.product_id, error); // Debug log
+      console.error('Error processing product:', product.product_id, error);
     }
-
-    console.log('Final product info:', { // Debug log
-      product_id: product.product_id,
-      price,
-      deleted_price,
-      inStock,
-      mainImage
-    });
-
+  
     return {
       price,
       deleted_price,

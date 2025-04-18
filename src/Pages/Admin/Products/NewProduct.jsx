@@ -121,12 +121,12 @@ const NewProduct = () => {
   // Validate form before submission
   const validateForm = () => {
     const errors = {};
-    
+
     // Basic product info validation
     if (!formData.name.trim()) errors.name = 'Product name is required';
     if (!formData.description.trim()) errors.description = 'Description is required';
     if (!formData.category_id) errors.category_id = 'Category is required';
-    
+
     // Image validation
     if (formData.images.length === 0 && newImages.length === 0) {
       errors.images = 'At least one product image is required';
@@ -150,7 +150,7 @@ const NewProduct = () => {
           if (color.price <= 0) errors[`color_price_${colorIndex}`] = 'Price must be greater than 0';
           if (color.stock_quantity < 0) errors[`color_stock_${colorIndex}`] = 'Stock cannot be negative';
           if (color.threshold < 0) errors[`color_threshold_${colorIndex}`] = 'Threshold cannot be negative';
-          
+
           // Validate color images
           if ((color.images?.length || 0) === 0 && (color.newImages?.length || 0) === 0) {
             errors[`color_images_${colorIndex}`] = 'At least one color image is required';
@@ -166,7 +166,7 @@ const NewProduct = () => {
       } else {
         formData.models.forEach((model, modelIndex) => {
           if (!model.name.trim()) errors[`model_name_${modelIndex}`] = 'Model name is required';
-          
+
           // Validate model specifications
           (model.specifications || []).forEach((spec, specIndex) => {
             if (!spec.key.trim()) errors[`model_${modelIndex}_spec_key_${specIndex}`] = 'Specification name is required';
@@ -182,7 +182,7 @@ const NewProduct = () => {
               if (color.price <= 0) errors[`model_${modelIndex}_color_price_${colorIndex}`] = 'Price must be greater than 0';
               if (color.stock_quantity < 0) errors[`model_${modelIndex}_color_stock_${colorIndex}`] = 'Stock cannot be negative';
               if (color.threshold < 0) errors[`model_${modelIndex}_color_threshold_${colorIndex}`] = 'Threshold cannot be negative';
-              
+
               // Validate color images
               if ((color.images?.length || 0) === 0 && (color.newImages?.length || 0) === 0) {
                 errors[`model_${modelIndex}_color_images_${colorIndex}`] = 'At least one color image is required';
@@ -274,7 +274,7 @@ const NewProduct = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setValidationErrors({});
-    
+
     if (!validateForm()) {
       scrollToFirstError();
       return;
@@ -395,84 +395,98 @@ const NewProduct = () => {
         }));
       }
 
-      // 5. Handle models and their colors (for variable products)
+      // Inside handleSubmit, in the variable product section:
+
       if (formData.product_type === 'variable') {
-        await Promise.all(formData.models.map(async (model, modelIndex) => {
-          const modelEndpoint = model.model_id
-            ? `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/models/${model.model_id}`
-            : `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/models`;
+  await Promise.all(formData.models.map(async (model, modelIndex) => {
+    const modelEndpoint = model.model_id
+      ? `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/models/${model.model_id}`
+      : `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/models`;
 
-          const method = model.model_id ? 'PUT' : 'POST';
+    const method = model.model_id ? 'PUT' : 'POST';
 
-          const modelResponse = await axios({
-            method,
-            url: modelEndpoint,
-            data: {
-              name: model.name,
-              description: model.description
-            },
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
+    const modelResponse = await axios({
+      method,
+      url: modelEndpoint,
+      data: {
+        name: model.name,
+        description: model.description
+      },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+
+    const modelId = modelResponse.data.model_id || model.model_id;
+
+    // Handle model colors
+    if (model.colors) {
+      await Promise.all(model.colors.map(async (color, colorIndex) => {
+        const colorEndpoint = color.color_id
+          ? `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/colors/${color.color_id}`
+          : `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/colors`;
+
+        const method = color.color_id ? 'PUT' : 'POST';
+
+        const colorData = {
+          name: color.name,
+          price: color.price,
+          original_price: color.original_price,
+          stock_quantity: color.stock_quantity,
+          threshold: color.threshold,
+          model_id: modelId
+        };
+
+        const colorResponse = await axios({
+          method,
+          url: colorEndpoint,
+          data: colorData,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+
+        const colorId = colorResponse.data.color_id || color.color_id;
+
+        // Handle color images
+        if (color.newImages && color.newImages.length > 0) {
+          // Create a copy of the files to upload
+          const filesToUpload = [...color.newImages];
+          
+          // Clear newImages immediately in state
+          setFormData(prev => {
+            const updatedModels = [...prev.models];
+            updatedModels[modelIndex].colors[colorIndex].newImages = [];
+            return {
+              ...prev,
+              models: updatedModels
+            };
           });
 
-          const modelId = modelResponse.data.model_id || model.model_id;
+          // Upload the files
+          await Promise.all(filesToUpload.map(async file => {
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('color_id', colorId);
 
-          // Handle model colors
-          if (model.colors) {
-            await Promise.all(model.colors.map(async (color, colorIndex) => {
-              const colorEndpoint = color.color_id
-                ? `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/colors/${color.color_id}`
-                : `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/colors`;
-
-              const method = color.color_id ? 'PUT' : 'POST';
-
-              const colorData = {
-                name: color.name,
-                price: color.price,
-                original_price: color.original_price,
-                stock_quantity: color.stock_quantity,
-                threshold: color.threshold,
-                model_id: modelId
-              };
-
-              const colorResponse = await axios({
-                method,
-                url: colorEndpoint,
-                data: colorData,
+            await axios.post(
+              `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/images`,
+              formData,
+              {
                 headers: {
-                  'Content-Type': 'application/json',
+                  'Content-Type': 'multipart/form-data',
                   'Authorization': `Bearer ${localStorage.getItem('token')}`
                 }
-              });
-
-              const colorId = colorResponse.data.color_id || color.color_id;
-
-              // Handle color images
-              if (color.newImages && color.newImages.length > 0) {
-                await Promise.all(color.newImages.map(async file => {
-                  const formData = new FormData();
-                  formData.append('image', file);
-                  formData.append('color_id', colorId);
-                  formData.append('model_id', modelId);
-
-                  await axios.post(
-                    `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/images`,
-                    formData,
-                    {
-                      headers: {
-                        'Content-Type': 'multipart/form-data',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                      }
-                    }
-                  );
-                }));
               }
-            }));
-          }
-        }));
-      }
+            );
+          }));
+        }
+      }));
+    }
+  }));
+}
 
       // Refresh data after all updates
       const res = await axios.get(`${import.meta.env.VITE_SERVER_API}/products`);
@@ -701,24 +715,25 @@ const NewProduct = () => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
-    try {
-      setFormData(prev => {
-        const updatedModels = [...prev.models];
-        updatedModels[modelIndex].colors[colorIndex] = {
-          ...updatedModels[modelIndex].colors[colorIndex],
-          newImages: [...(updatedModels[modelIndex].colors[colorIndex].newImages || []), ...files]
-        };
-        return {
-          ...prev,
-          models: updatedModels
-        };
-      });
+    setFormData(prev => {
+      const updatedModels = [...prev.models];
+      if (!updatedModels[modelIndex].colors[colorIndex].newImages) {
+        updatedModels[modelIndex].colors[colorIndex].newImages = [];
+      }
+      updatedModels[modelIndex].colors[colorIndex] = {
+        ...updatedModels[modelIndex].colors[colorIndex],
+        newImages: files // Replace existing newImages instead of appending
+      };
+      return {
+        ...prev,
+        models: updatedModels
+      };
+    });
 
-      setValidationErrors(prev => ({ ...prev, [`model_${modelIndex}_color_images_${colorIndex}`]: undefined }));
-    } catch (err) {
-      console.error('Error uploading model color images:', err);
-      setError(err.response?.data?.message || 'Failed to upload model color images');
-    }
+    setValidationErrors(prev => ({
+      ...prev,
+      [`model_${modelIndex}_color_images_${colorIndex}`]: undefined
+    }));
   };
 
   // Remove existing model color image
@@ -892,9 +907,9 @@ const NewProduct = () => {
     });
 
     // Clear validation error for this field
-    setValidationErrors(prev => ({ 
-      ...prev, 
-      [`model_${modelIndex}_color_${field}_${colorIndex}`]: undefined 
+    setValidationErrors(prev => ({
+      ...prev,
+      [`model_${modelIndex}_color_${field}_${colorIndex}`]: undefined
     }));
   };
 
@@ -933,9 +948,9 @@ const NewProduct = () => {
     });
 
     // Clear validation error for this field
-    setValidationErrors(prev => ({ 
-      ...prev, 
-      [`spec_${field}_${specIndex}`]: undefined 
+    setValidationErrors(prev => ({
+      ...prev,
+      [`spec_${field}_${specIndex}`]: undefined
     }));
   };
 
@@ -1293,7 +1308,7 @@ const NewProduct = () => {
   const renderProductForm = () => (
     <div className="product-form-container">
       <div className="form-header">
-        <button 
+        <button
           className="btn-back"
           onClick={cancelEdit}
         >
@@ -1301,7 +1316,7 @@ const NewProduct = () => {
         </button>
         <h2>Edit Product</h2>
       </div>
-      
+
       <form onSubmit={handleSubmit} className="product-form" ref={formRef}>
         <div className={`form-group ${validationErrors.name ? 'error-field' : ''}`}>
           <label>Product Name:</label>
@@ -1435,9 +1450,8 @@ const NewProduct = () => {
             </div>
 
             {formData.specifications?.map((spec, specIndex) => (
-              <div key={spec.spec_id || `new-spec-${specIndex}`} className={`specification-item ${
-                validationErrors[`spec_key_${specIndex}`] || validationErrors[`spec_value_${specIndex}`] ? 'error-field' : ''
-              }`}>
+              <div key={spec.spec_id || `new-spec-${specIndex}`} className={`specification-item ${validationErrors[`spec_key_${specIndex}`] || validationErrors[`spec_value_${specIndex}`] ? 'error-field' : ''
+                }`}>
                 <div>
                   <input
                     type="text"
@@ -1673,10 +1687,9 @@ const NewProduct = () => {
                   </div>
 
                   {model.specifications?.map((spec, specIndex) => (
-                    <div key={specIndex} className={`specification-item ${
-                      validationErrors[`model_${modelIndex}_spec_key_${specIndex}`] || 
+                    <div key={specIndex} className={`specification-item ${validationErrors[`model_${modelIndex}_spec_key_${specIndex}`] ||
                       validationErrors[`model_${modelIndex}_spec_value_${specIndex}`] ? 'error-field' : ''
-                    }`}>
+                      }`}>
                       <div>
                         <input
                           type="text"

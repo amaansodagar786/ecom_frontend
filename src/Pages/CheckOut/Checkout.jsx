@@ -3,6 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../Components/Context/AuthContext';
 import './Checkout.scss';
+import AddressModal from '../../Pages/User/Address/AddressModal'; // Import the AddressModal
+
 
 const Checkout = () => {
     const location = useLocation();
@@ -15,13 +17,14 @@ const Checkout = () => {
     const [selectedAddress, setSelectedAddress] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [isAddressModalOpen, setIsAddressModalOpen] = useState(false); // State for modal visibility
+    const [states, setStates] = useState([]); // State for states list
 
     // Calculate order totals
     const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const originalSubtotal = cartItems.reduce((sum, item) => sum + ((item.original_price || item.price) * item.quantity), 0);
     const totalDiscount = originalSubtotal - subtotal;
 
-    // Calculate delivery charge based on subtotal
     const calculateDeliveryCharge = (amount) => {
         if (amount <= 999) return 0;
         if (amount <= 5000) return 90;
@@ -32,29 +35,64 @@ const Checkout = () => {
     };
 
     const deliveryCharge = calculateDeliveryCharge(subtotal);
-    const taxes = 0; // "All taxes included" means 0 additional tax
+    const taxes = 0;
     const total = subtotal + deliveryCharge + taxes;
 
-    // Fetch user addresses
+    // Fetch user addresses and states
     useEffect(() => {
-        const fetchAddresses = async () => {
+        const fetchData = async () => {
             try {
-                const response = await axios.get(`${import.meta.env.VITE_SERVER_API}/addresses`, {
-                    headers: { Authorization: `Bearer ${getToken()}` }
-                });
-                setAddresses(response.data.addresses);
-                if (response.data.addresses.length > 0) {
-                    setSelectedAddress(response.data.addresses[0].address_id);
+                const [addressesResponse, statesResponse] = await Promise.all([
+                    axios.get(`${import.meta.env.VITE_SERVER_API}/addresses`, {
+                        headers: { Authorization: `Bearer ${getToken()}` }
+                    }),
+                    axios.get(`${import.meta.env.VITE_SERVER_API}/states`, {
+                        headers: { Authorization: `Bearer ${getToken()}` }
+                    })
+                ]);
+
+                setAddresses(addressesResponse.data.addresses || []);
+                setStates(statesResponse.data.states || []);
+
+                if (addressesResponse.data.addresses?.length > 0) {
+                    setSelectedAddress(addressesResponse.data.addresses[0].address_id);
                 }
             } catch (err) {
-                setError(err.response?.data?.message || 'Failed to load addresses');
+                setError(err.response?.data?.message || 'Failed to load data');
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchAddresses();
+        fetchData();
     }, [getToken]);
+
+    const handleSaveAddress = async (formData) => {
+        try {
+            const response = await axios.post(`${import.meta.env.VITE_SERVER_API}/add-address`, formData, {
+                headers: { Authorization: `Bearer ${getToken()}` }
+            });
+
+            if (response.data.success) {
+                // Refresh addresses list
+                const updatedResponse = await axios.get(`${import.meta.env.VITE_SERVER_API}/addresses`, {
+                    headers: { Authorization: `Bearer ${getToken()}` }
+                });
+
+                setAddresses(updatedResponse.data.addresses || []);
+                // Auto-select the newly added address
+                if (updatedResponse.data.addresses?.length > 0) {
+                    const newAddress = updatedResponse.data.addresses[updatedResponse.data.addresses.length - 1];
+                    setSelectedAddress(newAddress.address_id);
+                }
+
+                setIsAddressModalOpen(false);
+            }
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to save address');
+            throw err;
+        }
+    };
 
     const handleAddressSubmit = () => {
         if (!selectedAddress) {
@@ -64,8 +102,10 @@ const Checkout = () => {
         setActiveStep(2);
     };
 
-    const handleAddNewAddress = () => {
-        navigate('/address', { state: { fromCheckout: true } });
+    const handlePlaceOrder = () => {
+        alert('Order placed successfully!');
+        // In a real app, you would handle the payment process here
+        // and then navigate to order confirmation page
     };
 
     if (cartItems.length === 0) {
@@ -93,6 +133,26 @@ const Checkout = () => {
                     <p>Payment</p>
                 </div>
             </div>
+
+            {/* Top Navigation Buttons */}
+            {(activeStep === 2 || activeStep === 3) && (
+                <div className="top-navigation">
+                    <button 
+                        className="back-to-address-btn" 
+                        onClick={() => setActiveStep(1)}
+                    >
+                        Back to Address
+                    </button>
+                    {activeStep === 3 && (
+                        <button 
+                            className="back-to-review-btn" 
+                            onClick={() => setActiveStep(2)}
+                        >
+                            Back to Review
+                        </button>
+                    )}
+                </div>
+            )}
 
             {activeStep === 1 && (
                 <div className="address-step">
@@ -125,7 +185,10 @@ const Checkout = () => {
                     )}
 
                     <div className="address-actions">
-                        <button className="add-address-btn" onClick={handleAddNewAddress}>
+                        <button
+                            className="add-address-btn"
+                            onClick={() => setIsAddressModalOpen(true)}
+                        >
                             Add New Address
                         </button>
                         {addresses.length > 0 && (
@@ -249,12 +312,25 @@ const Checkout = () => {
                     <div className="final-order-summary">
                         <h3>Order Total: ₹{total.toFixed(2)}</h3>
                         <p>Including delivery charge: {deliveryCharge === 0 ? 'FREE' : `₹${deliveryCharge.toFixed(2)}`}</p>
-                        <button className="place-order-btn" onClick={() => alert('Order placed successfully!')}>
-                            Place Order
-                        </button>
+                        
+                        <div className="payment-actions">
+                            <button className="back-to-review-btn" onClick={() => setActiveStep(2)}>
+                                Back to Review
+                            </button>
+                            <button className="place-order-btn" onClick={handlePlaceOrder}>
+                                Place Order
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
+
+            <AddressModal
+                isOpen={isAddressModalOpen}
+                onClose={() => setIsAddressModalOpen(false)}
+                onSave={handleSaveAddress}
+                states={states}
+            />
         </div>
     );
 };

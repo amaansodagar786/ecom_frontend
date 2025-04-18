@@ -1,5 +1,5 @@
 // AddressModal.js
-import React, { useState } from 'react';
+import React, { useState , useEffect} from 'react';
 import { toast } from 'react-toastify';
 import './Address.scss'; // We'll use the same styles
 
@@ -11,7 +11,7 @@ const AddressModal = ({
   initialData = null,
   isEditMode = false
 }) => {
-  const [formData, setFormData] = useState(initialData || {
+  const [formData, setFormData] = useState({
     name: '',
     mobile: '',
     pincode: '',
@@ -25,6 +25,41 @@ const AddressModal = ({
     latitude: null,
     longitude: null
   });
+
+  // Update form data when initialData changes or modal opens
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        name: initialData.name || '',
+        mobile: initialData.mobile || '',
+        pincode: initialData.pincode || '',
+        locality: initialData.locality || '',
+        address_line: initialData.address_line || '',
+        city: initialData.city || '',
+        state_id: initialData.state_id?.toString() || '',
+        landmark: initialData.landmark || '',
+        alternate_phone: initialData.alternate_phone || '',
+        address_type: initialData.address_type || 'Home',
+        latitude: initialData.latitude || null,
+        longitude: initialData.longitude || null
+      });
+    } else {
+      setFormData({
+        name: '',
+        mobile: '',
+        pincode: '',
+        locality: '',
+        address_line: '',
+        city: '',
+        state_id: '',
+        landmark: '',
+        alternate_phone: '',
+        address_type: 'Home',
+        latitude: null,
+        longitude: null
+      });
+    }
+  }, [initialData, isOpen]);
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [locationStatus, setLocationStatus] = useState('');
   const [isLoading, setIsLoading] = useState(false);
