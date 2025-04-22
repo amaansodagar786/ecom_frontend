@@ -87,7 +87,9 @@ const MainProducts = () => {
   const handleProductClick = (product, e) => {
     console.log('Product clicked:', product.product_id);
     if (e) e.stopPropagation();
-    navigate(`/product/${product.product_id}`, { state: { product } });
+    // navigate(`/product/${product.product_id}`, { state: { product } });
+    navigate(`/products/${product.name.replace(/\s+/g, '-')}`, { state: { product } });
+
   };
 
   const filteredProducts = Array.isArray(products)
@@ -182,7 +184,7 @@ const MainProducts = () => {
             </select>
           </div>
 
-          <div className="filter-group">
+          {/* <div className="filter-group">
             <label>Color:</label>
             <select
               value={colorFilter}
@@ -195,7 +197,7 @@ const MainProducts = () => {
                 </option>
               ))}
             </select>
-          </div>
+          </div> */}
         </div>
       )}
 
@@ -205,11 +207,33 @@ const MainProducts = () => {
           filteredProducts.map((product) => {
             const firstImage = product.images?.[0];
             const imageUrl = getImageUrl(firstImage);
+            const isVideo = imageUrl && /\.(mp4)$/i.test(imageUrl);
 
             return (
-              <div className="product-card" onClick={(e) => handleProductClick(product, e)}>
+              <div
+                className="product-card"
+                key={product.product_id}
+                onClick={(e) => handleProductClick(product, e)}
+              >
                 {imageUrl ? (
-                  <img src={imageUrl} alt={product.name} className="product-image" />
+                  isVideo ? (
+                    <video
+                      className="product-image"
+                      src={imageUrl}
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                      preload="metadata"
+                    />
+                  ) : (
+                    <img
+                      src={imageUrl}
+                      alt={product.name}
+                      className="product-image"
+                      loading="lazy"
+                    />
+                  )
                 ) : (
                   <div className="no-image">No Image Available</div>
                 )}

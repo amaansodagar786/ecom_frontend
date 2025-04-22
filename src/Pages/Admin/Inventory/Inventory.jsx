@@ -153,15 +153,25 @@ const Inventory = () => {
             filteredProducts.map((product) => (
               <div key={`${product.product_id}-${product.model_id}-${product.color_id}`} className="product-card">
                 <div className="product-images">
-                  {product.images.length > 0 ? (
-                    <img
-                      src={`${import.meta.env.VITE_SERVER_API}/static/${product.images[0]}`}
-                      alt={`${product.color_name} ${product.product_name}`}
-                    />
-                  ) : (
-                    <div className="no-image">No Image</div>
-                  )}
+                  {(() => {
+                    console.log("Product:", product);
+                    console.log("Images:", product.images);
+
+                    if (product.images.length > 0) {
+                      const imageUrl = `${import.meta.env.VITE_SERVER_API}/static/${product.images[0]}`;
+                      console.log("Image URL:", imageUrl);
+                      return (
+                        <img
+                          src={imageUrl}
+                          alt={`${product.color_name} ${product.product_name}`}
+                        />
+                      );
+                    } else {
+                      return <div className="no-image">No Image</div>;
+                    }
+                  })()}
                 </div>
+
 
                 <div className="product-details">
                   <h3>{product.product_name}</h3>

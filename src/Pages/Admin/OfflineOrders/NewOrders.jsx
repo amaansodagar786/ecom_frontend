@@ -171,39 +171,95 @@ const NewOrders = () => {
         });
     };
 
-    const handlePlaceOrder = () => {
+    const handlePlaceOrder = async () => {
         if (selectedProducts.length === 0) {
             showErrorToast('Please select at least one product');
             return;
         }
 
-        if (!selectedCustomer || !selectedAddress) {
-            showErrorToast('Please select a customer and address');
+        if (!selectedCustomer) {
+            showErrorToast('Please select a customer');
             return;
         }
 
-        const orderData = {
-            customer_id: selectedCustomer.id,
-            address_id: selectedAddress.id,
-            products: selectedProducts.map(product => ({
-                id: product.id,
-                name: product.full_name,
-                quantity: product.quantity,
-                originalPrice: product.original_price,
-                finalPrice: product.finalPrice,
-                discountPercentage: product.discountPercentage
-            })),
-            subtotal: calculateSubtotal(),
-            discount: calculateTotalDiscount(),
-            deliveryCharge: calculateDeliveryCharge(calculateSubtotal()),
-            total: calculateSubtotal() + calculateDeliveryCharge(calculateSubtotal()),
-            date: new Date().toISOString()
-        };
+        try {
+            console.log('Selected Products:', selectedProducts);
 
-        console.log('Order Details:', orderData);
+            const token = localStorage.getItem('token');
 
-        showSuccessToast('Order placed successfully!');
+            // 🔁 Removed product verification step here
+
+            // Prepare order items
+            const orderItems = selectedProducts.map(product => {
+                console.log("🧪 Type of finalPrice:", typeof product.finalPrice, "Value:", product.finalPrice);
+                
+                if (!product.finalPrice || isNaN(product.finalPrice)) {
+                    throw new Error(`Invalid price for product ${product.product_id}`);
+                }
+
+                return {
+                    product_id: product.product_id,
+                    quantity: product.quantity,
+                    unit_price: product.finalPrice,
+                    ...(product.model_id && { model_id: product.model_id }),
+                    ...(product.color_id && { color_id: product.color_id })
+                };
+            });
+
+            // Prepare order data
+            const orderData = {
+                customer_id: selectedCustomer.id,
+                items: orderItems,
+                discount_percent: 0,
+                delivery_charge: 0,
+                tax_percent: 0,
+                channel: 'offline',
+                payment_status: 'paid'
+            };
+
+            // Log the exact payload being sent to backend
+            console.log('📦 Order Data being sent to backend:', JSON.stringify(orderData, null, 2));
+
+            // Submit order
+            const response = await axios.post(
+                `${import.meta.env.VITE_SERVER_API}/orders`,
+                orderData,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+
+            console.log('✅ Response from server:', response.data);
+
+            if (response.data?.order_id) {
+                showSuccessToast(`Order #${response.data.order_id} created successfully!`);
+                setSelectedProducts([]);
+                setSelectedCustomer(null);
+                setSelectedAddress(null);
+            } else {
+                showErrorToast('Order created but no order ID returned');
+            }
+        } catch (error) {
+            console.error('❌ Order creation error:', error);
+            let errorMessage = 'Failed to create order';
+
+            if (error.response?.data) {
+                errorMessage = error.response.data.error ||
+                    error.response.data.message ||
+                    JSON.stringify(error.response.data);
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+
+            showErrorToast(errorMessage);
+        }
     };
+
+
+
 
     const handleProductSelect = (product) => {
         setSelectedProduct(product);
@@ -1047,16 +1103,7 @@ const NewOrders = () => {
                                 </button>
                             </div>
                             <div
-                                className="modal-body-container"
-                                style={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    height: '70vh',
-                                    maxHeight: '700px',
-                                    overflow: 'auto',
-                                    padding: '0 20px'
-                                }}
-                            >
+                                className="modal-body-container">
                                 <div className="search-section">
                                     <input
                                         type="text"
@@ -1079,30 +1126,32 @@ const NewOrders = () => {
                                     <div className="loading-customers">Loading customers...</div>
                                 ) : (
                                     <>
-                                        <div className="customer-list">
-                                            {customers
-                                                .filter(customer => {
-                                                    const name = customer.name || '';
-                                                    const phone = customer.phone || '';
-                                                    return customerSearchTerm === '' ||
-                                                        name.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
-                                                        phone.includes(customerSearchTerm);
-                                                })
-                                                .map(customer => (
-                                                    <div
-                                                        key={customer.id}
-                                                        className={`customer-list-item ${selectedCustomer?.id === customer.id ? 'selected' : ''}`}
-                                                        onClick={() => handleCustomerSelect(customer)}
-                                                    >
-                                                        <div className="customer-info">
-                                                            <h4>{customer.name}</h4>
-                                                            <div className="customer-contact">
-                                                                <span>{customer.phone}</span>
-                                                                {customer.email && <span>{customer.email}</span>}
+                                        <div className="customer-list-section">
+                                            <div className="customer-list">
+                                                {customers
+                                                    .filter(customer => {
+                                                        const name = customer.name || '';
+                                                        const phone = customer.phone || '';
+                                                        return customerSearchTerm === '' ||
+                                                            name.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
+                                                            phone.includes(customerSearchTerm);
+                                                    })
+                                                    .map(customer => (
+                                                        <div
+                                                            key={customer.id}
+                                                            className={`customer-list-item ${selectedCustomer?.id === customer.id ? 'selected' : ''}`}
+                                                            onClick={() => handleCustomerSelect(customer)}
+                                                        >
+                                                            <div className="customer-info">
+                                                                <h4>{customer.name}</h4>
+                                                                <div className="customer-contact">
+                                                                    <span>{customer.phone}</span>
+                                                                    {customer.email && <span>{customer.email}</span>}
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                ))}
+                                                    ))}
+                                            </div>
                                         </div>
 
                                         {selectedCustomer && (

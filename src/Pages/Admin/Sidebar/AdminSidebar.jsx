@@ -14,6 +14,7 @@ const AdminSidebar = ({ isOpen, toggleSidebar, isMobile }) => {
     { path: '/adminorders', name: 'Orders', icon: <FiShoppingCart /> },
     { path: '/admininpayment', name: 'Payments', icon: <FiCreditCard /> },
     { path: '/createorders', name: 'New Order', icon: <FiSettings /> },
+    { path: '/categoryupdate', name: 'Category Update', icon: <FiSettings /> },
   ];
 
   const handleNavClick = (path) => {

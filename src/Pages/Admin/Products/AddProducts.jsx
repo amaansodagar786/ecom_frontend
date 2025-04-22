@@ -21,12 +21,11 @@ const initialValues = {
       description: '',
       colors: [
         {
-          name: '',
+          name: 'DEFAULT',
           stock_quantity: 0,
           price: 0,
           original_price: 0,
           threshold: 10,
-          images: []
         }
       ],
       specifications: [
@@ -100,14 +99,14 @@ const AddProducts = () => {
           colors: yup.array()
             .of(
               yup.object().shape({
-                name: yup.string().required('Color name is required'),
+                name: yup.string() ,
                 stock_quantity: yup.number().required('Stock is required').min(0),
                 price: yup.number().required('Price is required').min(0),
                 original_price: yup.number()
                   .min(yup.ref('price'), 'Original price must be greater than price')
                   .nullable(),
                 threshold: yup.number().required('Threshold is required').min(1),
-                images: yup.array().min(1, 'At least one image is required')
+                // images: yup.array().min(1, 'At least one image is required')
               })
             )
             .min(1, 'At least one color is required'),
@@ -371,15 +370,16 @@ const AddProducts = () => {
 
         // Handle colors for single product
         values.models[0].colors.forEach((color, colorIndex) => {
-          formData.append(`color_name_${colorIndex}`, color.name);
+          // formData.append(`color_name_${colorIndex}`, color.name);
+          formData.append(`color_name_${colorIndex}`, 'DEFAULT');
           formData.append(`color_price_${colorIndex}`, color.price);
           formData.append(`color_original_price_${colorIndex}`, color.original_price || '');
           formData.append(`color_stock_${colorIndex}`, color.stock_quantity);
           formData.append(`threshold_${colorIndex}`, color.threshold || 10);
 
-          color.images.forEach((image) => {
-            formData.append(`color_images_${colorIndex}`, image);
-          });
+          // color.images.forEach((image) => {
+          //   formData.append(`color_images_${colorIndex}`, image);
+          // });
         });
 
         formData.append('colors_count', values.models[0].colors.length);
@@ -398,15 +398,16 @@ const AddProducts = () => {
 
           // Handle colors for variable product
           model.colors.forEach((color, colorIndex) => {
-            formData.append(`model_${modelIndex}_color_name_${colorIndex}`, color.name);
+            // formData.append(`model_${modelIndex}_color_name_${colorIndex}`, color.name);
+            formData.append(`model_${modelIndex}_color_name_${colorIndex}`, 'DEFAULT');
             formData.append(`model_${modelIndex}_color_price_${colorIndex}`, color.price);
             formData.append(`model_${modelIndex}_color_original_price_${colorIndex}`, color.original_price || '');
             formData.append(`model_${modelIndex}_color_stock_${colorIndex}`, color.stock_quantity);
             formData.append(`model_${modelIndex}_threshold_${colorIndex}`, color.threshold || 10);
 
-            color.images.forEach((image) => {
-              formData.append(`model_${modelIndex}_color_images_${colorIndex}`, image);
-            });
+            // color.images.forEach((image) => {
+            //   formData.append(`model_${modelIndex}_color_images_${colorIndex}`, image);
+            // });
           });
 
           formData.append(`model_colors_count_${modelIndex}`, model.colors.length);
@@ -662,7 +663,8 @@ const AddProducts = () => {
                           type="file"
                           id="product-images"
                           multiple
-                          accept="image/*"
+                          // accept="image/*"
+                          accept="image/*,video/mp4"
                           className="file-input"
                           onChange={(e) => {
                             const files = Array.from(e.target.files);
@@ -769,176 +771,93 @@ const AddProducts = () => {
 
                             {/* Model Colors */}
                             <FieldArray name={`models.${modelIndex}.colors`}>
-                              {({ push: pushColor, remove: removeColor }) => (
-                                <div className="form-section">
-                                  <h4>Color Options</h4>
+                        {({ push: pushColor, remove: removeColor }) => (
+                          <div className="form-section">
+                            <h4>Product Variant</h4>
 
-                                  {model.colors.map((color, colorIndex) => (
-                                    <div key={colorIndex} className="color-card">
-                                      <div className="color-header">
-                                        <h5>Color {colorIndex + 1}</h5>
-                                        <button
-                                          type="button"
-                                          className="remove-button"
-                                          onClick={() => removeColor(colorIndex)}
-                                          disabled={model.colors.length <= 1}
-                                        >
-                                          <FaTrash />
-                                        </button>
-                                      </div>
+                            {model.colors.map((color, colorIndex) => (
+                              <div key={colorIndex} className="color-card">
+                                <div className="form-grid">
+                                  <div className="form-group">
+                                    <label className="form-label">Variant Name</label>
+                                    <input
+                                      type="text"
+                                      name={`models.${modelIndex}.colors.${colorIndex}.name`}
+                                      className="form-input"
+                                      value="DEFAULT"
+                                      readOnly
+                                    />
+                                  </div>
 
-                                      <div className="form-grid">
-                                        <div className="form-group">
-                                          <label className="form-label">Color Name *</label>
-                                          <Field
-                                            type="text"
-                                            name={`models.${modelIndex}.colors.${colorIndex}.name`}
-                                            className="form-input"
-                                            placeholder="e.g., Black, Red"
-                                          />
-                                          <ErrorMessage
-                                            name={`models.${modelIndex}.colors.${colorIndex}.name`}
-                                            component="div"
-                                            className="error-message"
-                                          />
-                                        </div>
+                                  <div className="form-group">
+                                    <label className="form-label">Stock Quantity *</label>
+                                    <Field
+                                      type="number"
+                                      name={`models.${modelIndex}.colors.${colorIndex}.stock_quantity`}
+                                      className="form-input"
+                                      min="0"
+                                    />
+                                    <ErrorMessage
+                                      name={`models.${modelIndex}.colors.${colorIndex}.stock_quantity`}
+                                      component="div"
+                                      className="error-message"
+                                    />
+                                  </div>
 
-                                        <div className="form-group">
-                                          <label className="form-label">Stock Quantity *</label>
-                                          <Field
-                                            type="number"
-                                            name={`models.${modelIndex}.colors.${colorIndex}.stock_quantity`}
-                                            className="form-input"
-                                            min="0"
-                                          />
-                                          <ErrorMessage
-                                            name={`models.${modelIndex}.colors.${colorIndex}.stock_quantity`}
-                                            component="div"
-                                            className="error-message"
-                                          />
-                                        </div>
+                                  <div className="form-group">
+                                    <label className="form-label">Price *</label>
+                                    <Field
+                                      type="number"
+                                      name={`models.${modelIndex}.colors.${colorIndex}.price`}
+                                      className="form-input"
+                                      min="0"
+                                      step="0.01"
+                                    />
+                                    <ErrorMessage
+                                      name={`models.${modelIndex}.colors.${colorIndex}.price`}
+                                      component="div"
+                                      className="error-message"
+                                    />
+                                  </div>
 
-                                        <div className="form-group">
-                                          <label className="form-label">Price *</label>
-                                          <Field
-                                            type="number"
-                                            name={`models.${modelIndex}.colors.${colorIndex}.price`}
-                                            className="form-input"
-                                            min="0"
-                                            step="0.01"
-                                          />
-                                          <ErrorMessage
-                                            name={`models.${modelIndex}.colors.${colorIndex}.price`}
-                                            component="div"
-                                            className="error-message"
-                                          />
-                                        </div>
+                                  <div className="form-group">
+                                    <label className="form-label">Original Price</label>
+                                    <Field
+                                      type="number"
+                                      name={`models.${modelIndex}.colors.${colorIndex}.original_price`}
+                                      className="form-input"
+                                      min="0"
+                                      step="0.01"
+                                    />
+                                    <ErrorMessage
+                                      name={`models.${modelIndex}.colors.${colorIndex}.original_price`}
+                                      component="div"
+                                      className="error-message"
+                                    />
+                                  </div>
 
-                                        <div className="form-group">
-                                          <label className="form-label">Original Price</label>
-                                          <Field
-                                            type="number"
-                                            name={`models.${modelIndex}.colors.${colorIndex}.original_price`}
-                                            className="form-input"
-                                            min="0"
-                                            step="0.01"
-                                          />
-                                          <ErrorMessage
-                                            name={`models.${modelIndex}.colors.${colorIndex}.original_price`}
-                                            component="div"
-                                            className="error-message"
-                                          />
-                                        </div>
-
-                                        <div className="form-group">
-                                          <label className="form-label">Low Stock Threshold *</label>
-                                          <Field
-                                            type="number"
-                                            name={`models.${modelIndex}.colors.${colorIndex}.threshold`}
-                                            className="form-input"
-                                            min="1"
-                                          />
-                                          <ErrorMessage
-                                            name={`models.${modelIndex}.colors.${colorIndex}.threshold`}
-                                            component="div"
-                                            className="error-message"
-                                          />
-                                        </div>
-                                      </div>
-
-                                      {/* Color Images */}
-                                      <div className="form-group">
-                                        <label className="form-label">Color Images *</label>
-                                        <div className="image-upload-container">
-                                          <input
-                                            type="file"
-                                            id={`model-${modelIndex}-color-images-${colorIndex}`}
-                                            multiple
-                                            accept="image/*"
-                                            className="file-input"
-                                            onChange={(e) => {
-                                              const files = Array.from(e.target.files);
-                                              setFieldValue(`models.${modelIndex}.colors.${colorIndex}.images`, files);
-                                            }}
-                                          />
-                                          <label htmlFor={`model-${modelIndex}-color-images-${colorIndex}`} className="upload-button">
-                                            <FaUpload /> Upload Images
-                                          </label>
-                                        </div>
-                                        <ErrorMessage
-                                          name={`models.${modelIndex}.colors.${colorIndex}.images`}
-                                          component="div"
-                                          className="error-message"
-                                        />
-
-                                        {color.images.length > 0 && (
-                                          <div className="image-previews">
-                                            {color.images.map((image, imgIndex) => (
-                                              <div key={imgIndex} className="image-preview">
-                                                {typeof image === 'string' ? (
-                                                  <img src={image} alt={`Preview ${imgIndex + 1}`} />
-                                                ) : (
-                                                  <img src={URL.createObjectURL(image)} alt={`Preview ${imgIndex + 1}`} />
-                                                )}
-                                                <button
-                                                  type="button"
-                                                  className="remove-image"
-                                                  onClick={() => {
-                                                    const updatedImages = [...color.images];
-                                                    updatedImages.splice(imgIndex, 1);
-                                                    setFieldValue(`models.${modelIndex}.colors.${colorIndex}.images`, updatedImages);
-                                                  }}
-                                                >
-                                                  <FaTrash />
-                                                </button>
-                                              </div>
-                                            ))}
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  ))}
-
-                                  {/* Add Color Button */}
-                                  <div className="add-button-container">
-                                    <button
-                                      type="button"
-                                      className="add-button"
-                                      onClick={() => pushColor({
-                                        name: '',
-                                        stock_quantity: 0,
-                                        price: 0,
-                                        original_price: 0,
-                                        threshold: 10,
-                                        images: []
-                                      })}
-                                    >
-                                      <FaPlus /> Add Color
-                                    </button>
+                                  <div className="form-group">
+                                    <label className="form-label">Low Stock Threshold *</label>
+                                    <Field
+                                      type="number"
+                                      name={`models.${modelIndex}.colors.${colorIndex}.threshold`}
+                                      className="form-input"
+                                      min="1"
+                                    />
+                                    <ErrorMessage
+                                      name={`models.${modelIndex}.colors.${colorIndex}.threshold`}
+                                      component="div"
+                                      className="error-message"
+                                    />
                                   </div>
                                 </div>
-                              )}
-                            </FieldArray>
+                                {/* Removed color images section */}
+                              </div>
+                            ))}
+                            {/* Removed "Add Color" button */}
+                          </div>
+                        )}
+                      </FieldArray>
 
                             {/* Model Specifications */}
                             <FieldArray name={`models.${modelIndex}.specifications`}>

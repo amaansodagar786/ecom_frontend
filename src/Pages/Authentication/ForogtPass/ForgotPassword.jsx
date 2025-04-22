@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './ForgotPassword.scss';
+import axios from 'axios';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
@@ -11,13 +12,7 @@ const ForgotPassword = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [step, setStep] = useState(1); // 1: email, 2: OTP, 3: new password
   const [isLoading, setIsLoading] = useState(false);
-  const [generatedOtp, setGeneratedOtp] = useState(null); // In production, this would come from backend
   const navigate = useNavigate();
-
-  // Mock function to simulate backend OTP generation
-  const generateMockOtp = () => {
-    return Math.floor(1000 + Math.random() * 9000).toString();
-  };
 
   const handleGetOtp = async (e) => {
     e.preventDefault();
@@ -30,69 +25,94 @@ const ForgotPassword = () => {
       return;
     }
 
-    // Simulate API call
     try {
-      // In a real app, this would be an API call to your backend
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      const mockOtp = generateMockOtp();
-      setGeneratedOtp(mockOtp);
+      const response = await axios.post(`${import.meta.env.VITE_SERVER_API}/send-otp`, { email });
       
-      // In production, backend would send this to user's email
-      console.log('Mock OTP sent to email:', mockOtp); // Remove in production
-      
-      toast.success(`OTP sent to ${email}`);
-      setStep(2);
+      if (response.status === 200) {
+        toast.success(`OTP sent to ${email}`);
+        setStep(2);
+      } else {
+        toast.error(response.data.message || 'Failed to send OTP');
+      }
     } catch (error) {
-      toast.error('Failed to send OTP. Please try again.');
+      const errorMessage = error.response?.data?.message || 'Failed to send OTP. Please try again.';
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleVerifyOtp = (e) => {
+  const handleVerifyOtp = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
     
     if (!otp) {
       toast.error('Please enter the OTP');
+      setIsLoading(false);
       return;
     }
 
-    if (otp === generatedOtp) {
-      toast.success('OTP verified successfully');
-      setStep(3);
-    } else {
-      toast.error('Invalid OTP. Please check and try again.');
+    try {
+      const response = await axios.post(`${import.meta.env.VITE_SERVER_API}/verify-otp`, {
+        email,
+        otp
+      });
+      
+        
+      
+      if (response.status === 200) {
+        toast.success('OTP verified successfully');
+        setStep(3);
+      } else {
+        toast.error(response.data.message || 'OTP verification failed');
+      }
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Invalid OTP. Please check and try again.';
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleResetPassword = (e) => {
+  const handleResetPassword = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
     
     if (!newPassword || !confirmPassword) {
       toast.error('Please fill in all fields');
+      setIsLoading(false);
       return;
     }
 
     if (newPassword !== confirmPassword) {
       toast.error('Passwords do not match');
+      setIsLoading(false);
       return;
     }
 
-    if (newPassword.length < 8) {
-      toast.error('Password must be at least 8 characters');
+    if (newPassword.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      setIsLoading(false);
       return;
     }
 
-    // Simulate API call to reset password
-    setIsLoading(true);
     try {
-      // In a real app, this would be an API call to your backend
-      setTimeout(() => {
+      const response = await axios.post(`${import.meta.env.VITE_SERVER_API}/reset-password`, {
+        
+        email,
+        new_password: newPassword,
+        confirm_password: confirmPassword
+      });
+      
+      if (response.status === 200) {
         toast.success('Password updated successfully!');
         navigate('/login');
-      }, 1000);
+      } else {
+        toast.error(response.data.message || 'Failed to reset password');
+      }
     } catch (error) {
-      toast.error('Failed to reset password. Please try again.');
+      const errorMessage = error.response?.data?.message || 'Failed to reset password. Please try again.';
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -198,6 +218,7 @@ const ForgotPassword = () => {
               type="button" 
               className="back-btn"
               onClick={() => setStep(step - 1)}
+              disabled={isLoading}
             >
               Back
             </button>

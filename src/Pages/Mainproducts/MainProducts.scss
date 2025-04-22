@@ -357,6 +357,11 @@
         }
       }
 
+      video.product-image {
+        // Specific video styles if needed
+        background: black; // Optional background for videos
+      }
+
       .product-details {
         padding: 20px;
         display: flex;

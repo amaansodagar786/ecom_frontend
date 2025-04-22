@@ -18,6 +18,17 @@ const NewProduct = () => {
   const [validationErrors, setValidationErrors] = useState({});
   const formRef = useRef(null);
 
+  // const [formData, setFormData] = useState({
+  //   name: '',
+  //   description: '',
+  //   product_type: 'single',
+  //   category_id: '',
+  //   subcategory_id: '',
+  //   images: [],
+  //   colors: [],
+  //   models: [],
+  //   specifications: []
+  // });
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -25,8 +36,25 @@ const NewProduct = () => {
     category_id: '',
     subcategory_id: '',
     images: [],
-    colors: [],
-    models: [],
+    colors: [{
+      name: 'DEFAULT', // Single default color variant
+      price: 0,
+      original_price: 0,
+      stock_quantity: 0,
+      threshold: 10
+    }],
+    models: [{
+      name: '',
+      description: '',
+      colors: [{
+        name: 'DEFAULT', // Default for variable products
+        price: 0,
+        original_price: 0,
+        stock_quantity: 0,
+        threshold: 10
+      }],
+      specifications: []
+    }],
     specifications: []
   });
 
@@ -146,15 +174,15 @@ const NewProduct = () => {
         errors.colors = 'At least one color variant is required';
       } else {
         formData.colors.forEach((color, colorIndex) => {
-          if (!color.name.trim()) errors[`color_name_${colorIndex}`] = 'Color name is required';
+          // if (!color.name.trim()) errors[`color_name_${colorIndex}`] = 'Color name is required';
           if (color.price <= 0) errors[`color_price_${colorIndex}`] = 'Price must be greater than 0';
           if (color.stock_quantity < 0) errors[`color_stock_${colorIndex}`] = 'Stock cannot be negative';
           if (color.threshold < 0) errors[`color_threshold_${colorIndex}`] = 'Threshold cannot be negative';
 
           // Validate color images
-          if ((color.images?.length || 0) === 0 && (color.newImages?.length || 0) === 0) {
-            errors[`color_images_${colorIndex}`] = 'At least one color image is required';
-          }
+          // if ((color.images?.length || 0) === 0 && (color.newImages?.length || 0) === 0) {
+          //   errors[`color_images_${colorIndex}`] = 'At least one color image is required';
+          // }
         });
       }
     }
@@ -178,15 +206,15 @@ const NewProduct = () => {
             errors[`model_${modelIndex}_colors`] = 'At least one color variant is required';
           } else {
             model.colors.forEach((color, colorIndex) => {
-              if (!color.name.trim()) errors[`model_${modelIndex}_color_name_${colorIndex}`] = 'Color name is required';
+              // if (!color.name.trim()) errors[`model_${modelIndex}_color_name_${colorIndex}`] = 'Color name is required';
               if (color.price <= 0) errors[`model_${modelIndex}_color_price_${colorIndex}`] = 'Price must be greater than 0';
               if (color.stock_quantity < 0) errors[`model_${modelIndex}_color_stock_${colorIndex}`] = 'Stock cannot be negative';
               if (color.threshold < 0) errors[`model_${modelIndex}_color_threshold_${colorIndex}`] = 'Threshold cannot be negative';
 
               // Validate color images
-              if ((color.images?.length || 0) === 0 && (color.newImages?.length || 0) === 0) {
-                errors[`model_${modelIndex}_color_images_${colorIndex}`] = 'At least one color image is required';
-              }
+              // if ((color.images?.length || 0) === 0 && (color.newImages?.length || 0) === 0) {
+              //   errors[`model_${modelIndex}_color_images_${colorIndex}`] = 'At least one color image is required';
+              // }
             });
           }
         });
@@ -273,9 +301,12 @@ const NewProduct = () => {
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('Submit started');
     setValidationErrors({});
+    console.log('Form data before validation:', formData);
 
     if (!validateForm()) {
+      console.log('Validation failed', validationErrors); // Add this
       scrollToFirstError();
       return;
     }
@@ -326,23 +357,30 @@ const NewProduct = () => {
 
       // 3. Handle product images
       const uploadedImages = await Promise.all(
-        newImages.map(file => uploadImage(file))
-      );
+        newImages.map(async (file) => {
+          try {
+            return await uploadImage(file);
+          } catch (err) {
+            console.error('Error uploading image:', err);
+            return null; // Continue with other uploads even if one fails
+          }
+        })
+      ).then(results => results.filter(url => url !== null));
 
-      if (uploadedImages.length > 0) {
-        await Promise.all(uploadedImages.map(url => {
-          return axios.post(
-            `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/images`,
-            { image_url: url },
-            {
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-              }
-            }
-          );
-        }));
-      }
+      // if (uploadedImages.length > 0) {
+      //   await Promise.all(uploadedImages.map(url => {
+      //     return axios.post(
+      //       `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/images`,
+      //       { image_url: url },
+      //       {
+      //         headers: {
+      //           'Content-Type': 'application/json',
+      //           'Authorization': `Bearer ${localStorage.getItem('token')}`
+      //         }
+      //       }
+      //     );
+      //   }));
+      // }
 
       // 4. Handle colors (for single products)
       if (formData.product_type === 'single') {
@@ -398,95 +436,95 @@ const NewProduct = () => {
       // Inside handleSubmit, in the variable product section:
 
       if (formData.product_type === 'variable') {
-  await Promise.all(formData.models.map(async (model, modelIndex) => {
-    const modelEndpoint = model.model_id
-      ? `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/models/${model.model_id}`
-      : `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/models`;
+        await Promise.all(formData.models.map(async (model, modelIndex) => {
+          const modelEndpoint = model.model_id
+            ? `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/models/${model.model_id}`
+            : `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/models`;
 
-    const method = model.model_id ? 'PUT' : 'POST';
+          const method = model.model_id ? 'PUT' : 'POST';
 
-    const modelResponse = await axios({
-      method,
-      url: modelEndpoint,
-      data: {
-        name: model.name,
-        description: model.description
-      },
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
-    });
-
-    const modelId = modelResponse.data.model_id || model.model_id;
-
-    // Handle model colors
-    if (model.colors) {
-      await Promise.all(model.colors.map(async (color, colorIndex) => {
-        const colorEndpoint = color.color_id
-          ? `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/colors/${color.color_id}`
-          : `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/colors`;
-
-        const method = color.color_id ? 'PUT' : 'POST';
-
-        const colorData = {
-          name: color.name,
-          price: color.price,
-          original_price: color.original_price,
-          stock_quantity: color.stock_quantity,
-          threshold: color.threshold,
-          model_id: modelId
-        };
-
-        const colorResponse = await axios({
-          method,
-          url: colorEndpoint,
-          data: colorData,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-
-        const colorId = colorResponse.data.color_id || color.color_id;
-
-        // Handle color images
-        if (color.newImages && color.newImages.length > 0) {
-          // Create a copy of the files to upload
-          const filesToUpload = [...color.newImages];
-          
-          // Clear newImages immediately in state
-          setFormData(prev => {
-            const updatedModels = [...prev.models];
-            updatedModels[modelIndex].colors[colorIndex].newImages = [];
-            return {
-              ...prev,
-              models: updatedModels
-            };
+          const modelResponse = await axios({
+            method,
+            url: modelEndpoint,
+            data: {
+              name: model.name,
+              description: model.description
+            },
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
           });
 
-          // Upload the files
-          await Promise.all(filesToUpload.map(async file => {
-            const formData = new FormData();
-            formData.append('image', file);
-            formData.append('color_id', colorId);
+          const modelId = modelResponse.data.model_id || model.model_id;
 
-            await axios.post(
-              `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/images`,
-              formData,
-              {
+          // Handle model colors
+          if (model.colors) {
+            await Promise.all(model.colors.map(async (color, colorIndex) => {
+              const colorEndpoint = color.color_id
+                ? `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/colors/${color.color_id}`
+                : `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/colors`;
+
+              const method = color.color_id ? 'PUT' : 'POST';
+
+              const colorData = {
+                name: color.name,
+                price: color.price,
+                original_price: color.original_price,
+                stock_quantity: color.stock_quantity,
+                threshold: color.threshold,
+                model_id: modelId
+              };
+
+              const colorResponse = await axios({
+                method,
+                url: colorEndpoint,
+                data: colorData,
                 headers: {
-                  'Content-Type': 'multipart/form-data',
+                  'Content-Type': 'application/json',
                   'Authorization': `Bearer ${localStorage.getItem('token')}`
                 }
+              });
+
+              const colorId = colorResponse.data.color_id || color.color_id;
+
+              // Handle color images
+              if (color.newImages && color.newImages.length > 0) {
+                // Create a copy of the files to upload
+                const filesToUpload = [...color.newImages];
+
+                // Clear newImages immediately in state
+                setFormData(prev => {
+                  const updatedModels = [...prev.models];
+                  updatedModels[modelIndex].colors[colorIndex].newImages = [];
+                  return {
+                    ...prev,
+                    models: updatedModels
+                  };
+                });
+
+                // Upload the files
+                await Promise.all(filesToUpload.map(async file => {
+                  const formData = new FormData();
+                  formData.append('image', file);
+                  formData.append('color_id', colorId);
+
+                  await axios.post(
+                    `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/images`,
+                    formData,
+                    {
+                      headers: {
+                        'Content-Type': 'multipart/form-data',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                      }
+                    }
+                  );
+                }));
               }
-            );
-          }));
-        }
-      }));
-    }
-  }));
-}
+            }));
+          }
+        }));
+      }
 
       // Refresh data after all updates
       const res = await axios.get(`${import.meta.env.VITE_SERVER_API}/products`);
@@ -503,22 +541,33 @@ const NewProduct = () => {
   };
 
   // Separate image upload function
-  const uploadImage = async (file) => {
+  const uploadImage = async (file, colorId = null) => {
     const formData = new FormData();
     formData.append('image', file);
+    if (colorId) formData.append('color_id', colorId);
 
-    const response = await axios.post(
-      `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/images`,
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+    try {
+      console.log('Uploading image...', file.name); // Debug log
+      const response = await axios.post(
+        `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/images`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
         }
-      }
-    );
-
-    return response.data.image_url;
+      );
+      console.log('Upload successful:', response.data); // Debug log
+      return response.data.image_url;
+    } catch (err) {
+      console.error('Detailed upload error:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status
+      });
+      throw err;
+    }
   };
 
   // Add specification to a model
@@ -585,6 +634,9 @@ const NewProduct = () => {
   const handleProductImageChange = async (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
+
+
+
 
     try {
       setNewImages(prev => [...prev, ...files]);
@@ -1264,14 +1316,25 @@ const NewProduct = () => {
             filteredProducts.map(product => (
               <div key={product.product_id} className="product-card">
                 <div className="product-images">
-                  {product.images.slice(0, 1).map(img => (
-                    <img
-                      key={img.image_id}
-                      src={`${import.meta.env.VITE_SERVER_API}/static/${img.image_url}`}
-                      alt={product.name}
-                    />
-                  ))}
-                </div>
+  {product.images.slice(0, 1).map(img => (
+    img.image_url.endsWith('.mp4') || img.image_url.endsWith('.webm') ? (
+      <video
+        key={img.image_id}
+        src={`${import.meta.env.VITE_SERVER_API}/static/${img.image_url}`}
+        autoPlay
+        muted
+        loop
+        playsInline
+      />
+    ) : (
+      <img
+        key={img.image_id}
+        src={`${import.meta.env.VITE_SERVER_API}/static/${img.image_url}`}
+        alt={product.name}
+      />
+    )
+  ))}
+</div>
                 <div className="product-details">
                   <h3>{product.name}</h3>
                   <p className="product-description">{product.description.substring(0, 50)}...</p>
@@ -1395,25 +1458,35 @@ const NewProduct = () => {
             type="file"
             multiple
             onChange={handleProductImageChange}
-            accept="image/*"
+            // accept="image/*"
+            accept="image/*,video/*"
             className="file-input"
           />
           {validationErrors.images && (
             <span className="error-message">{validationErrors.images}</span>
           )}
-          <div className="image-preview-container">
-            <h4>Existing Images</h4>
-            <div className="image-preview">
-              {formData.images.map((img, index) => (
-                <div key={index} className="image-thumbnail">
-                  <img
-                    src={`${import.meta.env.VITE_SERVER_API}/static/${img.image_url}`}
-                    alt={`Product ${index}`}
-                  />
+          <div className="media-preview-container">
+            <h4>Existing Media</h4>
+            <div className="media-preview">
+              {formData.images.map((media, index) => (
+                <div key={index} className="media-thumbnail">
+                  {media.image_url.endsWith('.mp4') || media.image_url.endsWith('.webm') ? (
+                    <video
+                      src={`${import.meta.env.VITE_SERVER_API}/static/${media.image_url}`}
+                      muted
+                      loop
+                      playsInline
+                    />
+                  ) : (
+                    <img
+                      src={`${import.meta.env.VITE_SERVER_API}/static/${media.image_url}`}
+                      alt={`Product ${index}`}
+                    />
+                  )}
                   <button
                     type="button"
-                    className="btn-remove-image"
-                    onClick={() => removeProductImage(img.image_id)}
+                    className="btn-remove-media"
+                    onClick={() => removeProductImage(media.image_id)}
                   >
                     ×
                   </button>
@@ -1421,14 +1494,23 @@ const NewProduct = () => {
               ))}
             </div>
 
-            <h4>New Images to Upload</h4>
-            <div className="image-preview">
+            <h4>New Media to Upload</h4>
+            <div className="media-preview">
               {newImages.map((file, index) => (
-                <div key={`new-${index}`} className="image-thumbnail">
-                  <img
-                    src={URL.createObjectURL(file)}
-                    alt={`New image ${index}`}
-                  />
+                <div key={`new-${index}`} className="media-thumbnail">
+                  {file.type.startsWith('video/') ? (
+                    <video
+                      src={URL.createObjectURL(file)}
+                      muted
+                      loop
+                      playsInline
+                    />
+                  ) : (
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt={`New media ${index}`}
+                    />
+                  )}
                 </div>
               ))}
             </div>
@@ -1439,36 +1521,29 @@ const NewProduct = () => {
           <div className="form-group">
             <div className="spec-header">
               <h3>Specifications</h3>
-              <button
-                type="button"
-                className="btn-save-specs"
-                onClick={saveProductSpecifications}
-                disabled={isLoading}
-              >
-                {isLoading ? 'Saving...' : 'Save Specifications'}
-              </button>
             </div>
 
             {formData.specifications?.map((spec, specIndex) => (
-              <div key={spec.spec_id || `new-spec-${specIndex}`} className={`specification-item ${validationErrors[`spec_key_${specIndex}`] || validationErrors[`spec_value_${specIndex}`] ? 'error-field' : ''
-                }`}>
-                <div>
+              <div key={spec.spec_id || `new-spec-${specIndex}`} className={`specification-item ${validationErrors[`spec_key_${specIndex}`] || validationErrors[`spec_value_${specIndex}`] ? 'error-field' : ''}`}>
+                <div className="spec-input-group">
                   <input
                     type="text"
                     placeholder="Spec name (e.g., Material)"
                     value={spec.key}
                     onChange={(e) => updateProductSpecification(specIndex, 'key', e.target.value)}
+                    className="spec-input"
                   />
                   {validationErrors[`spec_key_${specIndex}`] && (
                     <span className="error-message">{validationErrors[`spec_key_${specIndex}`]}</span>
                   )}
                 </div>
-                <div>
+                <div className="spec-input-group">
                   <input
                     type="text"
                     placeholder="Spec value (e.g., Cotton)"
                     value={spec.value}
                     onChange={(e) => updateProductSpecification(specIndex, 'value', e.target.value)}
+                    className="spec-input"
                   />
                   {validationErrors[`spec_value_${specIndex}`] && (
                     <span className="error-message">{validationErrors[`spec_value_${specIndex}`]}</span>
@@ -1476,46 +1551,68 @@ const NewProduct = () => {
                 </div>
                 <button
                   type="button"
-                  className="btn-remove"
+                  className="btn-remove-spec"
                   onClick={() => removeProductSpecification(specIndex)}
+                  title="Remove specification"
                 >
-                  Remove
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z" />
+                  </svg>
                 </button>
               </div>
             ))}
-            <button
-              type="button"
-              className="btn-add"
-              onClick={addProductSpecification}
-            >
-              + Add Specification
-            </button>
+
+            <div className="spec-actions">
+              <button
+                type="button"
+                className="btn-add-spec"
+                onClick={addProductSpecification}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style={{ marginRight: '8px' }}>
+                  <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z" />
+                </svg>
+                Add Specification
+              </button>
+              <button
+                type="button"
+                className="btn-save-specs"
+                onClick={saveProductSpecifications}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <svg className="spinner" viewBox="0 0 50 50" style={{ marginRight: '8px' }}>
+                      <circle className="path" cx="25" cy="25" r="20" fill="none" strokeWidth="5"></circle>
+                    </svg>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style={{ marginRight: '8px' }}>
+                      <path d="M2 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H9.5a1 1 0 0 0-1 1v7.293l2.646-2.647a.5.5 0 0 1 .708.708l-3.5 3.5a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L7.5 9.293V2a2 2 0 0 1 2-2H14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h2.5a.5.5 0 0 1 0 1H2z" />
+                    </svg>
+                    Save Specifications
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         )}
 
         {formData.product_type === 'single' && (
           <div className="form-group">
-            <h3>Colors/Variants</h3>
-            {validationErrors.colors && (
-              <span className="error-message">{validationErrors.colors}</span>
-            )}
+            <h3>Product Variant</h3>
             {formData.colors.map((color, colorIndex) => (
-              <div className="color-variant">
-                <h4>Color Variant #{colorIndex + 1}</h4>
-
-                <div className="color-details-grid">
-                  <div className={`form-field ${validationErrors[`color_name_${colorIndex}`] ? 'error-field' : ''}`}>
-                    <label>Color Name *</label>
+              <div key={colorIndex} className="product-variant">
+                <div className="variant-details-grid">
+                  <div className="form-field">
+                    <label>Variant Name</label>
                     <input
                       type="text"
-                      placeholder="e.g., Red, Blue, etc."
-                      value={color.name}
-                      onChange={(e) => updateColor(colorIndex, 'name', e.target.value)}
-                      required
+                      value="DEFAULT"
+                      readOnly
+                      className="read-only-input"
                     />
-                    {validationErrors[`color_name_${colorIndex}`] && (
-                      <span className="error-message">{validationErrors[`color_name_${colorIndex}`]}</span>
-                    )}
                   </div>
 
                   <div className={`form-field ${validationErrors[`color_price_${colorIndex}`] ? 'error-field' : ''}`}>
@@ -1580,7 +1677,7 @@ const NewProduct = () => {
                   </div>
                 </div>
 
-                <div className={`color-images ${validationErrors[`color_images_${colorIndex}`] ? 'error-field' : ''}`}>
+                {/* <div className={`color-images ${validationErrors[`color_images_${colorIndex}`] ? 'error-field' : ''}`}>
                   <label>Color Images:</label>
                   <input
                     type="file"
@@ -1624,24 +1721,24 @@ const NewProduct = () => {
                       ))}
                     </div>
                   </div>
-                </div>
+                </div> */}
 
-                <button
+                {/* <button
                   type="button"
                   className="btn-remove"
                   onClick={() => removeColor(colorIndex)}
                 >
                   Remove Color Variant
-                </button>
+                </button> */}
               </div>
             ))}
-            <button
+            {/* <button
               type="button"
               className="btn-add"
               onClick={addColor}
             >
               + Add Color Variant
-            </button>
+            </button> */}
           </div>
         )}
 
@@ -1676,37 +1773,30 @@ const NewProduct = () => {
                 <div className="model-specifications">
                   <div className="spec-header">
                     <h5>Specifications</h5>
-                    <button
-                      type="button"
-                      className="btn-save-specs"
-                      onClick={() => saveModelSpecifications(modelIndex)}
-                      disabled={isLoading}
-                    >
-                      {isLoading ? 'Saving...' : 'Save Specifications'}
-                    </button>
                   </div>
 
                   {model.specifications?.map((spec, specIndex) => (
                     <div key={specIndex} className={`specification-item ${validationErrors[`model_${modelIndex}_spec_key_${specIndex}`] ||
-                      validationErrors[`model_${modelIndex}_spec_value_${specIndex}`] ? 'error-field' : ''
-                      }`}>
-                      <div>
+                      validationErrors[`model_${modelIndex}_spec_value_${specIndex}`] ? 'error-field' : ''}`}>
+                      <div className="spec-input-group">
                         <input
                           type="text"
                           placeholder="Spec name (e.g., Weight)"
                           value={spec.key}
                           onChange={(e) => updateSpecification(modelIndex, specIndex, 'key', e.target.value)}
+                          className="spec-input"
                         />
                         {validationErrors[`model_${modelIndex}_spec_key_${specIndex}`] && (
                           <span className="error-message">{validationErrors[`model_${modelIndex}_spec_key_${specIndex}`]}</span>
                         )}
                       </div>
-                      <div>
+                      <div className="spec-input-group">
                         <input
                           type="text"
                           placeholder="Spec value (e.g., 1.2kg)"
                           value={spec.value}
                           onChange={(e) => updateSpecification(modelIndex, specIndex, 'value', e.target.value)}
+                          className="spec-input"
                         />
                         {validationErrors[`model_${modelIndex}_spec_value_${specIndex}`] && (
                           <span className="error-message">{validationErrors[`model_${modelIndex}_spec_value_${specIndex}`]}</span>
@@ -1714,40 +1804,66 @@ const NewProduct = () => {
                       </div>
                       <button
                         type="button"
-                        className="btn-remove"
+                        className="btn-remove-spec"
                         onClick={() => removeSpecification(modelIndex, specIndex)}
+                        title="Remove specification"
                       >
-                        Remove
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                          <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z" />
+                        </svg>
                       </button>
                     </div>
                   ))}
-                  <button
-                    type="button"
-                    className="btn-add"
-                    onClick={() => addSpecification(modelIndex)}
-                  >
-                    + Add Specification
-                  </button>
+
+                  <div className="spec-actions">
+                    <button
+                      type="button"
+                      className="btn-add-spec"
+                      onClick={() => addSpecification(modelIndex)}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style={{ marginRight: '8px' }}>
+                        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z" />
+                      </svg>
+                      Add Specification
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-save-specs"
+                      onClick={() => saveModelSpecifications(modelIndex)}
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <>
+                          <svg className="spinner" viewBox="0 0 50 50" style={{ marginRight: '8px' }}>
+                            <circle className="path" cx="25" cy="25" r="20" fill="none" strokeWidth="5"></circle>
+                          </svg>
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style={{ marginRight: '8px' }}>
+                            <path d="M2 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H9.5a1 1 0 0 0-1 1v7.293l2.646-2.647a.5.5 0 0 1 .708.708l-3.5 3.5a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L7.5 9.293V2a2 2 0 0 1 2-2H14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h2.5a.5.5 0 0 1 0 1H2z" />
+                          </svg>
+                          Save Specifications
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="model-colors">
-                  <h5>Colors/Variants</h5>
-                  {validationErrors[`model_${modelIndex}_colors`] && (
-                    <span className="error-message">{validationErrors[`model_${modelIndex}_colors`]}</span>
-                  )}
+                  <h5>Product Variant</h5>
                   {model.colors?.map((color, colorIndex) => (
-                    <div key={colorIndex} className="color-variant">
-                      <div className="color-details">
-                        <div className={`form-field ${validationErrors[`model_${modelIndex}_color_name_${colorIndex}`] ? 'error-field' : ''}`}>
+                    <div key={colorIndex} className="product-variant">
+                      <div className="variant-details">
+                        <div className="form-field">
+                          <label>Variant Name</label>
                           <input
                             type="text"
-                            placeholder="Color name"
-                            value={color.name}
-                            onChange={(e) => updateModelColor(modelIndex, colorIndex, 'name', e.target.value)}
+                            value="DEFAULT"
+                            readOnly
+                            className="read-only-input"
                           />
-                          {validationErrors[`model_${modelIndex}_color_name_${colorIndex}`] && (
-                            <span className="error-message">{validationErrors[`model_${modelIndex}_color_name_${colorIndex}`]}</span>
-                          )}
                         </div>
                         <div className={`form-field ${validationErrors[`model_${modelIndex}_color_price_${colorIndex}`] ? 'error-field' : ''}`}>
                           <input
@@ -1801,7 +1917,7 @@ const NewProduct = () => {
                         </div>
                       </div>
 
-                      <div className={`color-images ${validationErrors[`model_${modelIndex}_color_images_${colorIndex}`] ? 'error-field' : ''}`}>
+                      {/* <div className={`color-images ${validationErrors[`model_${modelIndex}_color_images_${colorIndex}`] ? 'error-field' : ''}`}>
                         <label>Color Images:</label>
                         <input
                           type="file"
@@ -1845,24 +1961,24 @@ const NewProduct = () => {
                             ))}
                           </div>
                         </div>
-                      </div>
+                      </div> */}
 
-                      <button
+                      {/* <button
                         type="button"
                         className="btn-remove"
                         onClick={() => removeModelColor(modelIndex, colorIndex)}
                       >
                         Remove Color Variant
-                      </button>
+                      </button> */}
                     </div>
                   ))}
-                  <button
+                  {/* <button
                     type="button"
                     className="btn-add"
                     onClick={() => addModelColor(modelIndex)}
                   >
                     + Add Color Variant
-                  </button>
+                  </button> */}
                 </div>
 
                 <button

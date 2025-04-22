@@ -15,7 +15,7 @@ const AllProducts = () => {
 
   const [filters, setFilters] = useState({
     priceRange: [0, 200000],
-    colors: [],
+    // colors: [],
     categories: [],
     sortBy: 'featured',
     searchQuery: '',
@@ -23,17 +23,96 @@ const AllProducts = () => {
 
   const [dropdownOpen, setDropdownOpen] = useState({
     categories: false,
-    colors: false,
+    // colors: false,
     price: false
   });
 
   // Helper function to get product info
+  // const getProductInfo = (product) => {
+  //   if (!product) return { price: 0, deleted_price: null, inStock: false, mainImage: null, availableColors: [] };
+
+  //   let price = 0;
+  //   let deleted_price = null;
+  //   let inStock = false;
+  //   let mainImage = product.images?.[0]?.image_url;
+  //   let availableColors = [];
+
+  //   const findMinPriceEntry = (entries) => {
+  //     if (!entries.length) return null;
+  //     return entries.reduce((minEntry, current) =>
+  //       current.price < minEntry.price ? current : minEntry, entries[0]
+  //     );
+  //   };
+
+  //   if (product.product_type === 'single') {
+  //     if (product.colors?.length > 0) {
+  //       const colorEntries = product.colors.map(c => ({
+  //         price: parseFloat(c.price),
+  //         original: c.original_price ? parseFloat(c.original_price) : null,
+  //         stock: c.stock_quantity > 0,
+  //         images: c.images,
+  //         name: c.name
+  //       }));
+
+  //       const minEntry = findMinPriceEntry(colorEntries);
+  //       if (minEntry) {
+  //         price = minEntry.price;
+  //         if (minEntry.original && minEntry.original > price) {
+  //           deleted_price = minEntry.original;
+  //         }
+  //       }
+
+  //       inStock = product.colors.some(c => c.stock_quantity > 0);
+  //       availableColors = product.colors.map(c => c.name.toLowerCase());
+
+  //       const firstColorWithImage = (minEntry?.images?.length ? minEntry : product.colors.find(c => c.images?.length))?.images?.[0];
+  //       mainImage = firstColorWithImage?.image_url || mainImage;
+  //     }
+  //   } else {
+  //     if (product.models?.length > 0) {
+  //       const allColorEntries = product.models.flatMap(m =>
+  //         m.colors?.map(c => ({
+  //           price: parseFloat(c.price),
+  //           original: c.original_price ? parseFloat(c.original_price) : null,
+  //           stock: c.stock_quantity > 0,
+  //           images: c.images,
+  //           name: c.name,
+  //           model: m
+  //         })) || []
+  //       );
+
+  //       const minEntry = findMinPriceEntry(allColorEntries);
+  //       if (minEntry) {
+  //         price = minEntry.price;
+  //         if (minEntry.original && minEntry.original > price) {
+  //           deleted_price = minEntry.original;
+  //         }
+  //       }
+
+  //       inStock = allColorEntries.some(c => c.stock);
+  //       availableColors = [...new Set(allColorEntries.map(c => c.name.toLowerCase()))];
+
+  //       const firstColorWithImage = (minEntry?.images?.length ? minEntry : allColorEntries.find(c => c.images?.length))?.images?.[0];
+  //       mainImage = firstColorWithImage?.image_url || mainImage;
+  //     }
+  //   }
+
+  //   return {
+  //     price,
+  //     deleted_price,
+  //     inStock,
+  //     mainImage: mainImage ? `${import.meta.env.VITE_SERVER_API}/static/${mainImage}` : null,
+  //     availableColors
+  //   };
+  // };
+
   const getProductInfo = (product) => {
     if (!product) return { price: 0, deleted_price: null, inStock: false, mainImage: null, availableColors: [] };
 
     let price = 0;
     let deleted_price = null;
     let inStock = false;
+    // Use only product-level images (not color-specific)
     let mainImage = product.images?.[0]?.image_url;
     let availableColors = [];
 
@@ -50,7 +129,6 @@ const AllProducts = () => {
           price: parseFloat(c.price),
           original: c.original_price ? parseFloat(c.original_price) : null,
           stock: c.stock_quantity > 0,
-          images: c.images,
           name: c.name
         }));
 
@@ -64,9 +142,6 @@ const AllProducts = () => {
 
         inStock = product.colors.some(c => c.stock_quantity > 0);
         availableColors = product.colors.map(c => c.name.toLowerCase());
-
-        const firstColorWithImage = (minEntry?.images?.length ? minEntry : product.colors.find(c => c.images?.length))?.images?.[0];
-        mainImage = firstColorWithImage?.image_url || mainImage;
       }
     } else {
       if (product.models?.length > 0) {
@@ -75,7 +150,6 @@ const AllProducts = () => {
             price: parseFloat(c.price),
             original: c.original_price ? parseFloat(c.original_price) : null,
             stock: c.stock_quantity > 0,
-            images: c.images,
             name: c.name,
             model: m
           })) || []
@@ -91,9 +165,6 @@ const AllProducts = () => {
 
         inStock = allColorEntries.some(c => c.stock);
         availableColors = [...new Set(allColorEntries.map(c => c.name.toLowerCase()))];
-
-        const firstColorWithImage = (minEntry?.images?.length ? minEntry : allColorEntries.find(c => c.images?.length))?.images?.[0];
-        mainImage = firstColorWithImage?.image_url || mainImage;
       }
     }
 
@@ -148,15 +219,15 @@ const AllProducts = () => {
   }, []);
 
   // Color Options
-  const colorOptions = [
-    { name: 'Black', value: 'black', hex: '#000000' },
-    { name: 'White', value: 'white', hex: '#FFFFFF' },
-    { name: 'Gold', value: 'gold', hex: '#FFD700' },
-    { name: 'Silver', value: 'silver', hex: '#C0C0C0' },
-    { name: 'Blue', value: 'blue', hex: '#0000FF' },
-    { name: 'Red', value: 'red', hex: '#FF0000' },
-    { name: 'Green', value: 'green', hex: '#008000' },
-  ];
+  // const colorOptions = [
+  //   { name: 'Black', value: 'black', hex: '#000000' },
+  //   { name: 'White', value: 'white', hex: '#FFFFFF' },
+  //   { name: 'Gold', value: 'gold', hex: '#FFD700' },
+  //   { name: 'Silver', value: 'silver', hex: '#C0C0C0' },
+  //   { name: 'Blue', value: 'blue', hex: '#0000FF' },
+  //   { name: 'Red', value: 'red', hex: '#FF0000' },
+  //   { name: 'Green', value: 'green', hex: '#008000' },
+  // ];
 
   // Get unique categories from products
   const categoryOptions = [...new Set(products.map(product => product.category))].filter(Boolean).map(category => ({
@@ -177,24 +248,19 @@ const AllProducts = () => {
   const filteredProducts = React.useMemo(() => {
     return products
       .filter(product => {
-        const { price, availableColors } = getProductInfo(product);
+        const { price } = getProductInfo(product);
         const matchesSearch = product.name?.toLowerCase().includes(filters.searchQuery.toLowerCase()) ||
           product.description?.toLowerCase().includes(filters.searchQuery.toLowerCase());
         const priceInRange = price >= filters.priceRange[0] &&
           price <= filters.priceRange[1];
-
-        const colorMatch = filters.colors.length === 0 ||
-          filters.colors.some(filterColor =>
-            availableColors.some(productColor =>
-              productColor.includes(filterColor.toLowerCase())
-            )
-          );
-
+  
+        // Remove the colorMatch check
         const categoryMatch = filters.categories.length === 0 ||
           (product.category && filters.categories.includes(product.category));
-
-        return matchesSearch && priceInRange && colorMatch && categoryMatch;
+  
+        return matchesSearch && priceInRange && categoryMatch;
       })
+
       .sort((a, b) => {
         const aInfo = getProductInfo(a);
         const bInfo = getProductInfo(b);
@@ -212,14 +278,14 @@ const AllProducts = () => {
       });
   }, [products, filters]);
 
-  const toggleColor = (color) => {
-    setFilters({
-      ...filters,
-      colors: filters.colors.includes(color)
-        ? filters.colors.filter(c => c !== color)
-        : [...filters.colors, color]
-    });
-  };
+  // const toggleColor = (color) => {
+  //   setFilters({
+  //     ...filters,
+  //     colors: filters.colors.includes(color)
+  //       ? filters.colors.filter(c => c !== color)
+  //       : [...filters.colors, color]
+  //   });
+  // };
 
   const toggleCategory = (category) => {
     setFilters({
@@ -233,7 +299,7 @@ const AllProducts = () => {
   const resetFilters = () => {
     setFilters({
       priceRange: [0, 200000],
-      colors: [],
+      // colors: [],
       categories: [],
       sortBy: 'featured',
       searchQuery: '',
@@ -305,14 +371,14 @@ const AllProducts = () => {
                     })}
                   />
                   <div className="price-display">
-                  ₹0 - ₹{filters.priceRange[1]}
+                    ₹0 - ₹{filters.priceRange[1]}
                   </div>
                 </div>
               )}
             </div>
 
             {/* Color Filter */}
-            <div className="filter-group">
+            {/* <div className="filter-group">
               <div
                 className="filter-title dropdown-header"
                 onClick={() => toggleDropdown('colors')}
@@ -341,7 +407,7 @@ const AllProducts = () => {
                   ))}
                 </div>
               )}
-            </div>
+            </div> */}
 
             {/* Category Filter */}
             <div className="filter-group">
@@ -464,9 +530,17 @@ const AllProducts = () => {
                       : item === product.product_id
                   );
 
+                  const isVideo = mainImage && /\.(mp4)$/i.test(mainImage);
+                  console.log('Product:', product, 'Main Image:', mainImage, 'Is Video:', isVideo);
+
+
                   return (
                     <div className="product-card" key={product.product_id}
-                      onClick={() => navigate(`/product/${product.product_id}`, { state: { product } })}
+                      onClick={() => 
+                        // navigate(`/product/${product.product_id}`, { state: { product } })}
+                        navigate(`/products/${product.name.replace(/\s+/g, '-')}`, { state: { product } })}
+
+                      
                     >
                       <div className="product-badge">
                         {inStock ? 'In Stock' : 'Pre-Order'}
@@ -489,15 +563,30 @@ const AllProducts = () => {
                         </svg>
                       </div>
                       <div className="product-image">
-                        {mainImage && (
-                          <img
-                            src={mainImage}
-                            alt={product.name}
-                            loading="lazy"
-                            onError={(e) => {
-                              e.target.src = '/path-to-fallback-image.jpg';
-                            }}
-                          />
+                        {mainImage ? (
+                          isVideo ? (
+                            <video
+                              className="media"
+                              src={mainImage}
+                              autoPlay
+                              muted
+                              loop
+                              playsInline
+                              controls
+                            />
+                          ) : (
+                            <img
+                              className="media"
+                              src={mainImage}
+                              alt={product.name}
+                              loading="lazy"
+                              onError={(e) => {
+                                e.target.src = '/path-to-fallback-image.jpg';
+                              }}
+                            />
+                          )
+                        ) : (
+                          <div className="no-image">No Image Available</div>
                         )}
                       </div>
                       <div className="product-details">
@@ -583,14 +672,14 @@ const AllProducts = () => {
                     })}
                   />
                   <div className="price-display">
-                  ₹0 - ₹{filters.priceRange[1]}
+                    ₹0 - ₹{filters.priceRange[1]}
                   </div>
                 </div>
               )}
             </div>
 
             {/* Color Filter */}
-            <div className="filter-group">
+            {/* <div className="filter-group">
               <div
                 className="filter-title dropdown-header"
                 onClick={() => toggleDropdown('colors')}
@@ -619,7 +708,7 @@ const AllProducts = () => {
                   ))}
                 </div>
               )}
-            </div>
+            </div> */}
 
             {/* Category Filter */}
             <div className="filter-group">

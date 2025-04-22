@@ -3,8 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../Components/Context/AuthContext';
 import './Checkout.scss';
-import AddressModal from '../../Pages/User/Address/AddressModal'; // Import the AddressModal
-
+import AddressModal from '../../Pages/User/Address/AddressModal';
 
 const Checkout = () => {
     const location = useLocation();
@@ -17,8 +16,8 @@ const Checkout = () => {
     const [selectedAddress, setSelectedAddress] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [isAddressModalOpen, setIsAddressModalOpen] = useState(false); // State for modal visibility
-    const [states, setStates] = useState([]); // State for states list
+    const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+    const [states, setStates] = useState([]);
 
     // Calculate order totals
     const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -74,13 +73,11 @@ const Checkout = () => {
             });
 
             if (response.data.success) {
-                // Refresh addresses list
                 const updatedResponse = await axios.get(`${import.meta.env.VITE_SERVER_API}/addresses`, {
                     headers: { Authorization: `Bearer ${getToken()}` }
                 });
 
                 setAddresses(updatedResponse.data.addresses || []);
-                // Auto-select the newly added address
                 if (updatedResponse.data.addresses?.length > 0) {
                     const newAddress = updatedResponse.data.addresses[updatedResponse.data.addresses.length - 1];
                     setSelectedAddress(newAddress.address_id);
@@ -104,8 +101,6 @@ const Checkout = () => {
 
     const handlePlaceOrder = () => {
         alert('Order placed successfully!');
-        // In a real app, you would handle the payment process here
-        // and then navigate to order confirmation page
     };
 
     if (cartItems.length === 0) {
@@ -134,7 +129,6 @@ const Checkout = () => {
                 </div>
             </div>
 
-            {/* Top Navigation Buttons */}
             {(activeStep === 2 || activeStep === 3) && (
                 <div className="top-navigation">
                     <button 
@@ -208,17 +202,38 @@ const Checkout = () => {
                             {cartItems.map(item => {
                                 const originalPrice = item.original_price || item.price;
                                 const hasDiscount = originalPrice > item.price;
+                                const imageUrl = `${import.meta.env.VITE_SERVER_API}/static/${item.image}`;
+                                const isVideo = item.image && /\.(mp4)$/i.test(item.image);
 
                                 return (
                                     <div key={`${item.product_id}-${item.color || 'none'}-${item.model || 'none'}`} className="order-item">
-                                        <img
-                                            src={`${import.meta.env.VITE_SERVER_API}/static/${item.image}`}
-                                            alt={item.name}
-                                        />
+                                        <div className="product-media-container">
+                                            {isVideo ? (
+                                                <video
+                                                    className="media"
+                                                    src={imageUrl}
+                                                    autoPlay
+                                                    muted
+                                                    loop
+                                                    playsInline
+                                                    controls
+                                                />
+                                            ) : (
+                                                <img
+                                                    className="media"
+                                                    src={imageUrl}
+                                                    alt={item.name}
+                                                    loading="lazy"
+                                                    onError={(e) => {
+                                                        console.error("Image failed to load for:", imageUrl);
+                                                        e.target.src = '/fallback-image.jpg';
+                                                    }}
+                                                />
+                                            )}
+                                        </div>
                                         <div className="item-details">
                                             <h3>{item.name}</h3>
-                                            {item.color && <p>Color: {item.color}</p>}
-                                            {item.model && <p>Model: {item.model}</p>}
+                                            {item.model && <p>{item.model}</p>}
                                             <p>Quantity: {item.quantity}</p>
                                             <div className="price-display">
                                                 {hasDiscount ? (
@@ -273,7 +288,6 @@ const Checkout = () => {
                             )}
                         </div>
                     </div>
-
 
                     <div className="selected-address">
                         <h3>Delivery Address</h3>

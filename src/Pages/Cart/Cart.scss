@@ -87,7 +87,7 @@ $border-radius: 8px;
       gap: 1rem;
       align-items: center;
     }
-  
+
     .clear-cart-btn {
       background: none;
       border: 2px solid red;
@@ -97,9 +97,9 @@ $border-radius: 8px;
       cursor: pointer;
       font-size: 0.9rem;
       transition: $transition;
-      
+
       &:hover {
-        color: white ;
+        color: white;
         background-color: red;
         // text-decoration: underline;
       }
@@ -122,6 +122,27 @@ $border-radius: 8px;
     &:last-child {
       border-bottom: none;
     }
+
+    .product-image-container {
+      width: 100px;
+      height: 100px;
+      flex-shrink: 0;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #f5f5f5;
+      position: relative;
+
+      .media {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+
+      video.media {
+        background: black; // Optional background for videos
+      }
+    }
+
 
     .product-image {
       width: 80px;
@@ -302,15 +323,22 @@ body.cart-open {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
-  to { opacity: 0.9; transform: translateX(-50%) translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+
+  to {
+    opacity: 0.9;
+    transform: translateX(-50%) translateY(0);
+  }
 }
 
 .price {
   display: flex;
   gap: 8px;
   align-items: center;
-  
+
   .original-price {
     text-decoration: line-through;
     color: #888;
@@ -361,7 +389,7 @@ body.cart-open {
   align-items: center;
   flex-wrap: wrap;
   margin: 0.5rem 0;
-  
+
   .original-price {
     text-decoration: line-through;
     color: #888;
@@ -394,7 +422,7 @@ body.cart-open {
   &.discount-row {
     color: $success-color;
     font-weight: 600;
-    
+
     span:last-child {
       color: $success-color;
     }

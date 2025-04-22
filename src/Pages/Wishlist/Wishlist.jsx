@@ -18,9 +18,8 @@ const Wishlist = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
-  const [isWishlisting, setIsWishlisting] = useState(false); // Add this state
+  const [isWishlisting, setIsWishlisting] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
-
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -63,10 +62,9 @@ const Wishlist = () => {
     fetchWishlistProducts();
   }, [isAuthenticated, getToken, navigate, updateWishlistCount]);
 
-
   const handleClearWishlist = async () => {
     if (isClearing || wishlistProducts.length === 0) return;
-  
+
     setIsClearing(true);
     try {
       const token = getToken();
@@ -76,17 +74,16 @@ const Wishlist = () => {
           headers: { Authorization: `Bearer ${token}` }
         }
       );
-  
+
       // Update both local state and AuthContext
       setWishlistProducts([]);
-      clearWishlistContext();
+      updateWishlistCount([]);
     } catch (error) {
       console.error('Error clearing wishlist:', error);
     } finally {
       setIsClearing(false);
     }
   };
-  
 
   const getWishlistItemPrice = (item) => {
     // Check if we have a selected color price
@@ -125,7 +122,7 @@ const Wishlist = () => {
   };
 
   const handleRemoveItem = async (item) => {
-    if (isWishlisting) return; // Prevent rapid clicks
+    if (isWishlisting) return;
     setIsWishlisting(true);
 
     try {
@@ -141,14 +138,13 @@ const Wishlist = () => {
           }
         }
       );
-      
 
       // Update both local state and AuthContext
       await toggleWishlistItem(item.product, item.model, item.color);
     } catch (error) {
       console.error('Error removing item:', error);
     } finally {
-      setIsWishlisting(false); // Reset state
+      setIsWishlisting(false);
     }
   };
 
@@ -195,19 +191,13 @@ const Wishlist = () => {
   };
 
   const getVariantDetails = (item) => {
-    if (!item.model && !item.color) return null;
-
-    let details = [];
-    if (item.model) details.push(`Model: ${item.model.name}`);
-    if (item.color) details.push(`Color: ${item.color.name}`);
-
-    return details.join(' • ');
+    if (!item.model) return null;
+    return `Model: ${item.model.name}`;
   };
 
   if (loading) return <Loader />;
   if (isWishlisting) return <Loader />;
   if (isClearing) return <Loader />;
-
 
   if (error) return (
     <div className="error-state">
@@ -251,18 +241,38 @@ const Wishlist = () => {
                 item.product?.image_url ||
                 (item.product?.models?.[0]?.colors?.[0]?.images?.[0]?.image_url);
 
+              const fullImageUrl = imageUrl ? `${import.meta.env.VITE_SERVER_API}/static/${imageUrl}` : null;
+              const isVideo = fullImageUrl && /\.(mp4)$/i.test(fullImageUrl);
+
               return (
                 <div key={item.item_id} className="wishlist-item">
                   <div className="product-image">
-                    <img
-                      src={`${import.meta.env.VITE_SERVER_API}/static/${imageUrl}`}
-                      alt={item.product.name}
-                      loading="lazy"
-                      onError={(e) => {
-                        console.error("Image failed to load for:", imageUrl);
-                        e.target.src = '/fallback-image.jpg';
-                      }}
-                    />
+                    {fullImageUrl ? (
+                      isVideo ? (
+                        <video
+                          className="media"
+                          src={fullImageUrl}
+                          autoPlay
+                          muted
+                          loop
+                          playsInline
+                          controls
+                        />
+                      ) : (
+                        <img
+                          className="media"
+                          src={fullImageUrl}
+                          alt={item.product.name}
+                          loading="lazy"
+                          onError={(e) => {
+                            console.error("Image failed to load for:", fullImageUrl);
+                            e.target.src = '/fallback-image.jpg';
+                          }}
+                        />
+                      )
+                    ) : (
+                      <div className="no-image">No Image Available</div>
+                    )}
                     <button
                       className="remove-btn"
                       onClick={() => handleRemoveItem(item)}
@@ -279,7 +289,7 @@ const Wishlist = () => {
                     <p className="product-category">{item.product.category}</p>
                     <div className="product-pricing">
                       <span className="current-price">
-                      ₹{currentPrice.toFixed(2)}
+                        ₹{currentPrice.toFixed(2)}
                       </span>
                       {originalPrice && originalPrice > currentPrice && (
                         <span className="original-price">

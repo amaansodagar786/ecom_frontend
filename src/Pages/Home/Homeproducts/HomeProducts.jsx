@@ -21,33 +21,38 @@ const HomeProducts = () => {
 
   const handleProductClick = (product, e) => {
     if (e) e.stopPropagation();
-    navigate(`/product/${product.product_id}`, { state: { product } });
+    // navigate(`/product/${product.product_id}`, { state: { product } });
+    navigate(`/products/${product.name.replace(/\s+/g, '-')}`, { state: { product } });
   };
 
   const getProductInfo = (product) => {
     let price = 0;
     let deleted_price = null;
     let inStock = false;
-    
+
     // ONLY USE PRODUCT-LEVEL IMAGES (color_id = NULL)
     let mainImage = product.images?.[0]?.image_url; // This already comes from product.images (not color-specific)
-  
+
+    let mediaType = 'image'; // default
+    if (mainImage && /\.(mp4)$/i.test(mainImage)) {
+      mediaType = 'video';
+    }
     try {
       if (product.product_type === 'single') {
         if (product.colors?.length > 0) {
-          const validColors = product.colors.filter(c => 
+          const validColors = product.colors.filter(c =>
             c.price !== undefined && c.price !== null
           );
-  
+
           if (validColors.length > 0) {
             const minPriceEntry = validColors.reduce((min, current) =>
               parseFloat(current.price) < parseFloat(min.price) ? current : min, validColors[0]);
-  
+
             price = parseFloat(minPriceEntry.price);
             if (minPriceEntry.original_price && parseFloat(minPriceEntry.original_price) > price) {
               deleted_price = parseFloat(minPriceEntry.original_price);
             }
-  
+
             inStock = validColors.some(c => c.stock_quantity > 0);
           }
         }
@@ -62,16 +67,16 @@ const HomeProducts = () => {
                 stock: color.stock_quantity > 0,
               }))
           );
-  
+
           if (allColors.length > 0) {
             const minPriceColor = allColors.reduce((min, current) =>
               current.price < min.price ? current : min, allColors[0]);
-  
+
             price = minPriceColor.price;
             if (minPriceColor.original !== null && minPriceColor.original > price) {
               deleted_price = minPriceColor.original;
             }
-  
+
             inStock = allColors.some(color => color.stock);
           }
         }
@@ -79,7 +84,7 @@ const HomeProducts = () => {
     } catch (error) {
       console.error('Error processing product:', product.product_id, error);
     }
-  
+
     return {
       price,
       deleted_price,
@@ -92,13 +97,13 @@ const HomeProducts = () => {
     if (e) e.stopPropagation();
     if (isWishlisting) return;
     setIsWishlisting(true);
-  
+
     if (!isAuthenticated) {
       navigate('/login');
       setIsWishlisting(false);
       return;
     }
-  
+
     try {
       const { price, deleted_price, mainImage } = getProductInfo(product);
       const productData = {
@@ -112,7 +117,7 @@ const HomeProducts = () => {
         model_id: null,
         color_id: null
       };
-  
+
       await toggleWishlistItem(productData);
     } catch (error) {
       console.error('Error updating wishlist:', error);
@@ -173,12 +178,12 @@ const HomeProducts = () => {
           {displayedProducts.length > 0 ? (
             displayedProducts.map((product) => {
               const { price, deleted_price, inStock, mainImage } = getProductInfo(product);
-              const isInWishlist = wishlistItems.some(item => 
-                item.product_id === product.product_id && 
-                item.model_id === null && 
+              const isInWishlist = wishlistItems.some(item =>
+                item.product_id === product.product_id &&
+                item.model_id === null &&
                 item.color_id === null
               );
-              
+
               return (
                 <div className="product-card" key={product.product_id}>
                   <div className="product-badge">
@@ -201,12 +206,32 @@ const HomeProducts = () => {
                   </div>
 
                   <div className="product-image" onClick={(e) => handleProductClick(product, e)}>
-                    {mainImage && (
+                    {/* {mainImage && (
                       <img
                         src={mainImage}
                         alt={product.name}
                         loading="lazy"
                       />
+                    )} */}
+                    {mainImage && (
+                      mainImage.endsWith('.mp4') ? (
+                        <video
+                          className="media"
+                          src={mainImage}
+                          autoPlay
+                          muted
+                          loop
+                          playsInline
+                          preload="metadata"
+                        />
+                      ) : (
+                        <img
+                          className="media"
+                          src={mainImage}
+                          alt={product.name}
+                          loading="lazy"
+                        />
+                      )
                     )}
                     <button className="quick-view" onClick={(e) => handleProductClick(product, e)}>
                       Quick View
