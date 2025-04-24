@@ -18,6 +18,9 @@ const NewProduct = () => {
   const [validationErrors, setValidationErrors] = useState({});
   const formRef = useRef(null);
 
+  const [coverImage, setCoverImage] = useState(null);
+  const [newCoverImage, setNewCoverImage] = useState(null);
+
   // const [formData, setFormData] = useState({
   //   name: '',
   //   description: '',
@@ -77,7 +80,7 @@ const NewProduct = () => {
         ]);
 
         setProducts(productsRes.data);
-        console.log('Products:', productsRes.data); 
+        console.log('Products:', productsRes.data);
         setFilteredProducts(productsRes.data);
         setCategories(categoriesRes.data);
         setIsLoading(false);
@@ -227,6 +230,22 @@ const NewProduct = () => {
     return Object.keys(errors).length === 0;
   };
 
+
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return '';
+
+    if (imagePath.startsWith('http')) {
+      return imagePath;
+    }
+
+    if (imagePath.startsWith('/')) {
+      return `${import.meta.env.VITE_SERVER_API}${imagePath}`;
+    }
+
+    return `${import.meta.env.VITE_SERVER_API}/static/${imagePath}`;
+  };
+
+
   // Scroll to first error field
   const scrollToFirstError = () => {
     if (formRef.current) {
@@ -252,6 +271,11 @@ const NewProduct = () => {
     const matchedCategory = categories.find(c => c.name === product.category);
     const matchedSubcategory = matchedCategory?.subcategories?.find(sc => sc.name === product.subcategory);
 
+    // Find the first image (cover image) - smallest image_id
+    const firstImage = product.images?.length > 0
+      ? [...product.images].sort((a, b) => a.image_id - b.image_id)[0]
+      : null;
+
     setEditingProduct({
       ...product,
       category_id: matchedCategory?.category_id || '',
@@ -264,6 +288,7 @@ const NewProduct = () => {
       product_type: product.product_type,
       category_id: matchedCategory?.category_id || '',
       subcategory_id: matchedSubcategory?.subcategory_id || '',
+      hsn: product.hsn || '',
       images: product.images || [],
       colors: product.colors || [],
       models: product.models || [],
@@ -274,11 +299,62 @@ const NewProduct = () => {
       })) || []
     });
 
+    // Set cover image state
+    setCoverImage(firstImage);
+    setNewCoverImage(null);
     setNewImages([]);
     setSpecsToDelete([]);
     setRemovedModelIds([]);
     setRemovedSpecIds([]);
     setValidationErrors({});
+  };
+
+  const handleCoverImageChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setNewCoverImage(file);
+    setValidationErrors(prev => ({ ...prev, coverImage: undefined }));
+
+    // If we're not editing, just preview the new image
+    if (!editingProduct) return;
+
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await axios.put(
+        `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/cover-image`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        }
+      );
+
+      // Update the cover image in state
+      setCoverImage({
+        ...coverImage,
+        image_url: response.data.image_url
+      });
+
+      // Also update the product images array if the cover image exists there
+      setFormData(prev => ({
+        ...prev,
+        images: prev.images.map(img =>
+          img.image_id === response.data.image_id
+            ? { ...img, image_url: response.data.image_url }
+            : img
+        )
+      }));
+
+      setNewCoverImage(null);
+    } catch (err) {
+      console.error('Error updating cover image:', err);
+      setError(err.response?.data?.error || 'Failed to update cover image');
+    }
   };
 
   // Cancel editing
@@ -308,7 +384,7 @@ const NewProduct = () => {
     console.log('Form data before validation:', formData);
 
     if (!validateForm()) {
-      console.log('Validation failed', validationErrors); // Add this
+      console.log('Validation failed', validationErrors);
       scrollToFirstError();
       return;
     }
@@ -317,13 +393,19 @@ const NewProduct = () => {
     setError(null);
 
     try {
-      // 1. First update basic product information
+      // 1. First handle cover image if it's new
+      if (newCoverImage && editingProduct) {
+        await handleCoverImageChange({ target: { files: [newCoverImage] } });
+      }
+
+      // 2. Update basic product information
       const productData = {
         name: formData.name,
         description: formData.description,
         product_type: formData.product_type,
         category_id: formData.category_id,
-        subcategory_id: formData.subcategory_id
+        subcategory_id: formData.subcategory_id,
+        hsn: formData.hsn
       };
 
       await axios.put(
@@ -337,7 +419,7 @@ const NewProduct = () => {
         }
       );
 
-      // 2. Handle deleted models
+      // 3. Handle deleted models
       if (removedModelIds.length > 0) {
         await Promise.all(
           removedModelIds.map(async (modelId) => {
@@ -357,34 +439,19 @@ const NewProduct = () => {
         );
       }
 
-      // 3. Handle product images
+      // 4. Handle product images
       const uploadedImages = await Promise.all(
         newImages.map(async (file) => {
           try {
             return await uploadImage(file);
           } catch (err) {
             console.error('Error uploading image:', err);
-            return null; // Continue with other uploads even if one fails
+            return null;
           }
         })
       ).then(results => results.filter(url => url !== null));
 
-      // if (uploadedImages.length > 0) {
-      //   await Promise.all(uploadedImages.map(url => {
-      //     return axios.post(
-      //       `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/images`,
-      //       { image_url: url },
-      //       {
-      //         headers: {
-      //           'Content-Type': 'application/json',
-      //           'Authorization': `Bearer ${localStorage.getItem('token')}`
-      //         }
-      //       }
-      //     );
-      //   }));
-      // }
-
-      // 4. Handle colors (for single products)
+      // 5. Handle colors (for single products)
       if (formData.product_type === 'single') {
         await Promise.all(formData.colors.map(async (color, colorIndex) => {
           const colorEndpoint = color.color_id
@@ -435,8 +502,7 @@ const NewProduct = () => {
         }));
       }
 
-      // Inside handleSubmit, in the variable product section:
-
+      // 6. Handle variable products
       if (formData.product_type === 'variable') {
         await Promise.all(formData.models.map(async (model, modelIndex) => {
           const modelEndpoint = model.model_id
@@ -492,10 +558,8 @@ const NewProduct = () => {
 
               // Handle color images
               if (color.newImages && color.newImages.length > 0) {
-                // Create a copy of the files to upload
                 const filesToUpload = [...color.newImages];
 
-                // Clear newImages immediately in state
                 setFormData(prev => {
                   const updatedModels = [...prev.models];
                   updatedModels[modelIndex].colors[colorIndex].newImages = [];
@@ -505,7 +569,6 @@ const NewProduct = () => {
                   };
                 });
 
-                // Upload the files
                 await Promise.all(filesToUpload.map(async file => {
                   const formData = new FormData();
                   formData.append('image', file);
@@ -1318,25 +1381,37 @@ const NewProduct = () => {
             filteredProducts.map(product => (
               <div key={product.product_id} className="product-card">
                 <div className="product-images">
-  {product.images.slice(0, 1).map(img => (
-    img.image_url.endsWith('.mp4') || img.image_url.endsWith('.webm') ? (
-      <video
-        key={img.image_id}
-        src={`${import.meta.env.VITE_SERVER_API}/static/${img.image_url}`}
-        autoPlay
-        muted
-        loop
-        playsInline
-      />
-    ) : (
-      <img
-        key={img.image_id}
-        src={`${import.meta.env.VITE_SERVER_API}/static/${img.image_url}`}
-        alt={product.name}
-      />
-    )
-  ))}
-</div>
+                  {product.images.slice(0, 1).map(img => (
+                    img.image_url.endsWith('.mp4') || img.image_url.endsWith('.webm') ? (
+                      <video
+                        key={img.image_id}
+                        src={
+                          img.image_url.startsWith('http')
+                            ? img.image_url
+                            : img.image_url.startsWith('/')
+                              ? `${import.meta.env.VITE_SERVER_API}${img.image_url}`
+                              : `${import.meta.env.VITE_SERVER_API}/static/${img.image_url}`
+                        }
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                      />
+                    ) : (
+                      <img
+                        key={img.image_id}
+                        src={
+                          img.image_url.startsWith('http')
+                            ? img.image_url
+                            : img.image_url.startsWith('/')
+                              ? `${import.meta.env.VITE_SERVER_API}${img.image_url}`
+                              : `${import.meta.env.VITE_SERVER_API}/static/${img.image_url}`
+                        }
+                        alt={product.name}
+                      />
+                    )
+                  ))}
+                </div>
                 <div className="product-details">
                   <h3>{product.name}</h3>
                   <p className="product-description">{product.description.substring(0, 50)}...</p>
@@ -1439,9 +1514,9 @@ const NewProduct = () => {
         </div>
 
         <div className="form-group">
-  <label>HSN Code:</label>
-  <p>{editingProduct?.hsn || 'No HSN code'}</p>
-</div>
+          <label>HSN Code:</label>
+          <p>{editingProduct?.hsn || 'No HSN code'}</p>
+        </div>
 
         <div className="form-group">
           <label>Product Type:</label>
@@ -1479,14 +1554,14 @@ const NewProduct = () => {
                 <div key={index} className="media-thumbnail">
                   {media.image_url.endsWith('.mp4') || media.image_url.endsWith('.webm') ? (
                     <video
-                      src={`${import.meta.env.VITE_SERVER_API}/static/${media.image_url}`}
+                      src={getImageUrl(media.image_url)}
                       muted
                       loop
                       playsInline
                     />
                   ) : (
                     <img
-                      src={`${import.meta.env.VITE_SERVER_API}/static/${media.image_url}`}
+                      src={getImageUrl(media.image_url)}
                       alt={`Product ${index}`}
                     />
                   )}
@@ -1523,6 +1598,71 @@ const NewProduct = () => {
             </div>
           </div>
         </div>
+
+        {/* Cover Image Section */}
+        <div className="form-group">
+          <label>Cover Image (Main Display Image)</label>
+          {coverImage && (
+            <div className="cover-image-preview">
+              {coverImage.image_url.endsWith('.mp4') || coverImage.image_url.endsWith('.webm') ? (
+                <video
+                  src={
+                    coverImage.image_url.startsWith('http')
+                      ? coverImage.image_url
+                      : coverImage.image_url.startsWith('/')
+                        ? `${import.meta.env.VITE_SERVER_API}${coverImage.image_url}`
+                        : `${import.meta.env.VITE_SERVER_API}/static/${coverImage.image_url}`
+                  }
+                  muted
+                  loop
+                  playsInline
+                />
+              ) : (
+                <img
+                  src={
+                    coverImage.image_url.startsWith('http')
+                      ? coverImage.image_url
+                      : coverImage.image_url.startsWith('/')
+                        ? `${import.meta.env.VITE_SERVER_API}${coverImage.image_url}`
+                        : `${import.meta.env.VITE_SERVER_API}/static/${coverImage.image_url}`
+                  }
+                  alt="Cover"
+                />
+              )}
+              <div className="cover-image-actions">
+                <input
+                  type="file"
+                  id="cover-image-upload"
+                  onChange={handleCoverImageChange}
+                  accept="image/*,video/*"
+                  className="file-input"
+                />
+                <label htmlFor="cover-image-upload" className="btn-update-cover">
+                  Update Cover Image
+                </label>
+              </div>
+            </div>
+          )}
+          {newCoverImage && (
+            <div className="new-cover-preview">
+              <h4>New Cover Image to Upload</h4>
+              {newCoverImage.type.startsWith('video/') ? (
+                <video
+                  src={URL.createObjectURL(newCoverImage)}
+                  muted
+                  loop
+                  playsInline
+                />
+              ) : (
+                <img
+                  src={URL.createObjectURL(newCoverImage)}
+                  alt="New Cover"
+                />
+              )}
+            </div>
+          )}
+        </div>
+
 
         {formData.product_type === 'single' && (
           <div className="form-group">
@@ -1873,7 +2013,7 @@ const NewProduct = () => {
                           />
                         </div>
                         <div className={`form-field ${validationErrors[`model_${modelIndex}_color_price_${colorIndex}`] ? 'error-field' : ''}`}>
-                        <label>Current Price *</label>
+                          <label>Current Price *</label>
                           <input
                             type="number"
                             placeholder="Price"
@@ -1887,7 +2027,7 @@ const NewProduct = () => {
                           )}
                         </div>
                         <div className={`form-field ${validationErrors[`model_${modelIndex}_color_original_price_${colorIndex}`] ? 'error-field' : ''}`}>
-                        <label>Original Price</label>
+                          <label>Original Price</label>
                           <input
                             type="number"
                             placeholder="Original Price"
@@ -1901,7 +2041,7 @@ const NewProduct = () => {
                           )}
                         </div>
                         <div className={`form-field ${validationErrors[`model_${modelIndex}_color_stock_${colorIndex}`] ? 'error-field' : ''}`}>
-                        <label>Stock Quantity *</label>
+                          <label>Stock Quantity *</label>
                           <input
                             type="number"
                             placeholder="Stock quantity"
@@ -1914,7 +2054,7 @@ const NewProduct = () => {
                           )}
                         </div>
                         <div className={`form-field ${validationErrors[`model_${modelIndex}_color_threshold_${colorIndex}`] ? 'error-field' : ''}`}>
-                        <label>Low Stock Threshold *</label>
+                          <label>Low Stock Threshold *</label>
                           <input
                             type="number"
                             placeholder="Low stock threshold"

@@ -116,6 +116,21 @@ const AllProducts = () => {
     let mainImage = product.images?.[0]?.image_url;
     let availableColors = [];
 
+    if (mainImage) {
+      // If it's already a full URL (starts with http), use as is
+      if (mainImage.startsWith('http')) {
+          // Do nothing, use as is
+      }
+      // If it starts with / (like /product_images/...), prepend server URL
+      else if (mainImage.startsWith('/')) {
+          mainImage = `${import.meta.env.VITE_SERVER_API}${mainImage}`;
+      }
+      // Otherwise, assume it's just a filename and use the old format
+      else {
+          mainImage = `${import.meta.env.VITE_SERVER_API}/static/${mainImage}`;
+      }
+  }
+
     const findMinPriceEntry = (entries) => {
       if (!entries.length) return null;
       return entries.reduce((minEntry, current) =>
@@ -172,9 +187,9 @@ const AllProducts = () => {
       price,
       deleted_price,
       inStock,
-      mainImage: mainImage ? `${import.meta.env.VITE_SERVER_API}/static/${mainImage}` : null,
+      mainImage,
       availableColors
-    };
+  };
   };
 
   const handleWishlistClick = async (product, e) => {
@@ -584,9 +599,9 @@ const AllProducts = () => {
                               src={mainImage}
                               alt={product.name}
                               loading="lazy"
-                              onError={(e) => {
-                                e.target.src = '/path-to-fallback-image.jpg';
-                              }}
+                              // onError={(e) => {
+                              //   e.target.src = '/path-to-fallback-image.jpg';
+                              // }}
                             />
                           )
                         ) : (

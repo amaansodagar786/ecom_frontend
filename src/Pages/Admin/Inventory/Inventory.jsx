@@ -93,10 +93,29 @@ const Inventory = () => {
     setStatusFilter('ALL');
   };
 
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return null;
+    
+    // If it's already a full URL (starts with http), use as is
+    if (imagePath.startsWith('http')) {
+      return imagePath;
+    }
+    
+    // If it starts with / (like /product_images/...), prepend server URL
+    if (imagePath.startsWith('/')) {
+      return `${import.meta.env.VITE_SERVER_API}${imagePath}`;
+    }
+    
+    // Otherwise, assume it's just a filename and use the old format
+    return `${import.meta.env.VITE_SERVER_API}/static/${imagePath}`;
+  };
+
+
   const renderMediaPreview = (mediaUrl) => {
     if (!mediaUrl) return <div className="no-image">No Media</div>;
     
-    const fullUrl = `${import.meta.env.VITE_SERVER_API}/static/${mediaUrl}`;
+    // const fullUrl = `${import.meta.env.VITE_SERVER_API}/static/${mediaUrl}`;
+    const fullUrl = getImageUrl(mediaUrl);
     
     if (mediaUrl.endsWith('.mp4')) {
       return (

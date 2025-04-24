@@ -64,27 +64,51 @@ const MainProducts = () => {
 
   const getImageUrl = (imageData) => {
     if (!imageData) return null;
-
+  
+    // If it's already a full URL (starts with http), use as is
+    if (typeof imageData === 'string' && imageData.startsWith('http')) {
+      return imageData;
+    }
+  
+    // If it starts with / (like /product_images/...), prepend server URL
+    if (typeof imageData === 'string' && imageData.startsWith('/')) {
+      return `${import.meta.env.VITE_SERVER_API}${imageData}`;
+    }
+  
+    // Handle object cases (from API response)
+    if (typeof imageData === 'object') {
+      // Check for image_url property first
+      if (imageData.image_url) {
+        const url = imageData.image_url;
+        if (url.startsWith('http')) return url;
+        if (url.startsWith('/')) return `${import.meta.env.VITE_SERVER_API}${url}`;
+        return `${import.meta.env.VITE_SERVER_API}/static/${url}`;
+      }
+      
+      // Check for url property
+      if (imageData.url) {
+        const url = imageData.url;
+        if (url.startsWith('http')) return url;
+        if (url.startsWith('/')) return `${import.meta.env.VITE_SERVER_API}${url}`;
+        return `${import.meta.env.VITE_SERVER_API}/static/${url}`;
+      }
+      
+      // Fallback to any string value in the object
+      const possibleUrl = Object.values(imageData).find(val => typeof val === 'string');
+      if (possibleUrl) {
+        if (possibleUrl.startsWith('http')) return possibleUrl;
+        if (possibleUrl.startsWith('/')) return `${import.meta.env.VITE_SERVER_API}${possibleUrl}`;
+        return `${import.meta.env.VITE_SERVER_API}/static/${possibleUrl}`;
+      }
+    }
+  
+    // Handle simple string case (filename only)
     if (typeof imageData === 'string') {
       return `${import.meta.env.VITE_SERVER_API}/static/${imageData}`;
     }
-
-    if (typeof imageData === 'object' && imageData.image_url) {
-      return `${import.meta.env.VITE_SERVER_API}/static/${imageData.image_url}`;
-    }
-
-    if (typeof imageData === 'object' && imageData.url) {
-      return `${import.meta.env.VITE_SERVER_API}/static/${imageData.url}`;
-    }
-
-    if (typeof imageData === 'object') {
-      const possibleUrl = Object.values(imageData).find(val => typeof val === 'string');
-      return possibleUrl ? `${import.meta.env.VITE_SERVER_API}/static/${possibleUrl}` : null;
-    }
-
+  
     return null;
   };
-
   const handleProductClick = (product, e) => {
     console.log('Product clicked:', product.product_id);
     if (e) e.stopPropagation();

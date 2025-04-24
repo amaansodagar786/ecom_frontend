@@ -192,7 +192,7 @@ const NewOrders = () => {
             // Prepare order items
             const orderItems = selectedProducts.map(product => {
                 console.log("🧪 Type of finalPrice:", typeof product.finalPrice, "Value:", product.finalPrice);
-                
+
                 if (!product.finalPrice || isNaN(product.finalPrice)) {
                     throw new Error(`Invalid price for product ${product.product_id}`);
                 }
@@ -258,7 +258,22 @@ const NewOrders = () => {
         }
     };
 
+    const getImageUrl = (imagePath) => {
+        if (!imagePath) return null;
 
+        // If it's already a full URL (starts with http), use as is
+        if (imagePath.startsWith('http')) {
+            return imagePath;
+        }
+
+        // If it starts with / (like /product_images/...), prepend server URL
+        if (imagePath.startsWith('/')) {
+            return `${import.meta.env.VITE_SERVER_API}${imagePath}`;
+        }
+
+        // Otherwise, assume it's just a filename and use the old format
+        return `${import.meta.env.VITE_SERVER_API}/static/${imagePath}`;
+    };
 
 
     const handleProductSelect = (product) => {
@@ -647,7 +662,7 @@ const NewOrders = () => {
                             <div className="product-image">
                                 <img
                                     src={product.images?.[0]?.image_url
-                                        ? `${import.meta.env.VITE_SERVER_API}/static/${product.images[0].image_url}`
+                                        ? getImageUrl(product.images[0].image_url)
                                         : '/placeholder-product.png'}
                                     alt={product.name}
                                 />
@@ -696,9 +711,9 @@ const NewOrders = () => {
                             <div className="model-image">
                                 <img
                                     src={model.images?.[0]?.image_url
-                                        ? `${import.meta.env.VITE_SERVER_API}/${model.images[0].image_url}`
+                                        ? getImageUrl(model.images[0].image_url)
                                         : selectedProduct.images?.[0]?.image_url
-                                            ? `${import.meta.env.VITE_SERVER_API}/${selectedProduct.images[0].image_url}`
+                                            ? getImageUrl(selectedProduct.images[0].image_url)
                                             : '/placeholder-product.png'}
                                     alt={model.name}
                                 />

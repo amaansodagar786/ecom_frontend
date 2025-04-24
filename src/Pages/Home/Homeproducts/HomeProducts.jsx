@@ -21,10 +21,10 @@ const HomeProducts = () => {
 
   const handleProductClick = (product, e) => {
     if (e) e.stopPropagation();
-  
+
     const productSlug = product.name.toLowerCase().replace(/\s+/g, '-');
     const productId = product.product_id;
-  
+
     navigate(`/products/${productId}/${productSlug}`, {
       state: { product },
     });
@@ -37,6 +37,28 @@ const HomeProducts = () => {
 
     // ONLY USE PRODUCT-LEVEL IMAGES (color_id = NULL)
     let mainImage = product.images?.[0]?.image_url; // This already comes from product.images (not color-specific)
+
+
+    // Get the first product-level image (color_id = null)
+    // let mainImage = product.images?.[0]?.image_url;
+
+    // Handle image URL construction
+    if (mainImage) {
+      // If it's already a full URL (starts with http), use as is
+      if (mainImage.startsWith('http')) {
+        // Do nothing, use as is
+      }
+      // If it starts with / (like /product_images/...), prepend server URL
+      else if (mainImage.startsWith('/')) {
+        mainImage = `${import.meta.env.VITE_SERVER_API}${mainImage}`;
+      }
+      // Otherwise, assume it's just a filename and use the old format
+      else {
+        mainImage = `${import.meta.env.VITE_SERVER_API}/static/${mainImage}`;
+      }
+    }
+
+
 
     let mediaType = 'image'; // default
     if (mainImage && /\.(mp4)$/i.test(mainImage)) {
@@ -94,7 +116,7 @@ const HomeProducts = () => {
       price,
       deleted_price,
       inStock,
-      mainImage: mainImage ? `${import.meta.env.VITE_SERVER_API}/static/${mainImage}` : null
+      mainImage
     };
   };
 
