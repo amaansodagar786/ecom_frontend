@@ -15,6 +15,7 @@ const MainProducts = () => {
   const [colorFilter, setColorFilter] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
   const [availableColors, setAvailableColors] = useState([]);
+  
 
   useEffect(() => {
     if (!categoryId) {
@@ -87,11 +88,14 @@ const MainProducts = () => {
   const handleProductClick = (product, e) => {
     console.log('Product clicked:', product.product_id);
     if (e) e.stopPropagation();
-    // navigate(`/product/${product.product_id}`, { state: { product } });
-    navigate(`/products/${product.name.replace(/\s+/g, '-')}`, { state: { product } });
-
+  
+    const productSlug = product.name.toLowerCase().replace(/\s+/g, '-');
+    const productId = product.product_id;
+  
+    navigate(`/products/${productId}/${productSlug}`, {
+      state: { product },
+    });
   };
-
   const filteredProducts = Array.isArray(products)
     ? products
       .filter((product) =>

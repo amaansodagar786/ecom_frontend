@@ -34,8 +34,9 @@ const Categories = () => {
     fetchCategories();
   }, []);
 
-  const handleCategoryClick = (categoryId) => {
+  const handleCategoryClick = (categoryId ) => {
     navigate(`/products/by-category/${categoryId}`);
+    
   };
 
   const slide = (direction) => {

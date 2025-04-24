@@ -34,7 +34,7 @@ $font-bold: 700;
 .product-page {
     padding: 2rem 5%;
     max-width: 1400px;
-    // margin: 80px auto;
+    margin: 100px auto;
     margin: 0 auto;
     font-family: 'Poppins', sans-serif;
     color: $text-dark;
@@ -512,6 +512,7 @@ $font-bold: 700;
 
         .tab-content {
             .description-content {
+                white-space: pre-line; // This preserves line breaks
                 line-height: 1.6;
                 color: $text-medium;
             }
@@ -554,6 +555,7 @@ $font-bold: 700;
             }
 
             .model-details-content {
+                white-space: pre-line; // This preserves line breaks
                 line-height: 1.6;
                 color: $text-medium;
             }

@@ -51,8 +51,7 @@ const Inventory = () => {
     if (searchTerm) {
       result = result.filter(product =>
         product.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.model_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.color_name.toLowerCase().includes(searchTerm.toLowerCase())
+        product.model_name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -92,6 +91,33 @@ const Inventory = () => {
   const resetFilters = () => {
     setSearchTerm('');
     setStatusFilter('ALL');
+  };
+
+  const renderMediaPreview = (mediaUrl) => {
+    if (!mediaUrl) return <div className="no-image">No Media</div>;
+    
+    const fullUrl = `${import.meta.env.VITE_SERVER_API}/static/${mediaUrl}`;
+    
+    if (mediaUrl.endsWith('.mp4')) {
+      return (
+        <video
+          className="media-preview"
+          src={fullUrl}
+          muted
+          loop
+          playsInline
+          autoPlay
+        />
+      );
+    } else {
+      return (
+        <img
+          className="media-preview"
+          src={fullUrl}
+          alt="Product media"
+        />
+      );
+    }
   };
 
   if (loading) return <AdminLayout><div className="loading-spinner"></div></AdminLayout>;
@@ -151,33 +177,15 @@ const Inventory = () => {
         <div className="inventory-content">
           {filteredProducts.length > 0 ? (
             filteredProducts.map((product) => (
-              <div key={`${product.product_id}-${product.model_id}-${product.color_id}`} className="product-card">
-                <div className="product-images">
-                  {(() => {
-                    console.log("Product:", product);
-                    console.log("Images:", product.images);
-
-                    if (product.images.length > 0) {
-                      const imageUrl = `${import.meta.env.VITE_SERVER_API}/static/${product.images[0]}`;
-                      console.log("Image URL:", imageUrl);
-                      return (
-                        <img
-                          src={imageUrl}
-                          alt={`${product.color_name} ${product.product_name}`}
-                        />
-                      );
-                    } else {
-                      return <div className="no-image">No Image</div>;
-                    }
-                  })()}
+              <div key={`${product.product_id}-${product.model_id}`} className="product-card">
+                <div className="product-media">
+                  {renderMediaPreview(product.images?.[0])}
                 </div>
-
 
                 <div className="product-details">
                   <h3>{product.product_name}</h3>
                   <div className="product-meta">
                     <span>Model: {product.model_name}</span>
-                    <span>Color: {product.color_name}</span>
                   </div>
 
                   <div className="stock-info">

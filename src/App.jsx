@@ -49,7 +49,7 @@ import CategoryUpdate from './Pages/Admin/CateHsnUpdate/CategoryUpdate';
 function App() {
   return (
     <AuthProvider>
-      <Router>
+      <Router basename="/">
       <ScrollToTop />
         <Navbar />
         <Routes>
@@ -60,7 +60,9 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/allproducts" element={<AllProducts />} />
-          <Route path="/products/:id" element={<ProductPage />} />
+          {/* <Route path="/products/:id" element={<ProductPage />} /> */}
+          <Route path="/products/:id/:slug" element={<ProductPage />} />
+
           <Route path="/products/by-category/:categoryId" element={<MainProducts />} />
 
           {/* USER PAGES  */}

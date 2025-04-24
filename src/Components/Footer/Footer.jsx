@@ -7,6 +7,7 @@ import {
 } from 'react-icons/fa';
 import { SiRazorpay } from "react-icons/si";
 import './Footer.scss';
+import logo from "../../assets/Logo/logo.png";
 
 const Footer = () => {
     useEffect(() => {

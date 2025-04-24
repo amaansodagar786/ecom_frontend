@@ -520,6 +520,8 @@ const AddProducts = () => {
                           className="form-input textarea"
                           placeholder="Product description"
                           rows="4"
+                          style={{ whiteSpace: 'pre-line' }} // This will display existing text with line breaks
+
                         />
                         <ErrorMessage
                           name="description"
@@ -765,6 +767,8 @@ const AddProducts = () => {
                                   name={`models.${modelIndex}.description`}
                                   component="div"
                                   className="error-message"
+                                  style={{ whiteSpace: 'pre-line' }}
+
                                 />
                               </div>
                             </div>

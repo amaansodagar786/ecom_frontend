@@ -21,8 +21,13 @@ const HomeProducts = () => {
 
   const handleProductClick = (product, e) => {
     if (e) e.stopPropagation();
-    // navigate(`/product/${product.product_id}`, { state: { product } });
-    navigate(`/products/${product.name.replace(/\s+/g, '-')}`, { state: { product } });
+  
+    const productSlug = product.name.toLowerCase().replace(/\s+/g, '-');
+    const productId = product.product_id;
+  
+    navigate(`/products/${productId}/${productSlug}`, {
+      state: { product },
+    });
   };
 
   const getProductInfo = (product) => {

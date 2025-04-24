@@ -253,11 +253,11 @@ const AllProducts = () => {
           product.description?.toLowerCase().includes(filters.searchQuery.toLowerCase());
         const priceInRange = price >= filters.priceRange[0] &&
           price <= filters.priceRange[1];
-  
+
         // Remove the colorMatch check
         const categoryMatch = filters.categories.length === 0 ||
           (product.category && filters.categories.includes(product.category));
-  
+
         return matchesSearch && priceInRange && categoryMatch;
       })
 
@@ -535,13 +535,17 @@ const AllProducts = () => {
 
 
                   return (
-                    <div className="product-card" key={product.product_id}
-                      onClick={() => 
-                        // navigate(`/product/${product.product_id}`, { state: { product } })}
-                        navigate(`/products/${product.name.replace(/\s+/g, '-')}`, { state: { product } })}
-
-                      
+                    <div
+                      className="product-card"
+                      key={product.product_id}
+                      onClick={() =>
+                        navigate(
+                          `/products/${product.product_id}/${product.name.toLowerCase().replace(/\s+/g, '-')}`,
+                          { state: { product } }
+                        )
+                      }
                     >
+
                       <div className="product-badge">
                         {inStock ? 'In Stock' : 'Pre-Order'}
                       </div>

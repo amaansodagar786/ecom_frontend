@@ -154,29 +154,33 @@ const Wishlist = () => {
       const response = await axios.get(
         `${import.meta.env.VITE_SERVER_API}/product/${item.product.product_id}`
       );
-
+  
       const fullProduct = response.data;
-
+  
+      // Create slug from product name
+      const productSlug = fullProduct.name.toLowerCase().replace(/\s+/g, '-');
+  
       // Prepare navigation state with all necessary details
       const navigationState = {
         product: fullProduct,
-        // Preserve the exact model/color objects from wishlist
         selectedModel: item.model || null,
         selectedColor: item.color || null,
-        // Also pass IDs for easier matching in ProductPage
         preselected: {
           modelId: item.model?.model_id || null,
           colorId: item.color?.color_id || null
         }
       };
-
-      navigate(`/product/${item.product.product_id}`, {
+  
+      navigate(`/products/${item.product.product_id}/${productSlug}`, {
         state: navigationState
       });
     } catch (error) {
       console.error('Error fetching product details:', error);
-      // Fallback to existing data if API call fails
-      navigate(`/product/${item.product.product_id}`, {
+  
+      // Fallback: create slug from existing product name
+      const fallbackSlug = item.product.name.toLowerCase().replace(/\s+/g, '-');
+  
+      navigate(`/products/${item.product.product_id}/${fallbackSlug}`, {
         state: {
           product: item.product,
           selectedModel: item.model || null,
@@ -189,6 +193,7 @@ const Wishlist = () => {
       });
     }
   };
+  
 
   const getVariantDetails = (item) => {
     if (!item.model) return null;

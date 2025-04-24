@@ -10,11 +10,11 @@ const AdminSidebar = ({ isOpen, toggleSidebar, isMobile }) => {
     { path: '/admindashboard', name: 'Dashboard', icon: <FiHome /> },
     { path: '/addproducts', name: 'List Products', icon: <FiBox /> },
     { path: '/updateproducts', name: 'Update Products', icon: <FiBox /> },
+    { path: '/categoryupdate', name: 'Category & Hsn', icon: <FiSettings /> },
+    { path: '/createorders', name: 'Offline Order', icon: <FiSettings /> },
     { path: '/admininventory', name: 'Inventory', icon: <FiPackage /> },
     { path: '/adminorders', name: 'Orders', icon: <FiShoppingCart /> },
     { path: '/admininpayment', name: 'Payments', icon: <FiCreditCard /> },
-    { path: '/createorders', name: 'New Order', icon: <FiSettings /> },
-    { path: '/categoryupdate', name: 'Category Update', icon: <FiSettings /> },
   ];
 
   const handleNavClick = (path) => {

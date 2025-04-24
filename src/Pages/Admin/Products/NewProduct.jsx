@@ -35,6 +35,7 @@ const NewProduct = () => {
     product_type: 'single',
     category_id: '',
     subcategory_id: '',
+    hsn: '', // Add this line
     images: [],
     colors: [{
       name: 'DEFAULT', // Single default color variant
@@ -76,6 +77,7 @@ const NewProduct = () => {
         ]);
 
         setProducts(productsRes.data);
+        console.log('Products:', productsRes.data); 
         setFilteredProducts(productsRes.data);
         setCategories(categoriesRes.data);
         setIsLoading(false);
@@ -1437,6 +1439,11 @@ const NewProduct = () => {
         </div>
 
         <div className="form-group">
+  <label>HSN Code:</label>
+  <p>{editingProduct?.hsn || 'No HSN code'}</p>
+</div>
+
+        <div className="form-group">
           <label>Product Type:</label>
           <select
             name="product_type"
@@ -1866,6 +1873,7 @@ const NewProduct = () => {
                           />
                         </div>
                         <div className={`form-field ${validationErrors[`model_${modelIndex}_color_price_${colorIndex}`] ? 'error-field' : ''}`}>
+                        <label>Current Price *</label>
                           <input
                             type="number"
                             placeholder="Price"
@@ -1879,6 +1887,7 @@ const NewProduct = () => {
                           )}
                         </div>
                         <div className={`form-field ${validationErrors[`model_${modelIndex}_color_original_price_${colorIndex}`] ? 'error-field' : ''}`}>
+                        <label>Original Price</label>
                           <input
                             type="number"
                             placeholder="Original Price"
@@ -1892,6 +1901,7 @@ const NewProduct = () => {
                           )}
                         </div>
                         <div className={`form-field ${validationErrors[`model_${modelIndex}_color_stock_${colorIndex}`] ? 'error-field' : ''}`}>
+                        <label>Stock Quantity *</label>
                           <input
                             type="number"
                             placeholder="Stock quantity"
@@ -1904,6 +1914,7 @@ const NewProduct = () => {
                           )}
                         </div>
                         <div className={`form-field ${validationErrors[`model_${modelIndex}_color_threshold_${colorIndex}`] ? 'error-field' : ''}`}>
+                        <label>Low Stock Threshold *</label>
                           <input
                             type="number"
                             placeholder="Low stock threshold"
