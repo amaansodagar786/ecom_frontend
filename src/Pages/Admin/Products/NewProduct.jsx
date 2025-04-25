@@ -323,7 +323,7 @@ const NewProduct = () => {
       const formData = new FormData();
       formData.append('image', file);
 
-      const response = await axios.put(
+      const response = await axios.post(
         `${import.meta.env.VITE_SERVER_API}/${editingProduct.product_id}/cover-image`,
         formData,
         {
