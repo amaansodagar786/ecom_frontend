@@ -555,7 +555,8 @@ const AllProducts = () => {
                       key={product.product_id}
                       onClick={() =>
                         navigate(
-                          `/products/${product.product_id}/${product.name.toLowerCase().replace(/\s+/g, '-')}`,
+                          // `/products/${product.product_id}/${product.name.toLowerCase().replace(/\s+/g, '-')}`,
+                          `/products/${product.name.toLowerCase().replace(/\s+/g, '-')}`,
                           { state: { product } }
                         )
                       }

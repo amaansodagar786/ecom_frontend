@@ -48,7 +48,7 @@
 //     const subtotal = items.reduce((sum, item) => sum + ((item.price || 0) * item.quantity), 0);
 //     const originalSubtotal = items.reduce((sum, item) => sum + ((item.original_price || item.price) * item.quantity), 0);
 //     const discount = originalSubtotal - subtotal;
-    
+
 //     return {
 //       subtotal,
 //       discount,
@@ -172,7 +172,7 @@
 //                 {cartItems.map((item) => {
 //                   const originalPrice = item.original_price || item.price;
 //                   const hasDiscount = originalPrice > item.price;
-                  
+
 //                   return (
 //                     <div
 //                       key={`${item.product_id}-${item.color || 'none'}-${item.model || 'none'}`}
@@ -343,13 +343,32 @@ const Cart = ({ isOpen, onClose }) => {
     const subtotal = items.reduce((sum, item) => sum + ((item.price || 0) * item.quantity), 0);
     const originalSubtotal = items.reduce((sum, item) => sum + ((item.original_price || item.price) * item.quantity), 0);
     const discount = originalSubtotal - subtotal;
-    
+
     return {
       subtotal,
       discount,
       originalSubtotal,
       total: subtotal
     };
+  };
+
+  const getImageUrl = (image) => {
+    if (!image) return null;
+  
+    // If it's already a full URL (starts with http), use as is
+    if (image.startsWith('http')) {
+      return image;
+    }
+    // If it starts with / (like /product_images/...), prepend server URL
+    else if (image.startsWith('/')) {
+      // Remove any leading slashes from the image path to prevent double slashes
+      const cleanPath = image.replace(/^\//, '');
+      return `${import.meta.env.VITE_SERVER_API}/static/${cleanPath}`;
+    }
+    // Otherwise, assume it's just a filename and use the old format
+    else {
+      return `${import.meta.env.VITE_SERVER_API}/static/${image}`;
+    }
   };
 
   const totals = calculateTotals(cartItems);
@@ -467,36 +486,43 @@ const Cart = ({ isOpen, onClose }) => {
                 {cartItems.map((item) => {
                   const originalPrice = item.original_price || item.price;
                   const hasDiscount = originalPrice > item.price;
-                  const imageUrl = `${import.meta.env.VITE_SERVER_API}/static/${item.image}`;
+                  // const imageUrl = `${import.meta.env.VITE_SERVER_API}/static/${item.image}`;
+                  const imageUrl = getImageUrl(item.image);                  
                   const isVideo = item.image && /\.(mp4)$/i.test(item.image);
-                  
+
                   return (
                     <div
                       key={`${item.product_id}-${item.color || 'none'}-${item.model || 'none'}`}
                       className="cart-item"
                     >
                       <div className="product-image-container">
-                        {isVideo ? (
-                          <video
-                            className="media"
-                            src={imageUrl}
-                            autoPlay
-                            muted
-                            loop
-                            playsInline
-                            controls
-                          />
+                        {imageUrl ? (
+                          isVideo ? (
+                            <video
+                              className="media"
+                              src={imageUrl}
+                              autoPlay
+                              muted
+                              loop
+                              playsInline
+                              controls
+                            />
+                          ) : (
+                            <img
+                              className="media"
+                              src={imageUrl}
+                              alt={item.name}
+                              loading="lazy"
+                              onError={(e) => {
+                                console.error("Image failed to load for:", imageUrl);
+                                // e.target.src = '/fallback-image.jpg';
+                              }}
+                            />
+                          )
                         ) : (
-                          <img
-                            className="media"
-                            src={imageUrl}
-                            alt={item.name}
-                            loading="lazy"
-                            onError={(e) => {
-                              console.error("Image failed to load for:", imageUrl);
-                              e.target.src = '/fallback-image.jpg';
-                            }}
-                          />
+                          <div className="media-placeholder">
+                            <FiShoppingBag size={24} />
+                          </div>
                         )}
                       </div>
                       <div className="product-info">
@@ -567,7 +593,7 @@ const Cart = ({ isOpen, onClose }) => {
                 )}
                 <div className="summary-row">
                   <span>Subtotal</span>
-                    <span>₹{totals.subtotal.toFixed(2)}</span>
+                  <span>₹{totals.subtotal.toFixed(2)}</span>
                 </div>
                 <div className="summary-row total">
                   <span>Total</span>

@@ -171,7 +171,7 @@ const Wishlist = () => {
         }
       };
   
-      navigate(`/products/${item.product.product_id}/${productSlug}`, {
+      navigate(`/products/${productSlug}`, {
         state: navigationState
       });
     } catch (error) {

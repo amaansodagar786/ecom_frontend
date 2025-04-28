@@ -34,97 +34,134 @@ const ProductPage = () => {
     const [selectionsLoading, setSelectionsLoading] = useState(true);
 
     // Extract product ID from URL
-    const extractProductId = () => {
-        const pathParts = location.pathname.split('/products/');
-        if (pathParts.length !== 2) return null;
-
-        // Split the remaining part to get ID (first part before next slash)
-        const idPart = pathParts[1].split('/')[0];
-        return idPart.match(/^\d+$/) ? idPart : null;
-
-    };
-
-    // Add this new function outside your component
+    // For URL like "/products/some-product-name"
 const extractProductNameFromUrl = () => {
     const pathParts = window.location.pathname.split('/products/');
     if (pathParts.length !== 2) return null;
-    
-    // Get the part after /products/id/ (the name)
-    const namePart = pathParts[1].split('/')[1]; 
-    return namePart ? namePart.replace(/-/g, ' ') : null;
+    return pathParts[1]; // Get everything after '/products/'
   };
-
-  // Inside your ProductPage component, add this new useEffect:
-useEffect(() => {
+  
+  // Inside your ProductPage component
+  useEffect(() => {
+    // This will run on every render
     const fetchAndLogProductByName = async () => {
-      const productName = extractProductNameFromUrl();
-      if (!productName) {
+      const productSlug = extractProductNameFromUrl();
+      if (!productSlug) {
         console.log("No product name found in URL");
         return;
       }
   
       try {
-        console.log(`Fetching product by name: "${productName}"`);
+        console.log(`Fetching product by slug: "${productSlug}"`);
         const response = await axios.get(
-          `${import.meta.env.VITE_SERVER_API}/product/slug/${productName}`
+          `${import.meta.env.VITE_SERVER_API}/product/slug/${productSlug}`
         );
-        
-        console.log("Product details from name:", response.data);
+        console.log("Product details from slug:", response.data);
       } catch (error) {
-        console.error("Error fetching product by name:", error);
+        console.error("Error fetching product by slug:", error);
       }
     };
   
     fetchAndLogProductByName();
-  }, []);
+  }, []); // Empty dependency array means this runs on mount
+  
+  // Keep your existing fetchProductData useEffect (for location.state products)
+//   useEffect(() => {
+//     const fetchProductData = async () => {
+//       if (location.state?.product) {
+//         setProduct(location.state.product);
+//         setLoading(false);
+//         return;
+//       }
+  
+//       const productId = extractProductId();
+//       if (!productId) {
+//         setError('Invalid product URL');
+//         setLoading(false);
+//         return;
+//       }
+  
+//       try {
+//         setLoading(true);
+//         setError(null);
+//         const response = await axios.get(
+//           `${import.meta.env.VITE_SERVER_API}/product/${productId}`
+//         );
+//         if (!response.data) throw new Error('Product data not found');
+//         setProduct(response.data);
+//       } catch (err) {
+//         console.error('Fetch error:', err);
+//         setError(err.response?.data?.message || err.message || 'Failed to load product');
+//         if (err.response?.status === 404) {
+//           navigate('/not-found', { replace: true });
+//         }
+//       } finally {
+//         setLoading(false);
+//       }
+//     };
+  
+//     if (!location.state?.product) {
+//       fetchProductData();
+//     }
+//   }, [location, navigate]);
 
-    // Fetch product data if not passed via state
-    useEffect(() => {
-        const fetchProductData = async () => {
-            // If product was passed via state (e.g., from product listing)
-            if (location.state?.product) {
-                setProduct(location.state.product);
-                setLoading(false);
-                return;
-            }
+// Replace your current fetchProductData useEffect with this:
 
-            const productId = extractProductId();
-            if (!productId) {
-                setError('Invalid product URL');
-                setLoading(false);
-                return;
-            }
-
-            try {
-                setLoading(true);
-                setError(null);
-
-                const response = await axios.get(
-                    `${import.meta.env.VITE_SERVER_API}/product/${productId}`
-                );
-
-                if (!response.data) {
-                    throw new Error('Product data not found in response');
-                }
-
-                setProduct(response.data);
-            } catch (err) {
-                console.error('Fetch error:', err);
-                setError(err.response?.data?.message || err.message || 'Failed to load product');
-
-                if (err.response?.status === 404) {
-                    navigate('/not-found', { replace: true });
-                }
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        if (!location.state?.product) {
-            fetchProductData();
+useEffect(() => {
+    const fetchProductData = async () => {
+      if (location.state?.product) {
+        setProduct(location.state.product);
+        setLoading(false);
+        return;
+      }
+  
+      try {
+        setLoading(true);
+        setError(null);
+  
+        // First try to get product by slug from URL
+        const productSlug = extractProductNameFromUrl();
+        if (!productSlug) {
+          throw new Error('Invalid product URL');
         }
-    }, [location, navigate]);
-
+  
+        // Step 1: Fetch basic product details by slug to get the ID
+        const slugResponse = await axios.get(
+          `${import.meta.env.VITE_SERVER_API}/product/slug/${productSlug}`
+        );
+        
+        if (!slugResponse.data) {
+          throw new Error('Product not found by slug');
+        }
+  
+        console.log("Product details from slug:", slugResponse.data);
+  
+        // Step 2: Now fetch full product details by ID
+        const fullProductResponse = await axios.get(
+          `${import.meta.env.VITE_SERVER_API}/product/${slugResponse.data.product_id}`
+        );
+  
+        if (!fullProductResponse.data) {
+          throw new Error('Full product data not found');
+        }
+  
+        setProduct(fullProductResponse.data);
+      } catch (err) {
+        console.error('Fetch error:', err);
+        setError(err.response?.data?.message || err.message || 'Failed to load product');
+        
+        if (err.response?.status === 404) {
+          navigate('/not-found', { replace: true });
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    if (!location.state?.product) {
+      fetchProductData();
+    }
+  }, [location, navigate]);
 
     useEffect(() => {
         if (product) {

@@ -116,7 +116,8 @@ const MainProducts = () => {
     const productSlug = product.name.toLowerCase().replace(/\s+/g, '-');
     const productId = product.product_id;
   
-    navigate(`/products/${productId}/${productSlug}`, {
+    // navigate(`/products/${productId}/${productSlug}`, {
+    navigate(`/products/${productSlug}`, {
       state: { product },
     });
   };

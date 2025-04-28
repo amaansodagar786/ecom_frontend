@@ -4,6 +4,8 @@ import axios from 'axios';
 import { useAuth } from '../../Components/Context/AuthContext';
 import './Checkout.scss';
 import AddressModal from '../../Pages/User/Address/AddressModal';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Checkout = () => {
     const location = useLocation();
@@ -18,6 +20,7 @@ const Checkout = () => {
     const [error, setError] = useState(null);
     const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
     const [states, setStates] = useState([]);
+    const [paymentMethod, setPaymentMethod] = useState('');
 
     // Calculate order totals
     const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -99,8 +102,97 @@ const Checkout = () => {
         setActiveStep(2);
     };
 
-    const handlePlaceOrder = () => {
-        alert('Order placed successfully!');
+    const handlePlaceOrder = async () => {
+        try {
+            // Prepare order data according to backend requirements
+            const orderData = {
+                address_id: selectedAddress,
+                payment_status: paymentMethod === 'Cash on Delivery' ? 'pending' : 'paid',
+                delivery_method: 'standard', // You can make this dynamic if needed
+                delivery_charge: deliveryCharge,
+                discount_percent: totalDiscount > 0 ? ((totalDiscount / originalSubtotal) * 100) : 0,
+                tax_percent: 0,
+                items: cartItems.map(item => ({
+                    product_id: item.product_id,
+                    model_id: item.model_id || null,
+                    color_id: item.color_id || null,
+                    quantity: item.quantity,
+                    price: item.price
+                }))
+            };
+
+            // Log order details to console
+            console.log('Order Data being sent to backend:', orderData);
+            console.log('Cart Items:', cartItems);
+            console.log('Selected Address:', addresses.find(a => a.address_id === selectedAddress));
+            console.log('Payment Method:', paymentMethod);
+            console.log('Order Totals:', {
+                subtotal,
+                originalSubtotal,
+                totalDiscount,
+                deliveryCharge,
+                taxes,
+                total
+            });
+
+            // Send order to backend
+            const response = await axios.post(
+                `${import.meta.env.VITE_SERVER_API}/order/place-order`,
+                orderData,
+                {
+                    headers: { Authorization: `Bearer ${getToken()}` }
+                }
+            );
+
+            if (response.data.success) {
+                console.log('Order placed successfully:', response.data.order);
+                
+                // Show success notification
+                toast.success('Order placed successfully!', {
+                    position: "top-center",
+                    autoClose: 3000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                });
+
+                // Redirect to order confirmation page after delay
+                setTimeout(() => {
+                    navigate('/order-confirmation', {
+                        state: {
+                            order: response.data.order,
+                            address: addresses.find(a => a.address_id === selectedAddress)
+                        }
+                    });
+                }, 3000);
+            } else {
+                throw new Error(response.data.error || 'Failed to place order');
+            }
+        } catch (error) {
+            console.error('Error placing order:', error);
+            toast.error(error.response?.data?.error || 'Failed to place order. Please try again.', {
+                position: "top-center",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+            });
+        }
+    };
+
+    const handlePaymentMethodSelect = (method) => {
+        setPaymentMethod(method);
+        // For immediate payment methods, you might want to handle payment processing here
+        if (method !== 'Cash on Delivery') {
+            toast.info(`You selected ${method}. Payment processing would be implemented here.`, {
+                position: "top-center",
+                autoClose: 3000,
+            });
+        }
     };
 
     if (cartItems.length === 0) {
@@ -131,15 +223,15 @@ const Checkout = () => {
 
             {(activeStep === 2 || activeStep === 3) && (
                 <div className="top-navigation">
-                    <button 
-                        className="back-to-address-btn" 
+                    <button
+                        className="back-to-address-btn"
                         onClick={() => setActiveStep(1)}
                     >
                         Back to Address
                     </button>
                     {activeStep === 3 && (
-                        <button 
-                            className="back-to-review-btn" 
+                        <button
+                            className="back-to-review-btn"
                             onClick={() => setActiveStep(2)}
                         >
                             Back to Review
@@ -317,27 +409,63 @@ const Checkout = () => {
                 <div className="payment-step">
                     <h2>Payment Methods</h2>
                     <div className="payment-methods">
-                        <button className="payment-option">Credit/Debit Card</button>
-                        <button className="payment-option">Net Banking</button>
-                        <button className="payment-option">UPI</button>
-                        <button className="payment-option">Cash on Delivery</button>
+                        <button 
+                            className={`payment-option ${paymentMethod === 'Credit/Debit Card' ? 'selected' : ''}`}
+                            onClick={() => handlePaymentMethodSelect('Credit/Debit Card')}
+                        >
+                            Credit/Debit Card
+                        </button>
+                        <button 
+                            className={`payment-option ${paymentMethod === 'Net Banking' ? 'selected' : ''}`}
+                            onClick={() => handlePaymentMethodSelect('Net Banking')}
+                        >
+                            Net Banking
+                        </button>
+                        <button 
+                            className={`payment-option ${paymentMethod === 'UPI' ? 'selected' : ''}`}
+                            onClick={() => handlePaymentMethodSelect('UPI')}
+                        >
+                            UPI
+                        </button>
+                        <button 
+                            className={`payment-option ${paymentMethod === 'Cash on Delivery' ? 'selected' : ''}`}
+                            onClick={() => handlePaymentMethodSelect('Cash on Delivery')}
+                        >
+                            Cash on Delivery
+                        </button>
                     </div>
 
                     <div className="final-order-summary">
                         <h3>Order Total: ₹{total.toFixed(2)}</h3>
                         <p>Including delivery charge: {deliveryCharge === 0 ? 'FREE' : `₹${deliveryCharge.toFixed(2)}`}</p>
-                        
+
                         <div className="payment-actions">
                             <button className="back-to-review-btn" onClick={() => setActiveStep(2)}>
                                 Back to Review
                             </button>
-                            <button className="place-order-btn" onClick={handlePlaceOrder}>
-                                Place Order
+                            <button 
+                                className="place-order-btn" 
+                                onClick={handlePlaceOrder}
+                                disabled={!paymentMethod}
+                            >
+                                {paymentMethod === 'Cash on Delivery' ? 'Place Order' : `Pay ₹${total.toFixed(2)}`}
                             </button>
                         </div>
                     </div>
                 </div>
             )}
+
+            <ToastContainer
+                position="top-center"
+                autoClose={3000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+            />
 
             <AddressModal
                 isOpen={isAddressModalOpen}
