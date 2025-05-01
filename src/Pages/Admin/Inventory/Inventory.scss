@@ -182,7 +182,8 @@ $breakpoint-xl: 1200px;
 
   .inventory-content {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    // grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
     gap: 1.5rem;
   }
 
@@ -401,12 +402,15 @@ $breakpoint-xl: 1200px;
     padding: $spacing-md;
 
     .inventory-content {
-      grid-template-columns: 1fr;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     }
   }
 }
 
 @media (max-width: $breakpoint-sm) {
+  .inventory-content {
+    grid-template-columns: 1fr;
+  }
   .product-card {
     flex-direction: column;
 

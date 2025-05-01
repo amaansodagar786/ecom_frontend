@@ -15,7 +15,7 @@ const MainProducts = () => {
   const [colorFilter, setColorFilter] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
   const [availableColors, setAvailableColors] = useState([]);
-  
+
 
   useEffect(() => {
     if (!categoryId) {
@@ -64,17 +64,17 @@ const MainProducts = () => {
 
   const getImageUrl = (imageData) => {
     if (!imageData) return null;
-  
+
     // If it's already a full URL (starts with http), use as is
     if (typeof imageData === 'string' && imageData.startsWith('http')) {
       return imageData;
     }
-  
+
     // If it starts with / (like /product_images/...), prepend server URL
     if (typeof imageData === 'string' && imageData.startsWith('/')) {
       return `${import.meta.env.VITE_SERVER_API}${imageData}`;
     }
-  
+
     // Handle object cases (from API response)
     if (typeof imageData === 'object') {
       // Check for image_url property first
@@ -84,7 +84,7 @@ const MainProducts = () => {
         if (url.startsWith('/')) return `${import.meta.env.VITE_SERVER_API}${url}`;
         return `${import.meta.env.VITE_SERVER_API}/static/${url}`;
       }
-      
+
       // Check for url property
       if (imageData.url) {
         const url = imageData.url;
@@ -92,7 +92,7 @@ const MainProducts = () => {
         if (url.startsWith('/')) return `${import.meta.env.VITE_SERVER_API}${url}`;
         return `${import.meta.env.VITE_SERVER_API}/static/${url}`;
       }
-      
+
       // Fallback to any string value in the object
       const possibleUrl = Object.values(imageData).find(val => typeof val === 'string');
       if (possibleUrl) {
@@ -101,21 +101,21 @@ const MainProducts = () => {
         return `${import.meta.env.VITE_SERVER_API}/static/${possibleUrl}`;
       }
     }
-  
+
     // Handle simple string case (filename only)
     if (typeof imageData === 'string') {
       return `${import.meta.env.VITE_SERVER_API}/static/${imageData}`;
     }
-  
+
     return null;
   };
   const handleProductClick = (product, e) => {
     console.log('Product clicked:', product.product_id);
     if (e) e.stopPropagation();
-  
+
     const productSlug = product.name.toLowerCase().replace(/\s+/g, '-');
     const productId = product.product_id;
-  
+
     // navigate(`/products/${productId}/${productSlug}`, {
     navigate(`/products/${productSlug}`, {
       state: { product },
@@ -269,9 +269,17 @@ const MainProducts = () => {
                 <div className="product-details">
                   <h3>{product.name || 'Unnamed Product'}</h3>
                   <p className="price">
-                    {product.colors?.length > 0
-                      ? `₹${product.colors[0].price}`
-                      : 'Price unavailable'}
+                    {product.colors?.length > 0 ? (
+                      <>
+                        <span className="current-price">₹{product.colors[0].price}</span>
+                        {product.colors[0].original_price &&
+                          product.colors[0].original_price > product.colors[0].price && (
+                            <span className="original-price">₹{product.colors[0].original_price}</span>
+                          )}
+                      </>
+                    ) : (
+                      'Price unavailable'
+                    )}
                   </p>
                   <button
                     className="view-button"

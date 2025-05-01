@@ -43,6 +43,10 @@ import NewOrders from './Pages/Admin/OfflineOrders/NewOrders';
 import Checkout from './Pages/CheckOut/Checkout';
 import ForgotPassword from './Pages/Authentication/ForogtPass/ForgotPassword';
 import CategoryUpdate from './Pages/Admin/CateHsnUpdate/CategoryUpdate';
+import Device from './Pages/Admin/Device/Device';
+import ShowOrders from './Pages/Admin/Orders/ShowOrders';
+import Dummyorders from './Pages/Admin/Orders/Dummyorders';
+
 
 
 
@@ -101,6 +105,9 @@ function App() {
         
           <Route path="/updateproducts" element={<AdminRoute> <NewProduct /> </AdminRoute> } />
           <Route path="/categoryupdate" element={<AdminRoute> <CategoryUpdate /> </AdminRoute> } />
+          <Route path="/device" element={<AdminRoute> <Device /> </AdminRoute> } />
+          <Route path="/orders/:orderId" element={<AdminRoute> <ShowOrders /> </AdminRoute> } />
+          <Route path="/orders/:orderId" element={<AdminRoute> <Dummyorders /> </AdminRoute> } />
 
 
 

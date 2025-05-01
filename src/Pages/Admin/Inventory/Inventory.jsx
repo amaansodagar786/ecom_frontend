@@ -11,6 +11,7 @@ const Inventory = () => {
   const [error, setError] = useState(null);
   const [editMode, setEditMode] = useState(null);
   const [stockValue, setStockValue] = useState(0);
+  const [thresholdValue, setThresholdValue] = useState(0);
 
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
@@ -63,19 +64,25 @@ const Inventory = () => {
     setFilteredProducts(result);
   };
 
-  const handleUpdateStock = async (productId, colorId) => {
+  const handleUpdateStockAndThreshold = async (productId, colorId) => {
     try {
-      await axios.put(`${import.meta.env.VITE_SERVER_API}/${productId}/colors/${colorId}`, {
-        stock_quantity: stockValue
-      }, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
+      await axios.put(
+        `${import.meta.env.VITE_SERVER_API}/${productId}/colors/${colorId}`,
+        {
+          stock_quantity: stockValue,
+          threshold: thresholdValue
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          }
         }
-      });
+      );
       fetchProductStatus();
       setEditMode(null);
     } catch (err) {
-      setError('Failed to update stock');
+      setError('Failed to update stock and threshold');
+      console.error('Update error:', err);
     }
   };
 
@@ -110,11 +117,9 @@ const Inventory = () => {
     return `${import.meta.env.VITE_SERVER_API}/static/${imagePath}`;
   };
 
-
   const renderMediaPreview = (mediaUrl) => {
     if (!mediaUrl) return <div className="no-image">No Media</div>;
     
-    // const fullUrl = `${import.meta.env.VITE_SERVER_API}/static/${mediaUrl}`;
     const fullUrl = getImageUrl(mediaUrl);
     
     if (mediaUrl.endsWith('.mp4')) {
@@ -205,6 +210,7 @@ const Inventory = () => {
                   <h3>{product.product_name}</h3>
                   <div className="product-meta">
                     <span>Model: {product.model_name}</span>
+                    {/* {product.color_name && <span>Color: {product.color_name}</span>} */}
                   </div>
 
                   <div className="stock-info">
@@ -216,30 +222,54 @@ const Inventory = () => {
 
                     {editMode === `${product.product_id}-${product.color_id}` ? (
                       <div className="stock-edit">
-                        <button onClick={() => setStockValue(prev => Math.max(0, prev - 1))}>
-                          <FaMinus />
-                        </button>
-                        <input
-                          type="number"
-                          value={stockValue}
-                          onChange={(e) => setStockValue(Math.max(0, parseInt(e.target.value) || 0))}
-                        />
+                        <div className="edit-group">
+                          <label>Stock:</label>
+                          <div className="number-input">
+                            <button onClick={() => setStockValue(prev => Math.max(0, prev - 1))}>
+                              <FaMinus />
+                            </button>
+                            <input
+                              type="number"
+                              value={stockValue}
+                              onChange={(e) => setStockValue(Math.max(0, parseInt(e.target.value) || 0))}
+                            />
+                            <button onClick={() => setStockValue(prev => prev + 1)}>
+                              <FaPlus />
+                            </button>
+                          </div>
+                        </div>
 
-                        <button onClick={() => setStockValue(prev => prev + 1)}>
-                          <FaPlus />
-                        </button>
-                        <button
-                          className="save-btn"
-                          onClick={() => handleUpdateStock(product.product_id, product.color_id)}
-                        >
-                          Save
-                        </button>
-                        <button
-                          className="cancel-btn"
-                          onClick={() => setEditMode(null)}
-                        >
-                          Cancel
-                        </button>
+                        <div className="edit-group">
+                          <label>Threshold:</label>
+                          <div className="number-input">
+                            <button onClick={() => setThresholdValue(prev => Math.max(0, prev - 1))}>
+                              <FaMinus />
+                            </button>
+                            <input
+                              type="number"
+                              value={thresholdValue}
+                              onChange={(e) => setThresholdValue(Math.max(0, parseInt(e.target.value) || 0))}
+                            />
+                            <button onClick={() => setThresholdValue(prev => prev + 1)}>
+                              <FaPlus />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="edit-buttons">
+                          <button
+                            className="save-btn"
+                            onClick={() => handleUpdateStockAndThreshold(product.product_id, product.color_id)}
+                          >
+                            Save
+                          </button>
+                          <button
+                            className="cancel-btn"
+                            onClick={() => setEditMode(null)}
+                          >
+                            Cancel
+                          </button>
+                        </div>
                       </div>
                     ) : (
                       <button
@@ -247,9 +277,10 @@ const Inventory = () => {
                         onClick={() => {
                           setEditMode(`${product.product_id}-${product.color_id}`);
                           setStockValue(product.stock_quantity);
+                          setThresholdValue(product.threshold);
                         }}
                       >
-                        <FaEdit /> Update Stock
+                        <FaEdit /> Update Stock & Threshold
                       </button>
                     )}
                   </div>
