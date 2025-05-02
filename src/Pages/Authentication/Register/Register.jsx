@@ -73,14 +73,14 @@ const Register = () => {
       </div>
 
       {/* Mobile Animation (visible only on small screens) */}
-      <div className="mobile-animation">
+      {/* <div className="mobile-animation">
         <Player
           autoplay
           loop
           src={animationData}
           style={{ width: '100%', height: '100%' }}
         />
-      </div>
+      </div> */}
 
       <div className="register-card">
         <h2 className="register-title">Create Account</h2>

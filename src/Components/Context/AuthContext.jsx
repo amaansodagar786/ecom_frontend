@@ -16,13 +16,13 @@ export const AuthProvider = ({ children }) => {
 
   // Initialize auth state from localStorage
   useEffect(() => {
-    const initializeAuth = () => {
+    const initializeAuth = async () => {
       try {
         const token = localStorage.getItem('token');
         const user = JSON.parse(localStorage.getItem('user'));
         const cart = JSON.parse(localStorage.getItem('cart')) || [];
         const wishlist = JSON.parse(localStorage.getItem('wishlist')) || [];
-
+  
         if (token && user) {
           setAuthState({
             isAuthenticated: true,
@@ -30,21 +30,60 @@ export const AuthProvider = ({ children }) => {
             token,
             isLoading: false
           });
-          setCartItems(cart);
+          
+          // Fetch server data on initial load if authenticated
+          await fetchServerCart();
+          
           setWishlistItems(wishlist);
         } else {
+          // Guest user - just use localStorage
           setAuthState(prev => ({ ...prev, isLoading: false }));
+          setCartItems(cart);
+          setWishlistItems(wishlist);
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
         setAuthState(prev => ({ ...prev, isLoading: false }));
       }
     };
-
+  
     initializeAuth();
   }, []);
 
-  const login = (token, user, navigate) => {
+
+  const fetchServerCart = async () => {
+    try {
+      const token = getToken();
+      const response = await axios.get(
+        `${import.meta.env.VITE_SERVER_API}/cart/getbycustid`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (response.data.success && response.data.cart.items) {
+        // Convert server cart items to frontend format
+        const formattedItems = response.data.cart.items.map(item => ({
+          product_id: item.product.product_id,
+          name: item.product.name,
+          price: item.product.price || (item.color ? item.color.price : null),
+          original_price: item.product.original_price || (item.color ? item.color.original_price : null),
+          quantity: item.quantity,
+          color: item.color ? item.color.name : '',
+          model: item.model ? item.model.name : '',
+          color_id: item.color ? item.color.color_id : null,
+          model_id: item.model ? item.model.model_id : null,
+          image: item.color?.images?.[0]?.image_url || 
+                 item.product?.images?.[0]?.image_url
+        }));
+        
+        setCartItems(formattedItems);
+        localStorage.setItem('cart', JSON.stringify(formattedItems));
+      }
+    } catch (err) {
+      console.error('Error fetching cart:', err);
+    }
+  };
+
+  const login = async (token, user, navigate) => {
     try {
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
@@ -54,6 +93,10 @@ export const AuthProvider = ({ children }) => {
         token,
         isLoading: false
       });
+      
+      // Fetch server data after login
+      await fetchServerCart();
+      
       if (navigate) navigate('/dashboard');
     } catch (error) {
       console.error('Login error:', error);

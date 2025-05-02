@@ -493,15 +493,19 @@ $transition: all 0.3s ease;
   }
 
   .mode-toggle {
-    flex-direction: column;
+    flex-direction: row !important; // Force row layout
+    // flex-wrap: wrap; // Allow wrapping if needed
     gap: 0.5rem;
+    padding-bottom: 0.5rem;
     
     button {
-      width: 100%;
-      text-align: left;
+      width: auto !important; // Remove full width
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
       
       &.active::after {
-        bottom: -0.5rem;
+        bottom: -0.5rem !important;
       }
     }
   }
@@ -662,15 +666,40 @@ $transition: all 0.3s ease;
     padding: 1.5rem;
 
     .delete-type-selector {
-      flex-direction: column;
+      flex-direction: row !important;
+      // flex-wrap: wrap;
       gap: 0.5rem;
+      padding-bottom: 0.5rem;
       
       button {
-        width: 100%;
-        text-align: left;
+        width: auto !important;
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
         
         &.active::after {
-          bottom: -0.5rem;
+          bottom: -0.5rem !important;
+        }
+      }
+    }
+    .delete-selection {
+      width: 100%;
+      overflow-x: hidden;
+      padding: 1rem;
+      
+      .delete-list-container {
+        width: 100%;
+        overflow-x: auto;
+        
+        .delete-table {
+          min-width: 100%;
+          width: auto;
+          
+          th, td {
+            white-space: nowrap;
+            padding: 0.75rem 0.5rem;
+            font-size: 0.85rem;
+          }
         }
       }
     }

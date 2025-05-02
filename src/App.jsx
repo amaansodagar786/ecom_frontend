@@ -45,6 +45,7 @@ import ForgotPassword from './Pages/Authentication/ForogtPass/ForgotPassword';
 import CategoryUpdate from './Pages/Admin/CateHsnUpdate/CategoryUpdate';
 import Device from './Pages/Admin/Device/Device';
 import ShowOrders from './Pages/Admin/Orders/ShowOrders';
+import OrderConfirm from './Components/OrderConfirm/OrderConfirm';
 // import Dummyorders from './Pages/Admin/Orders/Dummyorders';
 
 
@@ -84,19 +85,16 @@ function App() {
 
           {/* CHECKOUT  */}
           <Route path="/checkout" element={<Checkout />} />
+          <Route path="/order-confirmation" element={<OrderConfirm />} />
 
 
 
 
           {/* ADMIN PAGES  */}
           <Route path="/adminreg" element={<Adminsignup />} />
-
-
-          <Route path="/wishlist" element={<Wishlist />} />
+         
           {/* <Route path="/sidebar" element={<AdminSidebar />} /> */}
-
-          <Route  path="/addproducts" element={ <AdminRoute> <AddProducts /> </AdminRoute>} 
-          />
+          <Route  path="/addproducts" element={ <AdminRoute> <AddProducts /> </AdminRoute>} />
           <Route path="/admindashboard" element={<AdminRoute> <Dashboard /> </AdminRoute> } />
           <Route path="/createorders" element={<AdminRoute> <NewOrders /> </AdminRoute> } />
           <Route path="/adminorders" element={<AdminRoute> <Orders /> </AdminRoute> } />

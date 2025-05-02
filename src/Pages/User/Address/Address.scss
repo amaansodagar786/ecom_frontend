@@ -551,6 +551,8 @@ $transition: all 0.3s ease;
   .address-modal {
     max-width: 95%;
     margin: 0.5rem;
+    margin-top: 200px;
+    // z-index: 9999;
   }
 }
 

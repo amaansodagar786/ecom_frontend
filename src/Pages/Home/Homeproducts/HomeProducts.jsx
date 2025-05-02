@@ -10,6 +10,7 @@ const HomeProducts = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isWishlisting, setIsWishlisting] = useState(false); // Add this state
+  const [isMobile, setIsMobile] = useState(false);
 
   const {
     wishlistItems,
@@ -18,6 +19,18 @@ const HomeProducts = () => {
     getToken
   } = useAuth();
   const navigate = useNavigate();
+
+
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    checkIfMobile();
+    window.addEventListener('resize', checkIfMobile);
+
+    return () => window.removeEventListener('resize', checkIfMobile);
+  }, []);
 
   const handleProductClick = (product, e) => {
     if (e) e.stopPropagation();
@@ -269,16 +282,18 @@ const HomeProducts = () => {
                     <span className="product-category">{product.category || 'Uncategorized'}</span>
                     <h3 className="product-name">{product.name}</h3>
                     <div className="product-pricing">
-                      <span className="current-price">₹{price.toFixed(2)}</span>
-                      {deleted_price && (
-                        <span className="original-price">₹{deleted_price.toFixed(2)}</span>
-                      )}
+                      <div className="price-wrapper">
+                        <span className="current-price">₹{price.toFixed(2)}</span>
+                        {deleted_price && (
+                          <span className="original-price">₹{deleted_price.toFixed(2)}</span>
+                        )}
+                      </div>
                     </div>
                     <button
                       className="add-to-cart"
                       onClick={(e) => handleProductClick(product, e)}
                     >
-                      View Product
+                      {isMobile ? 'View' : 'View Product'}
                     </button>
                   </div>
                 </div>

@@ -1,0 +1,103 @@
+.order-confirm-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 2rem;
+    background: linear-gradient(135deg, #f0f4ff, #e6f0ff);
+  margin-top: 70px;
+    .order-card {
+      background: #ffffff;
+      border-radius: 20px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+      padding: 2.5rem;
+      text-align: center;
+      max-width: 500px;
+      width: 100%;
+      transition: all 0.3s ease;
+  
+      .animation-wrapper {
+        width: 100%;
+        max-width: 300px;
+        margin: 0 auto;
+      }
+  
+      .lottie-animation {
+        width: 100%;
+      }
+  
+      .thank-you {
+        font-size: 2rem;
+        color: #2c3e50;
+        margin-top: 1rem;
+        margin-bottom: 0.5rem;
+      }
+  
+      .confirmation-text {
+        font-size: 1rem;
+        color: #555;
+        margin-bottom: 1.5rem;
+      }
+  
+      .order-details {
+        background-color: #f8faff;
+        padding: 1rem;
+        border-radius: 12px;
+        font-size: 0.95rem;
+        margin-bottom: 1.5rem;
+        color: #333;
+  
+        p {
+          margin: 0.4rem 0;
+        }
+  
+        strong {
+          color: #2e86de;
+        }
+      }
+  
+      .home-btn {
+        background-color: #2e86de;
+        color: #fff;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+        border-radius: 30px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+  
+        &:hover {
+          background-color: #1b4f72;
+        }
+      }
+    }
+  }
+  
+  // Responsive
+  @media (max-width: 600px) {
+    .order-confirm-container {
+      padding: 1rem;
+  
+      .order-card {
+        padding: 1.5rem;
+  
+        .thank-you {
+          font-size: 1.5rem;
+        }
+  
+        .confirmation-text {
+          font-size: 0.95rem;
+        }
+  
+        .order-details {
+          font-size: 0.9rem;
+        }
+  
+        .home-btn {
+          font-size: 0.95rem;
+          padding: 0.65rem 1.2rem;
+        }
+      }
+    }
+  }
+  

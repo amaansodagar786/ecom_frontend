@@ -275,6 +275,7 @@
       position: relative;
       border: 1px solid rgba(0, 0, 0, 0.03);
       height: 100%;
+      padding: 0 !important;
 
       &:hover {
         transform: translateY(-8px);
@@ -561,5 +562,82 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+
+@media (max-width: 768px) {
+  .home-products {
+    .top-bar {
+      flex-direction: row; // Keep items in a row
+      flex-wrap: nowrap; // Prevent wrapping
+      gap: 10px; // Reduce gap between items
+      align-items: center;
+
+      .back-button {
+        flex-shrink: 0; // Prevent button from growing
+        padding: 10px 15px; // Reduce padding
+        font-size: 0.8rem; // Smaller font
+        white-space: nowrap; // Keep text in one line
+        margin-right: auto; // Push other items to the right
+      }
+
+      .search-container {
+        flex-grow: 1; // Take remaining space
+        min-width: auto; // Remove fixed min-width
+        margin: 0 10px; // Add some margin
+
+        .search-input {
+          padding: 10px 15px 10px 40px; // Reduce padding
+          font-size: 0.85rem; // Smaller font
+        }
+
+        .search-icon {
+          left: 12px; // Adjust icon position
+        }
+      }
+
+      .filter-toggle {
+        flex-shrink: 0; // Prevent button from growing
+        padding: 10px 15px; // Reduce padding
+        font-size: 0.8rem; // Smaller font
+        white-space: nowrap; // Keep text in one line
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .home-products {
+    .top-bar {
+      margin-top: 100px;
+      .back-button {
+        padding: 8px 12px; // Even smaller padding
+        font-size: 0.75rem; // Smaller font
+      }
+
+      .search-container {
+        .search-input {
+          padding: 8px 12px 8px 35px; // Even smaller padding
+          font-size: 0.8rem; // Smaller font
+        }
+
+        .search-icon {
+          left: 10px; // Adjust icon position
+          width: 14px; // Smaller icon
+          height: 14px;
+        }
+      }
+
+      .filter-toggle {
+        padding: 8px 12px; // Even smaller padding
+        font-size: 0.75rem; // Smaller font
+
+        svg {
+          width: 14px; // Smaller icons
+          height: 14px;
+        }
+      }
+    }
   }
 }

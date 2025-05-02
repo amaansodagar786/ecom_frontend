@@ -1,3 +1,15 @@
+// * {
+//   box-sizing: border-box;
+//   margin: 0;
+//   padding: 0;
+// }
+
+// html, body {
+//   width: 100%;
+//   overflow-x: hidden; // Prevent horizontal scrolling
+// }
+
+
 // AddProducts.scss
 
 // =============================================
@@ -67,6 +79,8 @@ $input-height: 3rem;
   background-color: #f8fafc;
   min-height: 100vh;
   padding: 2rem 1rem;
+  width: 100%;
+  overflow: hidden; // Add this to prevent any overflow
 
   @media (min-width: $breakpoint-md) {
     padding: 2rem;
@@ -80,6 +94,8 @@ $input-height: 3rem;
     box-shadow: $box-shadow-lg;
     overflow: hidden;
     animation: fadeIn 0.5s ease-out;
+    width: 100%; // Add this
+
   }
 
   .admin-header {
@@ -115,6 +131,8 @@ $input-height: 3rem;
 // =============================================
 .product-form {
   padding: 1.5rem;
+  width: 100%; // Add this
+  overflow: hidden; // Add this
 
   @media (min-width: $breakpoint-md) {
     padding: 2.5rem;
@@ -126,6 +144,8 @@ $input-height: 3rem;
     background: rgba($primary-light, 0.05);
     border-radius: $border-radius;
     border: 1px solid rgba($primary-color, 0.1);
+    width: 100%; // Add this
+    overflow: hidden; // Add this
 
     .section-title {
       font-size: 1.4rem;
@@ -505,6 +525,8 @@ $input-height: 3rem;
 
   .product-form {
     padding: 1rem;
+    width: 100%; // Add this
+  overflow: hidden; // Add this
 
     .form-section {
       padding: 1.5rem;
@@ -530,5 +552,42 @@ $input-height: 3rem;
     .add-button {
       width: 100%;
     }
+  }
+}
+
+@media (max-width: $breakpoint-md) {
+  .form-input {
+    max-width: 100% !important;
+  }
+
+  .select-with-button {
+    flex-direction: column;
+    
+    .form-input, .add-button {
+      width: 100% !important;
+    }
+  }
+
+  .model-card, .color-card {
+    padding: 1rem !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    width: 100% !important;
+  }
+
+  .spec-row {
+    flex-direction: column;
+    
+    .remove-button {
+      width: 100% !important;
+      margin-top: 0.5rem;
+    }
+  }
+}
+
+.image-previews {
+  img {
+    max-width: 100%;
+    height: auto;
   }
 }

@@ -1,180 +1,188 @@
 // Orders.scss
 .orders-container {
-    padding: 20px;
+  padding: 20px;
+  width: 100%;
+  position: relative;
+  box-sizing: border-box;
+
+  h1 {
+    margin-bottom: 20px;
+    color: #333;
+    font-size: clamp(1.5rem, 2vw, 2rem);
+  }
+
+  .loading {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+  }
+
+  .table-container {
     width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    background: white;
     position: relative;
-  
-    h1 {
-      margin-bottom: 20px;
-      color: #333;
-      font-size: clamp(1.5rem, 2vw, 2rem);
-    }
-  
-    .loading {
-      text-align: center;
-      padding: 40px;
-      color: #666;
-    }
-  
-    .table-container {
-      width: 100%;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-      background: white;
-      position: relative;
-      
-      &::after {
-        content: '';
-        position: absolute;
-        right: 0;
-        top: 0;
-        bottom: 0;
-        width: 30px;
-        background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 100%);
-        pointer-events: none;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-      }
-  
-      &.scrolling::after {
-        opacity: 1;
-      }
-    }
-  
-    .orders-table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 1200px;
-  
-      th, td {
-        padding: 14px 16px;
-        text-align: left;
-        border-bottom: 1px solid #f0f0f0;
-        font-size: 0.9rem;
-      }
-  
-      th {
-        background-color: #f8f9fa;
-        font-weight: 600;
-        position: sticky;
-        top: 0;
-        z-index: 10;
-        color: #555;
-        white-space: nowrap;
-      }
-  
-      tr {
-        transition: background-color 0.2s ease;
-        
-        &:hover {
-          background-color: #f9f9f9;
-        }
-        
-        &:last-child td {
-          border-bottom: none;
-        }
-      }
-  
-      td {
-        color: #444;
-      }
-  
-      .channel {
-        text-transform: capitalize;
-        font-weight: 500;
-        
-        &.online {
-          color: #3498db;
-        }
-        
-        &.offline {
-          color: #e67e22;
-        }
-      }
-  
-      .payment {
-        text-transform: capitalize;
-        font-weight: 500;
-        
-        &.paid {
-          color: #27ae60;
-        }
-        
-        &.pending {
-          color: #f39c12;
-        }
-      }
-  
-      .status {
-        text-transform: capitalize;
-        font-weight: 500;
-        
-        &.intransit, &.processing {
-          color: #3498db;
-        }
-        
-        &.pending {
-          color: #f39c12;
-        }
-        
-        &.delivered, &.completed {
-          color: #27ae60;
-        }
-        
-        &.cancelled {
-          color: #e74c3c;
-        }
-      }
-  
-      .fulfilled {
-        color: #27ae60;
-        font-weight: 500;
-      }
-      
-      .pending {
-        color: #f39c12;
-        font-weight: 500;
-      }
-    }
-  
-    @media (max-width: 768px) {
-      padding: 15px 10px;
-      
-      .table-container {
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-      }
-  
-      .orders-table {
-        th, td {
-          padding: 10px 12px;
-          font-size: 0.85rem;
-        }
-      }
-    }
-  
-    @media (max-width: 480px) {
-      h1 {
-        font-size: 1.4rem;
-        margin-bottom: 15px;
-      }
-  
-      .orders-table {
-        th, td {
-          padding: 8px 10px;
-          font-size: 0.8rem;
-        }
-      }
-    }
-  }
-
-
-  .clickable-row {
-    cursor: pointer;
+    box-sizing: border-box;
     
-    &:hover {
-      background-color: #f0f0f0 !important;
+    &::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 30px;
+      background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 100%);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    &.scrolling::after {
+      opacity: 1;
     }
   }
+
+  .orders-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 1200px;
+
+    th, td {
+      padding: 14px 16px;
+      text-align: left;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 0.9rem;
+    }
+
+    th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      color: #555;
+      white-space: nowrap;
+    }
+
+    tr {
+      transition: background-color 0.2s ease;
+      
+      &:hover {
+        background-color: #f9f9f9;
+      }
+      
+      &:last-child td {
+        border-bottom: none;
+      }
+    }
+
+    td {
+      color: #444;
+    }
+
+    .channel {
+      text-transform: capitalize;
+      font-weight: 500;
+      
+      &.online {
+        color: #3498db;
+      }
+      
+      &.offline {
+        color: #e67e22;
+      }
+    }
+
+    .payment {
+      text-transform: capitalize;
+      font-weight: 500;
+      
+      &.paid {
+        color: #27ae60;
+      }
+      
+      &.pending {
+        color: #f39c12;
+      }
+    }
+
+    .status {
+      text-transform: capitalize;
+      font-weight: 500;
+      
+      &.intransit, &.processing {
+        color: #3498db;
+      }
+      
+      &.pending {
+        color: #f39c12;
+      }
+      
+      &.delivered, &.completed {
+        color: #27ae60;
+      }
+      
+      &.cancelled {
+        color: #e74c3c;
+      }
+    }
+
+    .fulfilled {
+      color: #27ae60;
+      font-weight: 500;
+    }
+    
+    .pending {
+      color: #f39c12;
+      font-weight: 500;
+    }
+  }
+
+  @media (max-width: 768px) {
+    padding: 15px 10px;
+    width: 100vw;
+    margin-left: calc(-50vw + 50%);
+    
+    .table-container {
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      width: 100%;
+      display: block;
+      overflow-x: scroll;
+      -webkit-overflow-scrolling: touch;
+      position: relative;
+    }
+
+    .orders-table {
+      th, td {
+        padding: 10px 12px;
+        font-size: 0.85rem;
+      }
+    }
+  }
+
+  @media (max-width: 480px) {
+    h1 {
+      font-size: 1.4rem;
+      margin-bottom: 15px;
+    }
+
+    .orders-table {
+      th, td {
+        padding: 8px 10px;
+        font-size: 0.8rem;
+      }
+    }
+  }
+}
+
+.clickable-row {
+  cursor: pointer;
+  
+  &:hover {
+    background-color: #f0f0f0 !important;
+  }
+}

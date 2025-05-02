@@ -189,6 +189,7 @@ const handleGoogleLogin = async () => {
         </div>
         {/* Add Google Login Button */}
         <GoogleLoginButton 
+          className="google-login-button"
           onClick={handleGoogleLogin}
           disabled={isGoogleLoading}
         />

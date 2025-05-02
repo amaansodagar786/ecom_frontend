@@ -165,14 +165,25 @@ const Checkout = () => {
                 });
 
                 // Redirect to order confirmation page after delay
+                // setTimeout(() => {
+                //     navigate('/order-confirmation', {
+                //         state: {
+                //             order: response.data.order,
+                //             address: addresses.find(a => a.address_id === selectedAddress)
+                //         }
+                //     });
+                // }, 3000);
                 setTimeout(() => {
-                    navigate('/order-confirmation', {
-                        state: {
-                            order: response.data.order,
-                            address: addresses.find(a => a.address_id === selectedAddress)
-                        }
-                    });
+                    // Store state temporarily in sessionStorage
+                    sessionStorage.setItem('orderInfo', JSON.stringify({
+                        order: response.data.order,
+                        address: addresses.find(a => a.address_id === selectedAddress)
+                    }));
+                
+                    // Refresh the page and redirect
+                    window.location.href = '/order-confirmation';
                 }, 3000);
+                
             } else {
                 throw new Error(response.data.error || 'Failed to place order');
             }
