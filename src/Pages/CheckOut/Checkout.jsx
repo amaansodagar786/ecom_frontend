@@ -40,6 +40,12 @@ const Checkout = () => {
     const taxes = 0;
     const total = subtotal + deliveryCharge + taxes;
 
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+      }, [activeStep]); // Add dependencies that should trigger scroll to top
+
+      
     // Fetch user addresses and states
     useEffect(() => {
         const fetchData = async () => {

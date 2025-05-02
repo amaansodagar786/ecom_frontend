@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import AdminLayout from '../AdminPanel/AdminLayout';
 import './Orders.scss';
 import { useNavigate } from 'react-router-dom';
+import Loader from "../../../Components/Loader/Loader"
 
 
 const Orders = () => {
@@ -51,7 +52,7 @@ const Orders = () => {
         <h1>Order Management</h1>
 
         {loading ? (
-          <div className="loading">Loading orders...</div>
+          <Loader />
         ) : (
           <div className="table-container">
             <table className="orders-table">
@@ -75,10 +76,10 @@ const Orders = () => {
                 {orders.map((order) => (
                   <tr
                     key={order.order_id}
-                    onClick={() => navigate(`/orders/${order.order_id}`)}
+                    onClick={() => navigate(`/orders/${encodeURIComponent(order.order_id)}`)}
                     className="clickable-row"
-                  > 
-                    <td>#{order.order_id}</td>
+                  >
+                    <td>{order.order_id}</td>
                     <td>{formatIST(order.created_at)}</td>
                     <td>{getCustomerName(order)}</td>
                     <td>{order.address?.city || 'N/A'}</td>
