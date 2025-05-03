@@ -24,6 +24,9 @@ const ProductPage = () => {
     const [selectedImage, setSelectedImage] = useState(0);
     const [quantity, setQuantity] = useState(1);
     const [isWishlisting, setIsWishlisting] = useState(false);
+    const [reviews, setReviews] = useState([]);
+    const [showReviewsModal, setShowReviewsModal] = useState(false);
+    const [reviewsLoading, setReviewsLoading] = useState(false);
 
     const [cartStatus, setCartStatus] = useState({
         loading: false,
@@ -33,139 +36,158 @@ const ProductPage = () => {
     const [activeTab, setActiveTab] = useState('description');
     const [selectionsLoading, setSelectionsLoading] = useState(true);
 
+
+    const fetchProductReviews = async () => {
+        if (!product) return;
+
+        try {
+            setReviewsLoading(true);
+            const response = await axios.get(
+                `${import.meta.env.VITE_SERVER_API}/reviews/product/${product.product_id}`
+            );
+            setReviews(response.data.reviews || []);
+        } catch (err) {
+            console.error('Error fetching reviews:', err);
+        } finally {
+            setReviewsLoading(false);
+        }
+    };
+
     // Extract product ID from URL
     // For URL like "/products/some-product-name"
-const extractProductNameFromUrl = () => {
-    const pathParts = window.location.pathname.split('/products/');
-    if (pathParts.length !== 2) return null;
-    return pathParts[1]; // Get everything after '/products/'
-  };
-  
-  // Inside your ProductPage component
-  useEffect(() => {
-    // This will run on every render
-    const fetchAndLogProductByName = async () => {
-      const productSlug = extractProductNameFromUrl();
-      if (!productSlug) {
-        console.log("No product name found in URL");
-        return;
-      }
-  
-      try {
-        console.log(`Fetching product by slug: "${productSlug}"`);
-        const response = await axios.get(
-          `${import.meta.env.VITE_SERVER_API}/product/slug/${productSlug}`
-        );
-        console.log("Product details from slug:", response.data);
-      } catch (error) {
-        console.error("Error fetching product by slug:", error);
-      }
+    const extractProductNameFromUrl = () => {
+        const pathParts = window.location.pathname.split('/products/');
+        if (pathParts.length !== 2) return null;
+        return pathParts[1]; // Get everything after '/products/'
     };
-  
-    fetchAndLogProductByName();
-  }, []); // Empty dependency array means this runs on mount
-  
-  // Keep your existing fetchProductData useEffect (for location.state products)
-//   useEffect(() => {
-//     const fetchProductData = async () => {
-//       if (location.state?.product) {
-//         setProduct(location.state.product);
-//         setLoading(false);
-//         return;
-//       }
-  
-//       const productId = extractProductId();
-//       if (!productId) {
-//         setError('Invalid product URL');
-//         setLoading(false);
-//         return;
-//       }
-  
-//       try {
-//         setLoading(true);
-//         setError(null);
-//         const response = await axios.get(
-//           `${import.meta.env.VITE_SERVER_API}/product/${productId}`
-//         );
-//         if (!response.data) throw new Error('Product data not found');
-//         setProduct(response.data);
-//       } catch (err) {
-//         console.error('Fetch error:', err);
-//         setError(err.response?.data?.message || err.message || 'Failed to load product');
-//         if (err.response?.status === 404) {
-//           navigate('/not-found', { replace: true });
-//         }
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-  
-//     if (!location.state?.product) {
-//       fetchProductData();
-//     }
-//   }, [location, navigate]);
 
-// Replace your current fetchProductData useEffect with this:
+    // Inside your ProductPage component
+    useEffect(() => {
+        // This will run on every render
+        const fetchAndLogProductByName = async () => {
+            const productSlug = extractProductNameFromUrl();
+            if (!productSlug) {
+                console.log("No product name found in URL");
+                return;
+            }
 
-useEffect(() => {
-    const fetchProductData = async () => {
-      if (location.state?.product) {
-        setProduct(location.state.product);
-        setLoading(false);
-        return;
-      }
-  
-      try {
-        setLoading(true);
-        setError(null);
-  
-        // First try to get product by slug from URL
-        const productSlug = extractProductNameFromUrl();
-        if (!productSlug) {
-          throw new Error('Invalid product URL');
+            try {
+                console.log(`Fetching product by slug: "${productSlug}"`);
+                const response = await axios.get(
+                    `${import.meta.env.VITE_SERVER_API}/product/slug/${productSlug}`
+                );
+                console.log("Product details from slug:", response.data);
+            } catch (error) {
+                console.error("Error fetching product by slug:", error);
+            }
+        };
+
+        fetchAndLogProductByName();
+    }, []); // Empty dependency array means this runs on mount
+
+    // Keep your existing fetchProductData useEffect (for location.state products)
+    //   useEffect(() => {
+    //     const fetchProductData = async () => {
+    //       if (location.state?.product) {
+    //         setProduct(location.state.product);
+    //         setLoading(false);
+    //         return;
+    //       }
+
+    //       const productId = extractProductId();
+    //       if (!productId) {
+    //         setError('Invalid product URL');
+    //         setLoading(false);
+    //         return;
+    //       }
+
+    //       try {
+    //         setLoading(true);
+    //         setError(null);
+    //         const response = await axios.get(
+    //           `${import.meta.env.VITE_SERVER_API}/product/${productId}`
+    //         );
+    //         if (!response.data) throw new Error('Product data not found');
+    //         setProduct(response.data);
+    //       } catch (err) {
+    //         console.error('Fetch error:', err);
+    //         setError(err.response?.data?.message || err.message || 'Failed to load product');
+    //         if (err.response?.status === 404) {
+    //           navigate('/not-found', { replace: true });
+    //         }
+    //       } finally {
+    //         setLoading(false);
+    //       }
+    //     };
+
+    //     if (!location.state?.product) {
+    //       fetchProductData();
+    //     }
+    //   }, [location, navigate]);
+
+    // Replace your current fetchProductData useEffect with this:
+
+    useEffect(() => {
+        const fetchProductData = async () => {
+            if (location.state?.product) {
+                setProduct(location.state.product);
+                setLoading(false);
+                return;
+            }
+
+            try {
+                setLoading(true);
+                setError(null);
+
+                // First try to get product by slug from URL
+                const productSlug = extractProductNameFromUrl();
+                if (!productSlug) {
+                    throw new Error('Invalid product URL');
+                }
+
+                // Step 1: Fetch basic product details by slug to get the ID
+                const slugResponse = await axios.get(
+                    `${import.meta.env.VITE_SERVER_API}/product/slug/${productSlug}`
+                );
+
+                if (!slugResponse.data) {
+                    throw new Error('Product not found by slug');
+                }
+
+                console.log("Product details from slug:", slugResponse.data);
+
+                // Step 2: Now fetch full product details by ID
+                const fullProductResponse = await axios.get(
+                    `${import.meta.env.VITE_SERVER_API}/product/${slugResponse.data.product_id}`
+                );
+
+                if (!fullProductResponse.data) {
+                    throw new Error('Full product data not found');
+                }
+
+                setProduct(fullProductResponse.data);
+            } catch (err) {
+                console.error('Fetch error:', err);
+                setError(err.response?.data?.message || err.message || 'Failed to load product');
+
+                if (err.response?.status === 404) {
+                    navigate('/not-found', { replace: true });
+                }
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (!location.state?.product) {
+            fetchProductData();
         }
-  
-        // Step 1: Fetch basic product details by slug to get the ID
-        const slugResponse = await axios.get(
-          `${import.meta.env.VITE_SERVER_API}/product/slug/${productSlug}`
-        );
-        
-        if (!slugResponse.data) {
-          throw new Error('Product not found by slug');
-        }
-  
-        console.log("Product details from slug:", slugResponse.data);
-  
-        // Step 2: Now fetch full product details by ID
-        const fullProductResponse = await axios.get(
-          `${import.meta.env.VITE_SERVER_API}/product/${slugResponse.data.product_id}`
-        );
-  
-        if (!fullProductResponse.data) {
-          throw new Error('Full product data not found');
-        }
-  
-        setProduct(fullProductResponse.data);
-      } catch (err) {
-        console.error('Fetch error:', err);
-        setError(err.response?.data?.message || err.message || 'Failed to load product');
-        
-        if (err.response?.status === 404) {
-          navigate('/not-found', { replace: true });
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-  
-    if (!location.state?.product) {
-      fetchProductData();
-    }
-  }, [location, navigate]);
+    }, [location, navigate]);
 
     useEffect(() => {
         if (product) {
+
             console.log("Complete Product Object:", product);
+            fetchProductReviews();
         }
     }, [product]);
     // Handle initial selections and preselections
@@ -377,311 +399,389 @@ useEffect(() => {
     );
 
     return (
-        <div className="product-page">
-            <nav className="breadcrumb">
-                <span onClick={() => navigate('/')}>Home</span>
-                <span>/</span>
-                <span onClick={() => navigate(`/category/${product.category}`)}>
-                    {product.category}
-                </span>
-                <span>/</span>
-                <span className="current">{product.name}</span>
-            </nav>
+        <>
+            <div className="product-page">
+                <nav className="breadcrumb">
+                    <span onClick={() => navigate('/')}>Home</span>
+                    <span>/</span>
+                    <span onClick={() => navigate(`/category/${product.category}`)}>
+                        {product.category}
+                    </span>
+                    <span>/</span>
+                    <span className="current">{product.name}</span>
+                </nav>
 
-            <div className="product-container">
-                <div className="product-gallery">
-                    <div className="thumbnail-container">
-                        {product.images?.map((img, index) => {
-                            const imageUrl = getImageUrl(img);
-                            const isVideo = imageUrl && /\.(mp4)$/i.test(imageUrl);
+                <div className="product-container">
+                    <div className="product-gallery">
+                        <div className="thumbnail-container">
+                            {product.images?.map((img, index) => {
+                                const imageUrl = getImageUrl(img);
+                                const isVideo = imageUrl && /\.(mp4)$/i.test(imageUrl);
 
-                            return (
-                                <div
-                                    key={`thumb-${index}`}
-                                    className={`thumbnail ${selectedImage === index ? 'active' : ''}`}
-                                    onClick={() => setSelectedImage(index)}
-                                >
-                                    {isVideo ? (
-                                        <video
-                                            className="media"
-                                            src={imageUrl}
-                                            muted
-                                            loop
-                                            playsInline
-                                            preload="metadata"
+                                return (
+                                    <div
+                                        key={`thumb-${index}`}
+                                        className={`thumbnail ${selectedImage === index ? 'active' : ''}`}
+                                        onClick={() => setSelectedImage(index)}
+                                    >
+                                        {isVideo ? (
+                                            <video
+                                                className="media"
+                                                src={imageUrl}
+                                                muted
+                                                loop
+                                                playsInline
+                                                preload="metadata"
 
-                                        />
-                                    ) : (
-                                        <img
-                                            src={imageUrl}
-                                            alt={`${product.name} thumbnail ${index + 1}`}
-                                            onError={(e) => {
-                                                e.target.style.objectFit = 'contain';
-                                                console.error('Thumbnail load failed:', {
-                                                    attemptedUrl: imageUrl,
-                                                    imageData: img
-                                                });
-                                            }}
-                                        />
-                                    )}
-                                </div>
-                            );
-                        })}
+                                            />
+                                        ) : (
+                                            <img
+                                                src={imageUrl}
+                                                alt={`${product.name} thumbnail ${index + 1}`}
+                                                onError={(e) => {
+                                                    e.target.style.objectFit = 'contain';
+                                                    console.error('Thumbnail load failed:', {
+                                                        attemptedUrl: imageUrl,
+                                                        imageData: img
+                                                    });
+                                                }}
+                                            />
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        <div className="main-image">
+                            {product.images?.length > 0 && (
+                                <>
+                                    {(() => {
+                                        const mainImageUrl = getImageUrl(product.images[selectedImage]);
+                                        const isVideo = mainImageUrl && /\.(mp4)$/i.test(mainImageUrl);
+
+                                        return isVideo ? (
+                                            <video
+                                                className="media"
+                                                src={mainImageUrl}
+                                                autoPlay
+                                                muted
+                                                loop
+                                                playsInline
+                                            // controls
+                                            />
+                                        ) : (
+                                            <img
+                                                className="media"
+                                                src={mainImageUrl}
+                                                alt={product.name}
+                                                onError={(e) => {
+                                                    e.target.style.objectFit = 'contain';
+                                                    console.error('Image load failed:', {
+                                                        attemptedUrl: e.target.src,
+                                                        imageData: product.images[selectedImage]
+                                                    });
+                                                }}
+                                            />
+                                        );
+                                    })()}
+
+                                    <div className="image-nav">
+                                        <button
+                                            className="nav-arrow prev"
+                                            onClick={() => setSelectedImage(prev => (prev > 0 ? prev - 1 : product.images.length - 1))}
+                                        >
+                                            ‹
+                                        </button>
+                                        <button
+                                            className="nav-arrow next"
+                                            onClick={() => setSelectedImage(prev => (prev < product.images.length - 1 ? prev + 1 : 0))}
+                                        >
+                                            ›
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
                     </div>
 
-                    <div className="main-image">
-                        {product.images?.length > 0 && (
-                            <>
-                                {(() => {
-                                    const mainImageUrl = getImageUrl(product.images[selectedImage]);
-                                    const isVideo = mainImageUrl && /\.(mp4)$/i.test(mainImageUrl);
-
-                                    return isVideo ? (
-                                        <video
-                                            className="media"
-                                            src={mainImageUrl}
-                                            autoPlay
-                                            muted
-                                            loop
-                                            playsInline
-                                        // controls
-                                        />
-                                    ) : (
-                                        <img
-                                            className="media"
-                                            src={mainImageUrl}
-                                            alt={product.name}
-                                            onError={(e) => {
-                                                e.target.style.objectFit = 'contain';
-                                                console.error('Image load failed:', {
-                                                    attemptedUrl: e.target.src,
-                                                    imageData: product.images[selectedImage]
-                                                });
-                                            }}
-                                        />
-                                    );
-                                })()}
-
-                                <div className="image-nav">
-                                    <button
-                                        className="nav-arrow prev"
-                                        onClick={() => setSelectedImage(prev => (prev > 0 ? prev - 1 : product.images.length - 1))}
-                                    >
-                                        ‹
-                                    </button>
-                                    <button
-                                        className="nav-arrow next"
-                                        onClick={() => setSelectedImage(prev => (prev < product.images.length - 1 ? prev + 1 : 0))}
-                                    >
-                                        ›
-                                    </button>
+                    <div className="product-details">
+                        <div className="product-header">
+                            <h1>{product.name}</h1>
+                            <div className="product-meta">
+                                <div className="rating" onClick={() => setShowReviewsModal(true)}>
+                                    {Array.from({ length: 5 }).map((_, i) => (
+                                        <svg
+                                            key={`star-${i}`}
+                                            width="16"
+                                            height="16"
+                                            viewBox="0 0 24 24"
+                                            fill={i < Math.floor(product.rating) ? "#FFD700" : "#DDD"}
+                                        >
+                                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                                        </svg>
+                                    ))}
+                                    <span className="review-count" style={{ cursor: 'pointer', textDecoration: 'underline' }}>
+                                        ({product.raters || 0} reviews)
+                                    </span>
                                 </div>
-                            </>
+                                <span className="sku">SKU: {product.product_id}</span>
+                            </div>
+                        </div>
+
+                        <div className="price-container">
+                            <span className="current-price">₹{currentPrice.toFixed(2)}</span>
+                            {originalPrice && (
+                                <>
+                                    <span className="original-price">₹{originalPrice.toFixed(2)}</span>
+                                    <span className="discount-badge">
+                                        {Math.round((1 - currentPrice / originalPrice) * 100)}% OFF
+                                    </span>
+                                </>
+                            )}
+                        </div>
+
+                        <div className="availability">
+                            {inStock ? (
+                                selectedColor?.stock_quantity <= 10 ? (
+                                    <span className="stock-quantity">
+                                        Only {selectedColor.stock_quantity} left!
+                                    </span>
+                                ) : (
+                                    <span className="status in-stock">In Stock</span>
+                                )
+                            ) : (
+                                <span className="status out-of-stock">Out of Stock</span>
+                            )}
+                        </div>
+
+                        {product.models?.length > 0 && product.product_type === 'variable' && (
+                            <div className="option-selector model-selector">
+                                <h3>Model: <span>{selectedModel?.name}</span></h3>
+                                <div className="options">
+                                    {product.models.map(model => (
+                                        <button
+                                            key={`model-${model.model_id}`}
+                                            className={`model-option ${selectedModel?.model_id === model.model_id ? 'selected' : ''}`}
+                                            onClick={() => {
+                                                setSelectedModel(model);
+                                                setSelectedColor(model.colors?.[0] || null);
+                                            }}
+                                        >
+                                            {model.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
                         )}
+
+                        <div className="quantity-selector">
+                            <h3>Quantity</h3>
+                            <div className="quantity-control">
+                                <button onClick={decrementQuantity}>-</button>
+                                <span>{quantity}</span>
+                                <button onClick={incrementQuantity}>+</button>
+                            </div>
+                        </div>
+
+                        {cartStatus.error && (
+                            <div className="cart-status error">
+                                {cartStatus.error}
+                            </div>
+                        )}
+                        {cartStatus.success && (
+                            <div className="cart-status success">
+                                Item added to cart!
+                            </div>
+                        )}
+
+                        <div className="action-buttons">
+                            <button
+                                className="add-to-cart"
+                                onClick={handleAddToCart}
+                                disabled={!inStock || cartStatus.loading}
+                            >
+                                {cartStatus.loading ? 'Adding...' : inStock ? 'Add to Cart' : 'Out of Stock'}
+                            </button>
+                            <button
+                                className="buy-now"
+                                onClick={() => {
+                                    handleAddToCart();
+                                    navigate('/checkout');
+                                }}
+                                disabled={!inStock || cartStatus.loading}
+                            >
+                                Buy Now
+                            </button>
+                            <button
+                                className={`wishlist ${isInWishlist ? 'active' : ''}`}
+                                onClick={handleWishlistToggle}
+                                aria-label={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
+                            >
+                                <svg
+                                    width="20"
+                                    height="20"
+                                    viewBox="0 0 24 24"
+                                    fill={isInWishlist ? "#FF4757" : "none"}
+                                    stroke="#111"
+                                >
+                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <div className="product-details">
-                    <div className="product-header">
-                        <h1>{product.name}</h1>
-                        <div className="product-meta">
-                            <span className="rating">
+                {/* Tabbed Content Section */}
+                <div className="tabbed-content">
+                    <div className="tabs">
+                        <button
+                            className={`tab ${activeTab === 'description' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('description')}
+                        >
+                            Description
+                        </button>
+                        <button
+                            className={`tab ${activeTab === 'specifications' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('specifications')}
+                        >
+                            Specifications
+                        </button>
+                        {selectedModel?.description && (
+                            <button
+                                className={`tab ${activeTab === 'modelDetails' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('modelDetails')}
+                            >
+                                Model Details
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="tab-content">
+                        {activeTab === 'description' && (
+                            <div className="description-content"
+                            >
+                                <p>{product.description}</p>
+                            </div>
+                        )}
+
+                        {activeTab === 'specifications' && (
+                            <div className="specifications-content">
+                                {product.product_type === 'single' && product.specifications?.length > 0 && (
+                                    <div className="product-specs">
+                                        <table>
+                                            <tbody>
+                                                {product.specifications.map((spec, i) => (
+                                                    <tr key={`prod-spec-${i}-${spec.key}`}>
+                                                        <td>{spec.key}</td>
+                                                        <td>{spec.value}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+
+                                {product.product_type === 'variable' && selectedModel?.specifications?.length > 0 && (
+                                    <div className="model-specs">
+                                        <h3>Specifications</h3>
+                                        <table>
+                                            <tbody>
+                                                {selectedModel.specifications.map((spec, i) => (
+                                                    <tr key={`model-spec-${i}-${spec.key}`}>
+                                                        <td>{spec.key}</td>
+                                                        <td>{spec.value}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {activeTab === 'modelDetails' && selectedModel?.description && (
+                            <div className="model-details-content">
+                                <p>{selectedModel.description}</p>
+                            </div>
+                        )}
+
+
+
+                    </div>
+                </div>
+            </div>
+            {showReviewsModal && (
+                <div className="reviews-modal">
+                    <div className="modal-content">
+                        <button
+                            className="close-modal"
+                            onClick={() => setShowReviewsModal(false)}
+                        >
+                            &times;
+                        </button>
+
+                        <h2>Customer Reviews</h2>
+                        <div className="average-rating">
+                            <div className="stars">
                                 {Array.from({ length: 5 }).map((_, i) => (
                                     <svg
-                                        key={`star-${i}`}
-                                        width="16"
-                                        height="16"
+                                        key={`avg-star-${i}`}
+                                        width="24"
+                                        height="24"
                                         viewBox="0 0 24 24"
                                         fill={i < Math.floor(product.rating) ? "#FFD700" : "#DDD"}
                                     >
                                         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                                     </svg>
                                 ))}
-                                <span>({product.raters || 0} reviews)</span>
-                            </span>
-                            <span className="sku">SKU: {product.product_id}</span>
+                            </div>
+                            <span>{product.rating?.toFixed(1) || 0} out of 5</span>
+                            <span>{product.raters || 0} global ratings</span>
                         </div>
-                    </div>
 
-                    <div className="price-container">
-                        <span className="current-price">₹{currentPrice.toFixed(2)}</span>
-                        {originalPrice && (
-                            <>
-                                <span className="original-price">₹{originalPrice.toFixed(2)}</span>
-                                <span className="discount-badge">
-                                    {Math.round((1 - currentPrice / originalPrice) * 100)}% OFF
-                                </span>
-                            </>
-                        )}
-                    </div>
-
-                    <div className="availability">
-                        {inStock ? (
-                            selectedColor?.stock_quantity <= 10 ? (
-                                <span className="stock-quantity">
-                                    Only {selectedColor.stock_quantity} left!
-                                </span>
-                            ) : (
-                                <span className="status in-stock">In Stock</span>
-                            )
+                        {reviewsLoading ? (
+                            <div className="loading-reviews">Loading reviews...</div>
+                        ) : reviews.length === 0 ? (
+                            <div className="no-reviews">No reviews yet</div>
                         ) : (
-                            <span className="status out-of-stock">Out of Stock</span>
-                        )}
-                    </div>
-
-                    {product.models?.length > 0 && product.product_type === 'variable' && (
-                        <div className="option-selector model-selector">
-                            <h3>Model: <span>{selectedModel?.name}</span></h3>
-                            <div className="options">
-                                {product.models.map(model => (
-                                    <button
-                                        key={`model-${model.model_id}`}
-                                        className={`model-option ${selectedModel?.model_id === model.model_id ? 'selected' : ''}`}
-                                        onClick={() => {
-                                            setSelectedModel(model);
-                                            setSelectedColor(model.colors?.[0] || null);
-                                        }}
-                                    >
-                                        {model.name}
-                                    </button>
+                            <div className="reviews-list">
+                                {reviews.map(review => (
+                                    <div key={review.review_id} className="review-item">
+                                        <div className="review-header">
+                                            <div className="user-info">
+                                                <span className="user-name">
+                                                    {review.customer_name || 'Anonymous'}
+                                                </span>
+                                                <span className="review-date">
+                                                    {new Date(review.created_at).toLocaleDateString()}
+                                                </span>
+                                            </div>
+                                            <div className="review-rating">
+                                                {Array.from({ length: 5 }).map((_, i) => (
+                                                    <svg
+                                                        key={`review-star-${i}`}
+                                                        width="16"
+                                                        height="16"
+                                                        viewBox="0 0 24 24"
+                                                        fill={i < review.rating ? "#FFD700" : "#DDD"}
+                                                    >
+                                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                                                    </svg>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div className="review-body">
+                                            <p>{review.description}</p>
+                                        </div>
+                                    </div>
                                 ))}
                             </div>
-                        </div>
-                    )}
-
-                    <div className="quantity-selector">
-                        <h3>Quantity</h3>
-                        <div className="quantity-control">
-                            <button onClick={decrementQuantity}>-</button>
-                            <span>{quantity}</span>
-                            <button onClick={incrementQuantity}>+</button>
-                        </div>
-                    </div>
-
-                    {cartStatus.error && (
-                        <div className="cart-status error">
-                            {cartStatus.error}
-                        </div>
-                    )}
-                    {cartStatus.success && (
-                        <div className="cart-status success">
-                            Item added to cart!
-                        </div>
-                    )}
-
-                    <div className="action-buttons">
-                        <button
-                            className="add-to-cart"
-                            onClick={handleAddToCart}
-                            disabled={!inStock || cartStatus.loading}
-                        >
-                            {cartStatus.loading ? 'Adding...' : inStock ? 'Add to Cart' : 'Out of Stock'}
-                        </button>
-                        <button
-                            className="buy-now"
-                            onClick={() => {
-                                handleAddToCart();
-                                navigate('/checkout');
-                            }}
-                            disabled={!inStock || cartStatus.loading}
-                        >
-                            Buy Now
-                        </button>
-                        <button
-                            className={`wishlist ${isInWishlist ? 'active' : ''}`}
-                            onClick={handleWishlistToggle}
-                            aria-label={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
-                        >
-                            <svg
-                                width="20"
-                                height="20"
-                                viewBox="0 0 24 24"
-                                fill={isInWishlist ? "#FF4757" : "none"}
-                                stroke="#111"
-                            >
-                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                            </svg>
-                        </button>
+                        )}
                     </div>
                 </div>
-            </div>
+            )}
 
-            {/* Tabbed Content Section */}
-            <div className="tabbed-content">
-                <div className="tabs">
-                    <button
-                        className={`tab ${activeTab === 'description' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('description')}
-                    >
-                        Description
-                    </button>
-                    <button
-                        className={`tab ${activeTab === 'specifications' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('specifications')}
-                    >
-                        Specifications
-                    </button>
-                    {selectedModel?.description && (
-                        <button
-                            className={`tab ${activeTab === 'modelDetails' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('modelDetails')}
-                        >
-                            Model Details
-                        </button>
-                    )}
-                </div>
-
-                <div className="tab-content">
-                    {activeTab === 'description' && (
-                        <div className="description-content"
-                            >
-                            <p>{product.description}</p>
-                        </div>
-                    )}
-
-                    {activeTab === 'specifications' && (
-                        <div className="specifications-content">
-                            {product.product_type === 'single' && product.specifications?.length > 0 && (
-                                <div className="product-specs">
-                                    <table>
-                                        <tbody>
-                                            {product.specifications.map((spec, i) => (
-                                                <tr key={`prod-spec-${i}-${spec.key}`}>
-                                                    <td>{spec.key}</td>
-                                                    <td>{spec.value}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
-
-                            {product.product_type === 'variable' && selectedModel?.specifications?.length > 0 && (
-                                <div className="model-specs">
-                                    <h3>Specifications</h3>
-                                    <table>
-                                        <tbody>
-                                            {selectedModel.specifications.map((spec, i) => (
-                                                <tr key={`model-spec-${i}-${spec.key}`}>
-                                                    <td>{spec.key}</td>
-                                                    <td>{spec.value}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {activeTab === 'modelDetails' && selectedModel?.description && (
-                        <div className="model-details-content">
-                            <p>{selectedModel.description}</p>
-                        </div>
-                    )}
-                </div>
-            </div>
-        </div>
+        </>
     );
 };
 

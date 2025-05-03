@@ -31,6 +31,7 @@ import Adminsignup from './Pages/Admin/Authentication/Adminsignup';
 import UserDashboard from './Pages/User/UserPanel/Dashboard';
 import Address from './Pages/User/Address/Address';
 import Userorder from './Pages/User/Orders/Userorder';
+import UserOrderDetails  from './Pages/User/Orders/UserOrderDetails';
 import ReviewandRating from './Pages/User/ReviewandRating/ReviewandRating';
 import Support from './Pages/User/Support/Support';
 import Cart from './Pages/Cart/Cart';
@@ -75,6 +76,7 @@ function App() {
           <Route path="/userdashboard" element={<UserDashboard />} />
           <Route path="/address" element={<Address />} />
           <Route path="/userorders" element={< Userorder/>} />
+          <Route path="/user/orders/:orderId" element={<UserOrderDetails />} />
           <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/randr" element={<ReviewandRating />} />

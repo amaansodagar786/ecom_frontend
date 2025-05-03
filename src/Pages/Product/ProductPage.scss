@@ -599,3 +599,113 @@ $font-bold: 700;
         }
     }
 }
+
+.reviews-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    
+    .modal-content {
+        background: white;
+        padding: 2rem;
+        border-radius: 8px;
+        max-width: 800px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+        position: relative;
+        
+        .close-modal {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        .average-rating {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            
+            .stars {
+                display: flex;
+            }
+        }
+        
+        .reviews-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            
+            .review-item {
+                padding: 1rem;
+                border-bottom: 1px solid #eee;
+                
+                .review-header {
+                    display: flex;
+                    justify-content: space-between;
+                    margin-bottom: 0.5rem;
+                    
+                    .user-info {
+                        display: flex;
+                        flex-direction: column;
+                        
+                        .user-name {
+                            font-weight: bold;
+                        }
+                        
+                        .review-date {
+                            color: #666;
+                            font-size: 0.8rem;
+                        }
+                    }
+                    
+                    .review-rating {
+                        display: flex;
+                    }
+                }
+                
+                .review-body {
+                    p {
+                        margin: 0;
+                        line-height: 1.5;
+                    }
+                }
+            }
+        }
+        
+        .loading-reviews,
+        .no-reviews {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+    }
+}
+
+.rating {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    list-style: none;
+    
+    .review-count {
+        list-style: none;
+        text-decoration: none;
+        &:hover {
+            text-decoration: none;
+        }
+    }
+}

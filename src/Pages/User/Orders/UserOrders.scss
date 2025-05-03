@@ -1,0 +1,384 @@
+// colors.scss - E-commerce Theme Variables
+
+// Primary Colors
+$primary-color: #2563eb;       // Main brand color (blue)
+$primary-hover: #1d4ed8;      // Darker shade for hover states
+$secondary-color: #f59e0b;    // Accent color (amber)
+$secondary-hover: #d97706;    // Darker accent
+
+// Text Colors
+$dark-text: #1f2937;          // Primary text color
+$medium-text: #4b5563;        // Secondary text
+$light-text: #6b7280;         // Muted/disabled text
+$white-text: #ffffff;         // Text on dark backgrounds
+
+// Background Colors
+$light-bg: #f9fafb;           // Light background
+$lighter-bg: #ffffff;         // White background
+$dark-bg: #111827;            // Dark background
+$gray-bg: #f3f4f6;            // Gray background
+
+// Status Colors
+$success-color: #10b981;      // Green for success states
+$error-color: #ef4444;        // Red for errors
+$warning-color: #f59e0b;      // Yellow/orange warnings
+$info-color: #3b82f6;         // Blue for info
+
+// Borders
+$border-color: #e5e7eb;       // Default border
+$border-radius-sm: 4px;       // Small radius
+$border-radius-md: 8px;       // Medium radius
+$border-radius-lg: 12px;      // Large radius
+
+// Shadows
+$shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+$shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+$shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+// Spacing
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 16px;
+$spacing-lg: 24px;
+$spacing-xl: 32px;
+$spacing-xxl: 48px;
+
+// Typography
+$font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+$font-size-xs: 0.75rem;     // 12px
+$font-size-sm: 0.875rem;    // 14px
+$font-size-md: 1rem;        // 16px
+$font-size-lg: 1.125rem;    // 18px
+$font-size-xl: 1.25rem;     // 20px
+$font-size-xxl: 1.5rem;     // 24px
+
+// Font weights
+$font-light: 300;
+$font-regular: 400;
+$font-medium: 500;
+$font-semibold: 600;
+$font-bold: 700;
+
+// Breakpoints
+$breakpoint-xs: 480px;
+$breakpoint-sm: 640px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 1024px;
+$breakpoint-xl: 1280px;
+
+// Transitions
+$transition-fast: 0.15s ease;
+$transition-medium: 0.3s ease;
+$transition-slow: 0.45s ease;
+
+// Z-indexes
+$z-index-dropdown: 100;
+$z-index-sticky: 200;
+$z-index-modal: 300;
+$z-index-toast: 400;
+
+// UserOrders.scss - Updated to match JSX structure
+
+.user-orders-container {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  
+    .orders-title {
+      font-size: 2rem;
+      font-weight: 600;
+      margin-bottom: 2rem;
+      color: $dark-text;
+    }
+  
+    .orders-list {
+      display: grid;
+      gap: 1.5rem;
+    }
+  
+    .order-card {
+      background: $lighter-bg;
+      border-radius: $border-radius-lg;
+      box-shadow: $shadow-md;
+      overflow: hidden;
+      transition: transform $transition-medium, box-shadow $transition-medium;
+  
+      &:hover {
+        transform: translateY(-3px);
+        box-shadow: $shadow-lg;
+      }
+    }
+  
+    .order-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.2rem 1.5rem;
+      background: $gray-bg;
+      border-bottom: 1px solid $border-color;
+  
+      .order-meta {
+        display: flex;
+        flex-direction: column;
+        gap: $spacing-xs;
+  
+        .order-id {
+          font-weight: $font-semibold;
+          color: $dark-text;
+          font-size: $font-size-lg;
+        }
+  
+        .order-date {
+          font-size: $font-size-sm;
+          color: $light-text;
+        }
+      }
+    }
+  
+    .status-badge {
+      padding: 0.4rem 0.8rem;
+      border-radius: 20px;
+      font-size: $font-size-sm;
+      font-weight: $font-medium;
+      text-transform: capitalize;
+  
+      &.delivered {
+        background: rgba($success-color, 0.1);
+        color: darken($success-color, 10%);
+      }
+  
+      &.shipped {
+        background: rgba($info-color, 0.1);
+        color: darken($info-color, 10%);
+      }
+  
+      &.processing {
+        background: rgba($warning-color, 0.1);
+        color: darken($warning-color, 10%);
+      }
+  
+      &.cancelled {
+        background: rgba($error-color, 0.1);
+        color: darken($error-color, 10%);
+      }
+  
+      &.pending {
+        background: rgba($light-text, 0.1);
+        color: $medium-text;
+      }
+    }
+  
+    .order-items-preview {
+      padding: 1.5rem;
+  
+      .preview-item {
+        display: flex;
+        gap: 1.5rem;
+        padding: 1rem 0;
+        border-bottom: 1px solid $border-color;
+  
+        &:last-child {
+          border-bottom: none;
+        }
+      }
+  
+      .preview-image {
+        width: 80px;
+        height: 80px;
+        flex-shrink: 0;
+        border-radius: $border-radius-sm;
+        overflow: hidden;
+        background: $gray-bg;
+  
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+        }
+      }
+  
+      .preview-details {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+  
+        .preview-name {
+          font-size: $font-size-md;
+          font-weight: $font-medium;
+          margin-bottom: $spacing-xs;
+          color: $dark-text;
+        }
+  
+        .preview-qty {
+          font-size: $font-size-sm;
+          color: $light-text;
+        }
+      }
+  
+      .more-items {
+        padding-top: 1rem;
+        text-align: center;
+        font-size: $font-size-sm;
+        color: $medium-text;
+      }
+    }
+  
+    .order-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.2rem 1.5rem;
+      border-top: 1px solid $border-color;
+  
+      .order-total {
+        display: flex;
+        align-items: center;
+        gap: $spacing-sm;
+  
+        span {
+          font-size: $font-size-md;
+          color: $light-text;
+        }
+  
+        .total-amount {
+          font-size: $font-size-lg;
+          font-weight: $font-semibold;
+          color: $dark-text;
+        }
+      }
+  
+      .order-actions {
+        display: flex;
+        gap: $spacing-md;
+  
+        .action-btn {
+          padding: 0.6rem 1.2rem;
+          border-radius: $border-radius-sm;
+          font-size: $font-size-sm;
+          font-weight: $font-medium;
+          cursor: pointer;
+          transition: all $transition-fast;
+  
+          &.track-btn {
+            background: $lighter-bg;
+            border: 1px solid $primary-color;
+            color: $primary-color;
+  
+            &:hover {
+              background: rgba($primary-color, 0.05);
+            }
+          }
+  
+          &.details-btn {
+            background: $primary-color;
+            border: 1px solid $primary-color;
+            color: $white-text;
+  
+            &:hover {
+              background: $primary-hover;
+              border-color: $primary-hover;
+            }
+          }
+        }
+      }
+    }
+  
+    .orders-loading,
+    .orders-error,
+    .no-orders {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 300px;
+      text-align: center;
+  
+      p {
+        margin-top: $spacing-md;
+        color: $light-text;
+        font-size: $font-size-md;
+      }
+    }
+  
+    .no-orders {
+      .no-orders-icon {
+        font-size: 3rem;
+        color: lighten($light-text, 30%);
+        margin-bottom: $spacing-md;
+      }
+  
+      h3 {
+        font-size: $font-size-xxl;
+        margin-bottom: $spacing-sm;
+        color: $dark-text;
+        font-weight: $font-semibold;
+      }
+  
+      .shop-now-btn {
+        margin-top: $spacing-lg;
+        padding: 0.8rem 2rem;
+        background: $primary-color;
+        color: $white-text;
+        border: none;
+        border-radius: $border-radius-md;
+        font-weight: $font-medium;
+        cursor: pointer;
+        transition: background $transition-fast;
+        font-size: $font-size-md;
+  
+        &:hover {
+          background: $primary-hover;
+        }
+      }
+    }
+  
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba($primary-color, 0.2);
+      border-radius: 50%;
+      border-top-color: $primary-color;
+      animation: spin 1s ease-in-out infinite;
+    }
+  
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  }
+  
+  // Responsive styles
+  @media (max-width: $breakpoint-md) {
+    .user-orders-container {
+      padding: $spacing-md;
+  
+      .orders-title {
+        font-size: $font-size-xxl;
+        margin-bottom: $spacing-lg;
+      }
+  
+      .order-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: $spacing-sm;
+      }
+  
+      .order-footer {
+        flex-direction: column;
+        gap: $spacing-md;
+        align-items: flex-start;
+  
+        .order-actions {
+          width: 100%;
+          flex-direction: column;
+          gap: $spacing-sm;
+  
+          .action-btn {
+            width: 100%;
+          }
+        }
+      }
+    }
+  }
