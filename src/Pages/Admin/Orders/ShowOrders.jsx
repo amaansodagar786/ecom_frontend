@@ -169,6 +169,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './OrderDetails.scss';
 import './ShowOrders.scss';
+import Loader from '../../../Components/Loader/Loader';
 
 
 const OrderDetails = () => {
@@ -482,7 +483,8 @@ const OrderDetails = () => {
   if (loading) {
     return (
       <AdminLayout>
-        <div className="loading">Loading order details...</div>
+        {/* <div className="loading">Loading order details...</div> */}
+        <Loader/>
       </AdminLayout>
     );
   }

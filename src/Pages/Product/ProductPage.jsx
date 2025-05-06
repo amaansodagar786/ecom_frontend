@@ -36,6 +36,57 @@ const ProductPage = () => {
     const [activeTab, setActiveTab] = useState('description');
     const [selectionsLoading, setSelectionsLoading] = useState(true);
 
+    const handleBuyNow = async () => {
+        if (!product) {
+            setCartStatus({ error: 'Product not loaded', success: false, loading: false });
+            return;
+        }
+
+        if (!isAuthenticated) {
+            setCartStatus({ error: 'Please login to proceed', success: false, loading: false });
+            navigate('/login', { state: { from: location.pathname } });
+            return;
+        }
+
+        setCartStatus({ loading: true, error: null, success: false });
+
+        try {
+            const buyNowItem = {
+                product_id: product.product_id,
+                name: product.name,
+                price: selectedColor?.price ||
+                    selectedModel?.colors?.[0]?.price ||
+                    product.price ||
+                    0,
+                original_price: selectedColor?.original_price ||
+                    selectedModel?.colors?.[0]?.original_price ||
+                    product.original_price ||
+                    null,
+                image: product.images?.[0]?.image_url || product.images?.[0],
+                color: selectedColor?.name,
+                model: selectedModel?.name,
+                color_id: selectedColor?.color_id || null,
+                model_id: selectedModel?.model_id || null,
+                quantity: quantity
+            };
+
+            // Navigate to Checkout page with buyNowItem flag
+            navigate('/checkout', {
+                state: {
+                    buyNowItem,
+                    isBuyNowFlow: true
+                }
+            });
+        } catch (err) {
+            setCartStatus({
+                loading: false,
+                error: err.response?.data?.error || err.message || 'Failed to proceed',
+                success: false
+            });
+        }
+    };
+
+
 
     const fetchProductReviews = async () => {
         if (!product) return;
@@ -524,7 +575,7 @@ const ProductPage = () => {
                                         ({product.raters || 0} reviews)
                                     </span>
                                 </div>
-                                <span className="sku">SKU: {product.product_id}</span>
+                                <span className="sku">SKU: {product.sku_id}</span>
                             </div>
                         </div>
 
@@ -604,10 +655,7 @@ const ProductPage = () => {
                             </button>
                             <button
                                 className="buy-now"
-                                onClick={() => {
-                                    handleAddToCart();
-                                    navigate('/checkout');
-                                }}
+                                onClick={handleBuyNow}
                                 disabled={!inStock || cartStatus.loading}
                             >
                                 Buy Now

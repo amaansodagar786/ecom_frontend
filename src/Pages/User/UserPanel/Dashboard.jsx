@@ -5,6 +5,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import axios from 'axios';
 import './Userdashboard.scss';
+import Loader from '../../../Components/Loader/Loader';
 
 const ProfileDashboard = () => {
   const [userData, setUserData] = useState({
@@ -101,9 +102,7 @@ const ProfileDashboard = () => {
   if (isLoading) {
     return (
       <UserLayout>
-        <div className="profile-loading">
-          <div className="spinner"></div>
-        </div>
+        <Loader />
       </UserLayout>
     );
   }

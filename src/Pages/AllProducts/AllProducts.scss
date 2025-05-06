@@ -1019,7 +1019,7 @@
           padding: 15px;
 
           .product-category {
-            font-size: 0.7rem;
+            font-size: 0.7rem !important;
           }
           .add-to-cart
           {
@@ -1027,7 +1027,7 @@
           }
 
           .product-name {
-            font-size: 0.95rem;
+            font-size: 0.7rem !important;
             min-height: 2.8em;
             margin-bottom: 8px;
           }
@@ -1036,11 +1036,11 @@
             margin-bottom: 12px;
 
             .current-price {
-              font-size: 1rem;
+              font-size: 0.7rem !important;
             }
 
             .original-price {
-              font-size: 0.8rem;
+              font-size: 0.7rem !important;
             }
           }
 
@@ -1087,7 +1087,7 @@
           padding: 10px !important;
 
           .product-name {
-            font-size: 0.85rem;
+            font-size: 0.7rem !important;
           }
 
           .add-to-cart {

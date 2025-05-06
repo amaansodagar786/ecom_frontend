@@ -16,6 +16,7 @@ import {
 } from 'react-icons/fi';
 import UserLayout from '../../User/UserPanel/UserLayout';
 import './Support.scss';
+import Loader from '../../../Components/Loader/Loader';
 
 const Support = () => {
   const [activeTab, setActiveTab] = useState('faq');

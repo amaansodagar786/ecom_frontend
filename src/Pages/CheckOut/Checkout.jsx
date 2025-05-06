@@ -6,12 +6,23 @@ import './Checkout.scss';
 import AddressModal from '../../Pages/User/Address/AddressModal';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import Loader from '../../Components/Loader/Loader';
 
 const Checkout = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { getToken } = useAuth();
-    const cartItems = location.state?.cartItems || [];
+    // const { getToken } = useAuth();
+    // const cartItems = location.state?.cartItems || [];
+
+    const { getToken, cartItems: contextCartItems } = useAuth();
+
+    // Get items from either buyNow flow or cart flow
+    const initialItems = location.state?.isBuyNowFlow
+        ? [location.state.buyNowItem]
+        : location.state?.cartItems || contextCartItems || [];
+
+    const [cartItems, setCartItems] = useState(initialItems);
+    const [isBuyNowFlow] = useState(location.state?.isBuyNowFlow || false);
 
     const [activeStep, setActiveStep] = useState(1);
     const [addresses, setAddresses] = useState([]);
@@ -43,9 +54,9 @@ const Checkout = () => {
 
     useEffect(() => {
         window.scrollTo(0, 0);
-      }, [activeStep]); // Add dependencies that should trigger scroll to top
+    }, [activeStep]); // Add dependencies that should trigger scroll to top
 
-      
+
     // Fetch user addresses and states
     useEffect(() => {
         const fetchData = async () => {
@@ -110,40 +121,66 @@ const Checkout = () => {
 
     const handlePlaceOrder = async () => {
         try {
-            // Prepare order data according to backend requirements
-            const orderData = {
+            // Determine if this is a buy now flow (single item) or cart flow
+            const isBuyNowFlow = cartItems.length === 1 && location.state?.isBuyNowFlow;
+
+
+            // Validate required data
+            if (!selectedAddress) {
+                throw new Error('Please select a delivery address');
+            }
+            if (!paymentMethod) {
+                throw new Error('Please select a payment method');
+            }
+
+            // Prepare the base order data
+            const baseOrderData = {
                 address_id: selectedAddress,
                 payment_status: paymentMethod === 'Cash on Delivery' ? 'pending' : 'paid',
-                delivery_method: 'standard', // You can make this dynamic if needed
+                delivery_method: 'standard',
                 delivery_charge: deliveryCharge,
-                discount_percent: totalDiscount > 0 ? ((totalDiscount / originalSubtotal) * 100) : 0,
-                tax_percent: 0,
-                items: cartItems.map(item => ({
-                    product_id: item.product_id,
-                    model_id: item.model_id || null,
-                    color_id: item.color_id || null,
-                    quantity: item.quantity,
-                    price: item.price
-                }))
+                // discount_percent: totalDiscount > 0 ? ((totalDiscount / originalSubtotal) * 100) : 0,
+                tax_percent: 0
             };
 
-            // Log order details to console
-            console.log('Order Data being sent to backend:', orderData);
-            console.log('Cart Items:', cartItems);
-            console.log('Selected Address:', addresses.find(a => a.address_id === selectedAddress));
-            console.log('Payment Method:', paymentMethod);
-            console.log('Order Totals:', {
-                subtotal,
-                originalSubtotal,
-                totalDiscount,
-                deliveryCharge,
-                taxes,
-                total
-            });
+            // Prepare the complete order data based on flow type
+            const orderData = isBuyNowFlow
+                ? {
+                    ...baseOrderData,
+                    product_id: cartItems[0].product_id,
+                    model_id: cartItems[0].model_id || null,
+                    color_id: cartItems[0].color_id || null,
+                    quantity: cartItems[0].quantity,
+                    address_id: selectedAddress,
+                    payment_status: paymentMethod === 'Cash on Delivery' ? 'pending' : 'paid',
+                    delivery_method: 'standard'
+                }
+                : {
+                    ...baseOrderData,
+                    items: cartItems.map(item => ({
+                        product_id: item.product_id,
+                        model_id: item.model_id || null,
+                        color_id: item.color_id || null,
+                        quantity: item.quantity,
+                        price: item.price,
+                        address_id: selectedAddress,
+                        payment_status: paymentMethod === 'Cash on Delivery' ? 'pending' : 'paid',
+                        delivery_method: 'standard'
+                    }))
+                };
+
+            // Determine the appropriate API endpoint
+            const endpoint = isBuyNowFlow
+                ? '/order/add-to-order'
+                : '/order/place-order';
+
+            console.log('Order Data:', orderData);
+            console.log('Using endpoint:', endpoint);
+            console.log('Flow type:', isBuyNowFlow ? 'Buy Now' : 'Cart Checkout');
 
             // Send order to backend
             const response = await axios.post(
-                `${import.meta.env.VITE_SERVER_API}/order/place-order`,
+                `${import.meta.env.VITE_SERVER_API}${endpoint}`,
                 orderData,
                 {
                     headers: { Authorization: `Bearer ${getToken()}` }
@@ -152,7 +189,7 @@ const Checkout = () => {
 
             if (response.data.success) {
                 console.log('Order placed successfully:', response.data.order);
-                
+
                 // Show success notification
                 toast.success('Order placed successfully!', {
                     position: "top-center",
@@ -164,32 +201,38 @@ const Checkout = () => {
                     progress: undefined,
                 });
 
-                // Redirect to order confirmation page after delay
-                // setTimeout(() => {
-                //     navigate('/order-confirmation', {
-                //         state: {
-                //             order: response.data.order,
-                //             address: addresses.find(a => a.address_id === selectedAddress)
-                //         }
-                //     });
-                // }, 3000);
+                // Clear cart if this was a regular checkout (not buy now)
+                if (!isBuyNowFlow) {
+                    // You might want to add cart clearing logic here if needed
+                }
+
+                // Redirect to confirmation page
                 setTimeout(() => {
-                    // Store state temporarily in sessionStorage
                     sessionStorage.setItem('orderInfo', JSON.stringify({
                         order: response.data.order,
-                        address: addresses.find(a => a.address_id === selectedAddress)
+                        address: addresses.find(a => a.address_id === selectedAddress),
+                        isBuyNow: isBuyNowFlow
                     }));
-                
-                    // Refresh the page and redirect
                     window.location.href = '/order-confirmation';
                 }, 3000);
-                
+
             } else {
                 throw new Error(response.data.error || 'Failed to place order');
             }
         } catch (error) {
-            console.error('Error placing order:', error);
-            toast.error(error.response?.data?.error || 'Failed to place order. Please try again.', {
+            console.error('Order placement error:', {
+                error: error.response?.data || error.message,
+                stack: error.stack
+            });
+
+            let errorMessage = 'Failed to place order. Please try again.';
+            if (error.response?.status === 400) {
+                errorMessage = error.response.data.error || errorMessage;
+            } else if (error.response?.status === 403) {
+                errorMessage = 'Session expired. Please login again.';
+            }
+
+            toast.error(errorMessage, {
                 position: "top-center",
                 autoClose: 5000,
                 hideProgressBar: false,
@@ -198,6 +241,13 @@ const Checkout = () => {
                 draggable: true,
                 progress: undefined,
             });
+
+            // If session expired, redirect to login
+            if (error.response?.status === 403) {
+                setTimeout(() => {
+                    navigate('/login', { state: { from: location.pathname } });
+                }, 1500);
+            }
         }
     };
 
@@ -223,6 +273,11 @@ const Checkout = () => {
 
     return (
         <div className="checkout-container">
+            {isBuyNowFlow && (
+                <div className="buy-now-notice">
+                    <p>You're completing your purchase directly. This item won't be added to your cart.</p>
+                </div>
+            )}
             <div className="checkout-stepper">
                 <div className={`step ${activeStep >= 1 ? 'active' : ''}`}>
                     <span>1</span>
@@ -262,7 +317,8 @@ const Checkout = () => {
                     <h2>Select Delivery Address</h2>
 
                     {loading ? (
-                        <div className="loading">Loading addresses...</div>
+                        // <div className="loading">Loading addresses...</div>
+                        <Loader/>
                     ) : error ? (
                         <div className="error">{error}</div>
                     ) : addresses.length > 0 ? (
@@ -426,25 +482,25 @@ const Checkout = () => {
                 <div className="payment-step">
                     <h2>Payment Methods</h2>
                     <div className="payment-methods">
-                        <button 
+                        <button
                             className={`payment-option ${paymentMethod === 'Credit/Debit Card' ? 'selected' : ''}`}
                             onClick={() => handlePaymentMethodSelect('Credit/Debit Card')}
                         >
                             Credit/Debit Card
                         </button>
-                        <button 
+                        <button
                             className={`payment-option ${paymentMethod === 'Net Banking' ? 'selected' : ''}`}
                             onClick={() => handlePaymentMethodSelect('Net Banking')}
                         >
                             Net Banking
                         </button>
-                        <button 
+                        <button
                             className={`payment-option ${paymentMethod === 'UPI' ? 'selected' : ''}`}
                             onClick={() => handlePaymentMethodSelect('UPI')}
                         >
                             UPI
                         </button>
-                        <button 
+                        <button
                             className={`payment-option ${paymentMethod === 'Cash on Delivery' ? 'selected' : ''}`}
                             onClick={() => handlePaymentMethodSelect('Cash on Delivery')}
                         >
@@ -460,8 +516,8 @@ const Checkout = () => {
                             <button className="back-to-review-btn" onClick={() => setActiveStep(2)}>
                                 Back to Review
                             </button>
-                            <button 
-                                className="place-order-btn" 
+                            <button
+                                className="place-order-btn"
                                 onClick={handlePlaceOrder}
                                 disabled={!paymentMethod}
                             >

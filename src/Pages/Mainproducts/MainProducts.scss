@@ -526,7 +526,15 @@
           padding: 15px;
 
           .product-name {
-            font-size: 1.1rem;
+            font-size: 0.7rem !important;
+          }
+
+          .current-price {
+            font-size: 0.7rem !important;
+          }
+
+          .original-price{
+            font-size: 0.7rem !important;
           }
 
           .view-button {
@@ -545,6 +553,8 @@
 
     .product-grid {
       .product-card {
+
+        
         .product-image {
           height: 180px;
         }

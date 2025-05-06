@@ -77,422 +77,354 @@ $z-index-sticky: 200;
 $z-index-modal: 300;
 $z-index-toast: 400;
 
+
+// Text ellipsis mixin for multi-line truncation
+@mixin text-ellipsis($lines) {
+  display: -webkit-box;
+  -webkit-line-clamp: $lines;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 // colors.scss - E-commerce Theme Variables
 // [Keep your existing variables unchanged]
 
-.user-order-details-container {
-    padding: 2rem;
-    max-width: 1200px;
-    margin: 0 auto;
-    font-family: $font-family;
-  
-    .back-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 1.5rem;
-      padding: 0.6rem 1.2rem;
-      background: $light-bg;
-      border: 1px solid $border-color;
-      border-radius: $border-radius-sm;
-      color: $medium-text;
-      font-size: $font-size-sm;
-      font-weight: $font-medium;
-      cursor: pointer;
-      transition: all $transition-fast;
-  
-      &:hover {
-        background: darken($light-bg, 2%);
-        border-color: $primary-color;
-        color: $primary-color;
-      }
-    }
-  
-    .orders-title {
-      font-size: $font-size-xxl;
-      font-weight: $font-semibold;
-      margin-bottom: 2rem;
-      color: $dark-text;
-      position: relative;
-      padding-bottom: 0.5rem;
-  
-      &::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 60px;
-        height: 3px;
-        background: $primary-color;
-        border-radius: 3px;
-      }
-    }
-  
-    .order-card {
-      background: $lighter-bg;
-      border-radius: $border-radius-lg;
-      box-shadow: $shadow-md;
-      overflow: hidden;
-      border: 1px solid $border-color;
-      margin-bottom: 2rem;
-    }
-  
-    .order-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1.5rem;
-      background: $light-bg;
-      border-bottom: 1px solid $border-color;
-  
-      @media (max-width: $breakpoint-sm) {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-      }
-  
-      .order-meta {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-  
-        .order-id {
-          font-weight: $font-semibold;
-          color: $dark-text;
-          font-size: $font-size-lg;
-        }
-  
-        .order-date {
-          font-size: $font-size-sm;
-          color: $light-text;
-        }
-      }
-    }
-  
-    .status-badge {
-      padding: 0.5rem 1rem;
-      border-radius: 20px;
-      font-size: $font-size-sm;
-      font-weight: $font-medium;
-      text-transform: capitalize;
-      box-shadow: $shadow-sm;
-  
-      &.delivered {
-        background: rgba($success-color, 0.1);
-        color: darken($success-color, 10%);
-      }
-  
-      &.shipped {
-        background: rgba($info-color, 0.1);
-        color: darken($info-color, 10%);
-      }
-  
-      &.processing {
-        background: rgba($warning-color, 0.1);
-        color: darken($warning-color, 10%);
-      }
-  
-      &.cancelled {
-        background: rgba($error-color, 0.1);
-        color: darken($error-color, 10%);
-      }
-  
-      &.pending {
-        background: rgba($light-text, 0.1);
-        color: $medium-text;
-      }
-    }
-  
-    .order-items {
-      padding: 1.5rem;
-  
-      .order-item {
-        display: flex;
-        gap: 1.5rem;
-        padding: 1.5rem;
-        margin-bottom: 1rem;
-        border-radius: $border-radius-md;
-        transition: background $transition-fast;
-        border: 1px solid $border-color;
-  
-        &:last-child {
-          margin-bottom: 0;
-        }
-  
-        &:hover {
-          background: rgba($primary-color, 0.03);
-          border-color: rgba($primary-color, 0.2);
-        }
-  
-        @media (max-width: $breakpoint-sm) {
-          flex-direction: column;
-          gap: 1rem;
-          padding: 1rem;
-        }
-      }
-  
-      .item-image {
-        width: 100px;
-        height: 100px;
-        flex-shrink: 0;
-        border-radius: $border-radius-md;
-        overflow: hidden;
-        background: $gray-bg;
-        border: 1px solid $border-color;
-  
-        @media (max-width: $breakpoint-sm) {
-          width: 100%;
-          height: 150px;
-        }
-  
-        img {
-          width: 100%;
-          height: 100%;
-          object-fit: contain;
-          mix-blend-mode: multiply;
-        }
-      }
-  
-      .item-details {
-        flex-grow: 1;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-  
-        .item-name {
-          font-size: $font-size-lg;
-          font-weight: $font-medium;
-          margin-bottom: 0.75rem;
-          color: $dark-text;
-  
-          @media (max-width: $breakpoint-sm) {
-            font-size: $font-size-md;
-          }
-        }
-  
-        .item-price {
-          font-weight: $font-semibold;
-          color: $primary-color;
-          margin-bottom: 0.75rem;
-          font-size: $font-size-md;
-        }
-  
-        .item-meta {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 0.75rem;
-          align-items: center;
-  
-          span {
-            font-size: $font-size-sm;
-            color: $light-text;
-            background: $light-bg;
-            padding: 0.25rem 0.75rem;
-            border-radius: $border-radius-sm;
-            display: inline-flex;
-            align-items: center;
-          }
-        }
-      }
-    }
-  
-    .order-summary {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1.5rem;
-      border-top: 1px solid $border-color;
-      background: $light-bg;
-      gap: 1.5rem;
-  
-      @media (max-width: $breakpoint-sm) {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-      }
-  
-      .payment-status {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        font-size: $font-size-md;
-  
-        span:first-child {
-          color: $medium-text;
-        }
-  
-        span:last-child {
-          font-weight: $font-medium;
-          text-transform: capitalize;
-          padding: 0.25rem 0.75rem;
-          border-radius: $border-radius-sm;
-  
-          &.paid, &.completed {
-            background: rgba($success-color, 0.1);
-            color: darken($success-color, 10%);
-          }
-  
-          &.pending {
-            background: rgba($warning-color, 0.1);
-            color: darken($warning-color, 10%);
-          }
-  
-          &.failed, &.cancelled {
-            background: rgba($error-color, 0.1);
-            color: darken($error-color, 10%);
-          }
-        }
-      }
-  
-      .order-total {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        font-size: $font-size-md;
-  
-        @media (max-width: $breakpoint-sm) {
-          width: 100%;
-          justify-content: space-between;
-        }
-  
-        span:first-child {
-          color: $medium-text;
-        }
-  
-        .total-amount {
-          font-size: $font-size-xl;
-          font-weight: $font-bold;
-          color: $dark-text;
-        }
-      }
-    }
-  
-    .orders-error,
-    .no-orders {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 300px;
-      text-align: center;
-      padding: 2rem;
-  
-      p {
-        margin-top: $spacing-md;
-        color: $light-text;
-        font-size: $font-size-md;
-        max-width: 500px;
-      }
-  
-      .back-btn {
-        margin-top: $spacing-md;
-        background: $primary-color;
-        color: $white-text;
-        border-color: $primary-color;
-  
-        &:hover {
-          background: $primary-hover;
-          border-color: $primary-hover;
-          color: $white-text;
-        }
-      }
-    }
-  
-    .no-orders {
-      h3 {
-        font-size: $font-size-xl;
-        margin-bottom: $spacing-sm;
-        color: $dark-text;
-        font-weight: $font-semibold;
-      }
-  
-      p {
-        color: $medium-text;
-        line-height: 1.5;
-      }
-    }
-  }
-  
-  // Responsive adjustments
-  @media (max-width: $breakpoint-md) {
-    .user-order-details-container {
-      padding: 1.5rem;
-  
-      .orders-title {
-        font-size: $font-size-xl;
-        margin-bottom: 1.5rem;
-      }
-  
-      .order-items {
-        padding: 1rem;
-  
-        .order-item {
-          padding: 1rem;
-        }
-      }
-  
-      .order-summary {
-        padding: 1rem;
-      }
-    }
-  }
-  
-  @media (max-width: $breakpoint-sm) {
-    .user-order-details-container {
-      padding: 1rem;
-  
-      .orders-title {
-        font-size: $font-size-lg;
-      }
-  
-      .order-header {
-        padding: 1rem;
-      }
-  
-      .order-items {
-        padding: 0.5rem;
-  
-        .order-item {
-          margin-bottom: 0.75rem;
-        }
-      }
-    }
-  }
+// Prefix all classes with 'user-order-'
+.user-order-wrapper {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  font-family: $font-family;
 
-
-  // Add these new styles to your existing SCSS file
-
-// Add these new styles to your existing SCSS file
-
-// Review Button
-.review-btn {
-    margin-top: 1rem;
-    padding: 0.5rem 1rem;
-    background: $primary-color;
-    color: $white-text;
-    border: none;
+  .user-order-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    padding: 0.6rem 1.2rem;
+    background: $light-bg;
+    border: 1px solid $border-color;
     border-radius: $border-radius-sm;
+    color: $medium-text;
     font-size: $font-size-sm;
     font-weight: $font-medium;
     cursor: pointer;
     transition: all $transition-fast;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-  
+
     &:hover {
-      background: $primary-hover;
-    }
-  
-    @media (max-width: $breakpoint-sm) {
-      width: 100%;
-      justify-content: center;
+      background: darken($light-bg, 2%);
+      border-color: $primary-color;
+      color: $primary-color;
     }
   }
-  
-  // Review Modal
-  .review-modal-overlay {
+
+  .user-order-title {
+    font-size: $font-size-xxl;
+    font-weight: $font-semibold;
+    margin-bottom: 2rem;
+    color: $dark-text;
+    position: relative;
+    padding-bottom: 0.5rem;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 60px;
+      height: 3px;
+      background: $primary-color;
+      border-radius: 3px;
+    }
+  }
+
+  .user-order-main-card {
+    background: $lighter-bg;
+    border-radius: $border-radius-lg;
+    box-shadow: $shadow-md;
+    overflow: hidden;
+    border: 1px solid $border-color;
+    margin-bottom: 2rem;
+  }
+
+  .user-order-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    background: $light-bg;
+    border-bottom: 1px solid $border-color;
+
+    @media (max-width: $breakpoint-sm) {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .user-order-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+
+      .user-order-id {
+        font-weight: $font-semibold;
+        color: $dark-text;
+        font-size: $font-size-lg;
+      }
+
+      .user-order-date {
+        font-size: $font-size-sm;
+        color: $light-text;
+      }
+    }
+  }
+
+  .user-order-status-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: $font-size-sm;
+    font-weight: $font-medium;
+    text-transform: capitalize;
+    box-shadow: $shadow-sm;
+
+    &.delivered {
+      background: rgba($success-color, 0.1);
+      color: darken($success-color, 10%);
+    }
+
+    &.shipped {
+      background: rgba($info-color, 0.1);
+      color: darken($info-color, 10%);
+    }
+
+    &.processing {
+      background: rgba($warning-color, 0.1);
+      color: darken($warning-color, 10%);
+    }
+
+    &.cancelled {
+      background: rgba($error-color, 0.1);
+      color: darken($error-color, 10%);
+    }
+
+    &.pending {
+      background: rgba($light-text, 0.1);
+      color: $medium-text;
+    }
+  }
+
+  .user-order-items-list {
+    padding: 1.5rem;
+
+    .user-order-item {
+      display: flex;
+      gap: 1.5rem;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      border-radius: $border-radius-md;
+      transition: background $transition-fast;
+      border: 1px solid $border-color;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      &:hover {
+        background: rgba($primary-color, 0.03);
+        border-color: rgba($primary-color, 0.2);
+      }
+
+      @media (max-width: $breakpoint-sm) {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+      }
+    }
+
+    .user-order-item-image {
+      width: 100px;
+      height: 100px;
+      flex-shrink: 0;
+      border-radius: $border-radius-md;
+      overflow: hidden;
+      background: $gray-bg;
+      border: 1px solid $border-color;
+
+      @media (max-width: $breakpoint-sm) {
+        width: 100%;
+        height: 150px;
+      }
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        mix-blend-mode: multiply;
+      }
+    }
+
+    .user-order-item-details {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+
+      .user-order-item-name {
+        font-size: $font-size-lg;
+        font-weight: $font-medium;
+        margin-bottom: 0.75rem;
+        color: $dark-text;
+
+        @media (max-width: $breakpoint-sm) {
+          font-size: $font-size-md;
+        }
+      }
+
+      .user-order-item-price {
+        font-weight: $font-semibold;
+        color: $primary-color;
+        margin-bottom: 0.75rem;
+        font-size: $font-size-md;
+      }
+
+      .user-order-item-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: center;
+
+        span {
+          font-size: $font-size-sm;
+          color: $light-text;
+          background: $light-bg;
+          padding: 0.25rem 0.75rem;
+          border-radius: $border-radius-sm;
+          display: inline-flex;
+          align-items: center;
+        }
+      }
+    }
+  }
+
+  .user-order-summary {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-top: 1px solid $border-color;
+    background: $light-bg;
+    gap: 1.5rem;
+
+    @media (max-width: $breakpoint-sm) {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .user-order-payment-status {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: $font-size-md;
+
+      span:first-child {
+        color: $medium-text;
+      }
+
+      span:last-child {
+        font-weight: $font-medium;
+        text-transform: capitalize;
+        padding: 0.25rem 0.75rem;
+        border-radius: $border-radius-sm;
+
+        &.paid, &.completed {
+          background: rgba($success-color, 0.1);
+          color: darken($success-color, 10%);
+        }
+
+        &.pending {
+          background: rgba($warning-color, 0.1);
+          color: darken($warning-color, 10%);
+        }
+
+        &.failed, &.cancelled {
+          background: rgba($error-color, 0.1);
+          color: darken($error-color, 10%);
+        }
+      }
+    }
+
+    .user-order-total {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      font-size: $font-size-md;
+
+      @media (max-width: $breakpoint-sm) {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      span:first-child {
+        color: $medium-text;
+      }
+
+      .user-order-total-amount {
+        font-size: $font-size-xl;
+        font-weight: $font-bold;
+        color: $dark-text;
+      }
+    }
+  }
+
+  .user-order-error,
+  .user-order-no-orders {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    text-align: center;
+    padding: 2rem;
+
+    p {
+      margin-top: $spacing-md;
+      color: $light-text;
+      font-size: $font-size-md;
+      max-width: 500px;
+    }
+
+    .user-order-back-btn {
+      margin-top: $spacing-md;
+      background: $primary-color;
+      color: $white-text;
+      border-color: $primary-color;
+
+      &:hover {
+        background: $primary-hover;
+        border-color: $primary-hover;
+        color: $white-text;
+      }
+    }
+  }
+
+  .user-order-no-orders {
+    h3 {
+      font-size: $font-size-xl;
+      margin-bottom: $spacing-sm;
+      color: $dark-text;
+      font-weight: $font-semibold;
+    }
+
+    p {
+      color: $medium-text;
+      line-height: 1.5;
+    }
+  }
+
+  // Review Modal Styles
+  .user-order-review-modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -505,78 +437,106 @@ $z-index-toast: 400;
     z-index: $z-index-modal;
     padding: 1rem;
   }
-  
-  .review-modal {
+
+  .user-order-review-modal {
     background: $lighter-bg;
     border-radius: $border-radius-lg;
     width: 100%;
-    max-width: 500px;
+    max-width: 550px;
     box-shadow: $shadow-lg;
     overflow: hidden;
     animation: fadeIn 0.3s ease;
-  
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1.5rem;
-      border-bottom: 1px solid $border-color;
-  
-      h3 {
-        margin: 0;
-        font-size: $font-size-lg;
-        color: $dark-text;
-      }
-  
-      .close-btn {
-        background: none;
-        border: none;
-        font-size: $font-size-xl;
-        cursor: pointer;
-        color: $light-text;
-        transition: color $transition-fast;
-  
-        &:hover {
-          color: $error-color;
-        }
-      }
+  }
+
+  .user-order-modal-header {
+    display: flex;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid $border-color;
+    gap: 1rem;
+
+    h3 {
+      margin: 0;
+      font-size: $font-size-lg;
+      color: $dark-text;
+      flex-grow: 1;
     }
   }
-  
-  .rating-section {
+
+  .user-order-modal-close-btn {
+    background: none;
+    border: none;
+    font-size: $font-size-xl;
+    cursor: pointer;
+    color: $light-text;
+    transition: color $transition-fast;
+    flex-shrink: 0;
+
+    &:hover {
+      color: $error-color;
+    }
+  }
+
+  .user-order-modal-product-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-grow: 1;
+
+    .user-order-modal-product-image {
+      width: 60px;
+      height: 60px;
+      object-fit: contain;
+      border-radius: $border-radius-sm;
+      border: 1px solid $border-color;
+      padding: 0.25rem;
+      background: $white-text;
+      flex-shrink: 0;
+    }
+
+    h3 {
+      margin: 0;
+      font-size: $font-size-md;
+      color: $dark-text;
+      font-weight: $font-medium;
+      @include text-ellipsis(2);
+    }
+  }
+
+  .user-order-rating-section {
     padding: 1.5rem;
     text-align: center;
     border-bottom: 1px solid $border-color;
-  
-    .stars {
+
+    .user-order-rating-stars {
       display: flex;
       justify-content: center;
       gap: 0.5rem;
       margin-bottom: 0.5rem;
-  
-      .star {
+
+      .user-order-rating-star {
         font-size: 2rem;
         color: $secondary-color;
         cursor: pointer;
         transition: transform $transition-fast;
-  
+
         &:hover {
           transform: scale(1.1);
         }
       }
     }
-  
-    .rating-text {
+
+    .user-order-rating-text {
       margin: 0;
       font-size: $font-size-md;
       color: $medium-text;
       font-weight: $font-medium;
     }
   }
-  
-  .review-section {
+
+  .user-order-review-section {
     padding: 1.5rem;
-  
+
     label {
       display: block;
       margin-bottom: 0.75rem;
@@ -584,7 +544,7 @@ $z-index-toast: 400;
       color: $dark-text;
       font-weight: $font-medium;
     }
-  
+
     textarea {
       width: 100%;
       padding: 1rem;
@@ -595,35 +555,35 @@ $z-index-toast: 400;
       resize: vertical;
       min-height: 120px;
       transition: border-color $transition-fast;
-  
+
       &:focus {
         outline: none;
         border-color: $primary-color;
         box-shadow: 0 0 0 2px rgba($primary-color, 0.1);
       }
-  
+
       &::placeholder {
         color: $light-text;
       }
     }
   }
-  
-  .error-message {
+
+  .user-order-error-message {
     color: $error-color;
     padding: 0 1.5rem;
     margin-top: -1rem;
     margin-bottom: 0.5rem;
     font-size: $font-size-sm;
   }
-  
-  .modal-actions {
+
+  .user-order-modal-actions {
     display: flex;
     justify-content: flex-end;
     gap: 1rem;
     padding: 1rem 1.5rem;
     border-top: 1px solid $border-color;
     background: $light-bg;
-  
+
     button {
       padding: 0.75rem 1.5rem;
       border-radius: $border-radius-sm;
@@ -631,27 +591,27 @@ $z-index-toast: 400;
       font-weight: $font-medium;
       cursor: pointer;
       transition: all $transition-fast;
-  
-      &.cancel-btn {
+
+      &.user-order-modal-cancel-btn {
         background: $light-bg;
         border: 1px solid $border-color;
         color: $medium-text;
-  
+
         &:hover {
           background: darken($light-bg, 3%);
         }
       }
-  
-      &.submit-btn {
+
+      &.user-order-modal-submit-btn {
         background: $primary-color;
         border: 1px solid $primary-color;
         color: $white-text;
-  
+
         &:hover:not(:disabled) {
           background: $primary-hover;
           border-color: $primary-hover;
         }
-  
+
         &:disabled {
           opacity: 0.7;
           cursor: not-allowed;
@@ -659,10 +619,65 @@ $z-index-toast: 400;
       }
     }
   }
-  
+
+  .user-order-review-btn{
+  margin-top: 10px;
+    width: fit-content;
+    padding: 7px 10px;
+    border-radius:  10px ;
+    border: none;
+    background: $primary-color;
+    color: $white-text;
+  }
+
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
   }
-  
-  // [Keep all your existing styles below]
+}
+
+// Responsive adjustments
+@media (max-width: $breakpoint-md) {
+  .user-order-wrapper {
+    padding: 1.5rem;
+
+    .user-order-title {
+      font-size: $font-size-xl;
+      margin-bottom: 1.5rem;
+    }
+
+    .user-order-items-list {
+      padding: 1rem;
+
+      .user-order-item {
+        padding: 1rem;
+      }
+    }
+
+    .user-order-summary {
+      padding: 1rem;
+    }
+  }
+}
+
+@media (max-width: $breakpoint-sm) {
+  .user-order-wrapper {
+    padding: 1rem;
+
+    .user-order-title {
+      font-size: $font-size-lg;
+    }
+
+    .user-order-card-header {
+      padding: 1rem;
+    }
+
+    .user-order-items-list {
+      padding: 0.5rem;
+
+      .user-order-item {
+        margin-bottom: 0.75rem;
+      }
+    }
+  }
+}

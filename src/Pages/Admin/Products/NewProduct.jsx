@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import Loader from "../../../Components/Loader/Loader";
+// import Loader from "../../../Components/Loader/Loader";
 import AdminLayout from '../AdminPanel/AdminLayout';
 import './NewProduct.scss';
+import Loader from '../../../Components/Loader/Loader';
 
 const NewProduct = () => {
   const navigate = useNavigate();
@@ -1372,7 +1373,8 @@ const NewProduct = () => {
       </div>
 
       {isLoading ? (
-        <div className="loading">Loading products...</div>
+        // <div className="loading">Loading products...</div>
+        <Loader/>
       ) : error ? (
         <div className="error-message">{error}</div>
       ) : (

@@ -3,6 +3,7 @@ import axios from 'axios';
 import './HomeProducts.scss';
 import { useAuth } from '../../../Components/Context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import Loader from "../../../Components/Loader/Loader";
 
 const HomeProducts = () => {
   const [products, setProducts] = useState([]);
@@ -190,10 +191,7 @@ const HomeProducts = () => {
   }, [products]);
 
   if (loading) return (
-    <div className="loading-state">
-      <div className="spinner"></div>
-      <p>Loading premium products...</p>
-    </div>
+    <Loader />
   );
 
   if (error) return (

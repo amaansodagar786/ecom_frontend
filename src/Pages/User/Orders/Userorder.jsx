@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import './UserOrders.scss';
 import Loader from "../../../Components/Loader/Loader" ;
 
-
 const UserOrders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -148,23 +147,35 @@ const UserOrders = () => {
 
               {/* Show first 2-3 items preview */}
               <div className="order-items-preview">
-                {order.items?.slice(0, 3).map((item, index) => (
-                  <div key={index} className="preview-item">
-                    <div className="preview-image">
-                      <img 
-                        src={item.product_image || '/images/placeholder-product.jpg'} 
-                        alt={item.product_name}
-                        onError={(e) => {
-                          // e.target.src = '/images/placeholder-product.jpg';
-                        }}
-                      />
+                {order.items?.slice(0, 3).map((item, index) => {
+                  // Log the image URL for debugging
+                  console.log(`Product ${item.product_id} image URL:`, item.product_image);
+                  
+                  return (
+                    <div key={index} className="preview-item">
+                      <div className="preview-image">
+                        {item.product_image ? (
+                          <img 
+                            src={`${import.meta.env.VITE_SERVER_API}${item.product_image}`} 
+                            alt={item.product_name}
+                            onError={(e) => {
+                              // e.target.src = '/images/placeholder-product.jpg';
+                            }}
+                          />
+                        ) : (
+                          <img 
+                            // src="/images/placeholder-product.jpg" 
+                            alt={item.product_name}
+                          />
+                        )}
+                      </div>
+                      <div className="preview-details">
+                        <span className="preview-name">{item.product_name}</span>
+                        <span className="preview-qty">Qty: {item.quantity}</span>
+                      </div>
                     </div>
-                    <div className="preview-details">
-                      <span className="preview-name">{item.product_name}</span>
-                      <span className="preview-qty">Qty: {item.quantity}</span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
                 {order.items?.length > 3 && (
                   <div className="more-items">+{order.items.length - 3} more items</div>
                 )}

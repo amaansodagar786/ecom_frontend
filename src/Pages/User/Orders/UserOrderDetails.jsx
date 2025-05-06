@@ -33,11 +33,22 @@ const UserOrderDetails = () => {
         
         const data = await response.json();
         
+        // Log image URLs for debugging
+        console.log('Order items with images:', data.items.map(item => ({
+          product_id: item.product_id,
+          image_url: item.product_image
+        })));
+        
         setOrder({
           ...data,
           items: data.items.map(item => ({
             ...item,
-            product_image: item.product_image || '/images/placeholder-product.jpg'
+            // Prepend server URL if the image path is relative
+            product_image: item.product_image 
+              ? item.product_image.startsWith('http')
+                ? item.product_image
+                : `${import.meta.env.VITE_SERVER_API}${item.product_image}`
+              : '/images/placeholder-product.jpg'
           }))
         });
       } catch (err) {
@@ -157,47 +168,47 @@ const UserOrderDetails = () => {
 
   return (
     <UserLayout>
-      <div className="user-order-details-container">
-        <button className="back-btn" onClick={() => navigate(-1)}>
+      <div className="user-order-wrapper">
+        <button className="user-order-back-btn" onClick={() => navigate(-1)}>
           &larr; Back to Orders
         </button>
         
-        <h1 className="orders-title">Order Details {order.order_id}</h1>
+        <h1 className="user-order-title">Order Details {order.order_id}</h1>
         
-        <div className="order-card">
-          <div className="order-header">
-            <div className="order-meta">
-              <span className="order-id">Order {order.order_id}</span>
-              <span className="order-date">Placed on {formatDate(order.created_at)}</span>
+        <div className="user-order-main-card">
+          <div className="user-order-card-header">
+            <div className="user-order-meta">
+              <span className="user-order-id">Order {order.order_id}</span>
+              <span className="user-order-date">Placed on {formatDate(order.created_at)}</span>
             </div>
-            <div className="order-status">
+            <div className="user-order-status">
               {getStatusBadge(order.delivery_status)}
             </div>
           </div>
 
-          <div className="order-items">
+          <div className="user-order-items-list">
             {order.items?.map((item, index) => (
-              <div key={index} className="order-item">
-                <div className="item-image">
+              <div key={index} className="user-order-item">
+                <div className="user-order-item-image">
                   <img 
                     src={item.product_image} 
                     alt={item.product_name}
                     onError={(e) => {
-                    //   e.target.src = '/images/placeholder-product.jpg';
+                      e.target.src = '/images/placeholder-product.jpg';
                     }}
                   />
                 </div>
-                <div className="item-details">
-                  <h4 className="item-name">{item.product_name}</h4>
-                  <p className="item-price">₹{item.unit_price?.toFixed(2)}</p>
-                  <div className="item-meta">
-                    <span className="item-quantity">Qty: {item.quantity}</span>
-                    {item.model && <span className="item-model">Model: {item.model}</span>}
-                    {item.color && <span className="item-color">Color: {item.color}</span>}
+                <div className="user-order-item-details">
+                  <h4 className="user-order-item-name">{item.product_name}</h4>
+                  <p className="user-order-item-price">₹{item.unit_price?.toFixed(2)}</p>
+                  <div className="user-order-item-meta">
+                    <span className="user-order-item-qty">Qty: {item.quantity}</span>
+                    {item.model && <span className="user-order-item-model">Model: {item.model}</span>}
+                    {/* {item.color && <span className="user-order-item-color">Color: {item.color}</span>} */}
                   </div>
                   {order.delivery_status?.toLowerCase() === 'pending' && (
                     <button 
-                      className="review-btn"
+                      className="user-order-review-btn"
                       onClick={() => handleReviewClick(item)}
                     >
                       Rate & Review
@@ -208,14 +219,14 @@ const UserOrderDetails = () => {
             ))}
           </div>
 
-          <div className="order-summary">
-            <div className="order-total">
+          <div className="user-order-summary">
+            <div className="user-order-total">
               <span>Total ({order.total_items} items):</span>
-              <span className="total-amount">₹{order.total_amount?.toFixed(2)}</span>
+              <span className="user-order-total-amount">₹{order.total_amount?.toFixed(2)}</span>
             </div>
-            <div className="payment-status">
+            <div className="user-order-payment-status">
               <span>Payment Status:</span>
-              <span className={`status-${order.payment_status}`}>
+              <span className={`user-order-status-${order.payment_status}`}>
                 {order.payment_status}
               </span>
             </div>
@@ -223,32 +234,42 @@ const UserOrderDetails = () => {
         </div>
 
         {/* Review Modal */}
-        {showReviewModal && (
-          <div className="review-modal-overlay">
-            <div className="review-modal">
-              <div className="modal-header">
-                <h3>Rate {selectedProduct.product_name}</h3>
+        {showReviewModal && selectedProduct && (
+          <div className="user-order-review-modal-overlay">
+            <div className="user-order-review-modal">
+              <div className="user-order-modal-header">
+                <div className="user-order-modal-product-info">
+                  <img 
+                    src={selectedProduct.product_image} 
+                    alt={selectedProduct.product_name}
+                    className="user-order-modal-product-image"
+                    onError={(e) => {
+                      e.target.src = '/images/placeholder-product.jpg';
+                    }}
+                  />
+                  <h3>{selectedProduct.product_name}</h3>
+                </div>
                 <button 
-                  className="close-btn"
+                  className="user-order-modal-close-btn"
                   onClick={() => setShowReviewModal(false)}
                 >
                   &times;
                 </button>
               </div>
               
-              <div className="rating-section">
-                <div className="stars">
+              <div className="user-order-rating-section">
+                <div className="user-order-rating-stars">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <span 
                       key={star}
-                      className="star"
+                      className="user-order-rating-star"
                       onClick={() => setRating(star)}
                     >
                       {star <= rating ? <FaStar /> : <FaRegStar />}
                     </span>
                   ))}
                 </div>
-                <p className="rating-text">
+                <p className="user-order-rating-text">
                   {rating === 0 ? 'Select rating' : 
                    rating === 1 ? 'Poor' :
                    rating === 2 ? 'Fair' :
@@ -257,10 +278,10 @@ const UserOrderDetails = () => {
                 </p>
               </div>
               
-              <div className="review-section">
-                <label htmlFor="review-text">Your Review (Optional)</label>
+              <div className="user-order-review-section">
+                <label htmlFor="user-order-review-text">Your Review (Optional)</label>
                 <textarea
-                  id="review-text"
+                  id="user-order-review-text"
                   value={reviewText}
                   onChange={(e) => setReviewText(e.target.value)}
                   placeholder="Share your experience with this product..."
@@ -268,18 +289,18 @@ const UserOrderDetails = () => {
                 />
               </div>
               
-              {submitError && <p className="error-message">{submitError}</p>}
+              {submitError && <p className="user-order-error-message">{submitError}</p>}
               
-              <div className="modal-actions">
+              <div className="user-order-modal-actions">
                 <button
-                  className="cancel-btn"
+                  className="user-order-modal-cancel-btn"
                   onClick={() => setShowReviewModal(false)}
                   disabled={isSubmitting}
                 >
                   Cancel
                 </button>
                 <button
-                  className="submit-btn"
+                  className="user-order-modal-submit-btn"
                   onClick={handleSubmitReview}
                   disabled={isSubmitting}
                 >

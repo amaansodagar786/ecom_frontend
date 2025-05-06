@@ -5,6 +5,7 @@ import { toast ,ToastContainer  } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import AdminLayout from '../AdminPanel/AdminLayout';
 import './CategoryUpdate.scss';
+import Loader from '../../../Components/Loader/Loader';
 
 const CategoryUpdate = () => {
   const navigate = useNavigate();
@@ -783,10 +784,11 @@ const CategoryUpdate = () => {
       />
       <div className="hsn-management-container">
         {isLoading && !selectedForDelete && (
-          <div className="loading-overlay">
-            <div className="loading-spinner"></div>
-            <p>Loading...</p>
-          </div>
+          // <div className="loading-overlay">
+          //   <div className="loading-spinner"></div>
+          //   <p>Loading...</p>
+          // </div>
+          <Loader/>
         )}
         
         {mode === 'update' ? (

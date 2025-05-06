@@ -1,6 +1,7 @@
 import AdminLayout from '../AdminPanel/AdminLayout';
 import React from 'react'
 import './Dashboard.scss'; // Import your CSS file for styling
+import Loader from '../../../Components/Loader/Loader';
 
 const Dashboard = () => {
   return (

@@ -176,51 +176,59 @@ const NewOrders = () => {
             showErrorToast('Please select at least one product');
             return;
         }
-
+    
         if (!selectedCustomer) {
             showErrorToast('Please select a customer');
             return;
         }
-
+    
         try {
-            console.log('Selected Products:', selectedProducts);
-
             const token = localStorage.getItem('token');
-
-            // 🔁 Removed product verification step here
-
+    
             // Prepare order items
             const orderItems = selectedProducts.map(product => {
-                console.log("🧪 Type of finalPrice:", typeof product.finalPrice, "Value:", product.finalPrice);
-
                 if (!product.finalPrice || isNaN(product.finalPrice)) {
                     throw new Error(`Invalid price for product ${product.product_id}`);
                 }
-
-                return {
+    
+                // Create the base item object
+                const item = {
                     product_id: product.product_id,
                     quantity: product.quantity,
-                    unit_price: product.finalPrice,
-                    ...(product.model_id && { model_id: product.model_id }),
-                    ...(product.color_id && { color_id: product.color_id })
+                    unit_price: product.finalPrice
                 };
+    
+                // Add model_id if it exists
+                if (product.model_id) {
+                    item.model_id = product.model_id;
+                }
+    
+                // Add color_id if it exists (this is the key change)
+                if (product.color_id) {
+                    item.color_id = product.color_id;
+                }
+    
+                return item;
             });
-
-            // Prepare order data
+    
+            // Prepare complete order data with all required fields
             const orderData = {
                 customer_id: selectedCustomer.id,
                 items: orderItems,
                 discount_percent: 0,
-                delivery_charge: 0,
+                delivery_charge: calculateDeliveryCharge(calculateSubtotal()),
                 tax_percent: 0,
                 channel: 'offline',
-                payment_status: 'paid'
+                payment_status: 'paid',
+                delivery_method: 'shipping',
+                delivery_status: 'intransit',
+                fulfillment_status: false
             };
-
-            // Log the exact payload being sent to backend
-            console.log('📦 Order Data being sent to backend:', JSON.stringify(orderData, null, 2));
-
-            // Submit order
+    
+            // Rest of the function remains the same...
+            console.log('📦 Full Order Data:', JSON.stringify(orderData, null, 2));
+            console.log('🌐 Sending to:', `${import.meta.env.VITE_SERVER_API}/orders`);
+    
             const response = await axios.post(
                 `${import.meta.env.VITE_SERVER_API}/orders`,
                 orderData,
@@ -228,12 +236,22 @@ const NewOrders = () => {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
-                    }
+                    },
+                    timeout: 10000
                 }
-            );
-
-            console.log('✅ Response from server:', response.data);
-
+            ).catch(error => {
+                if (error.response) {
+                    console.error('❌ Server responded with error:', error.response.status, error.response.data);
+                } else if (error.request) {
+                    console.error('❌ No response received:', error.request);
+                } else {
+                    console.error('❌ Request setup error:', error.message);
+                }
+                throw error;
+            });
+    
+            console.log('✅ Order created:', response.data);
+    
             if (response.data?.order_id) {
                 showSuccessToast(`Order #${response.data.order_id} created successfully!`);
                 setSelectedProducts([]);
@@ -243,17 +261,19 @@ const NewOrders = () => {
                 showErrorToast('Order created but no order ID returned');
             }
         } catch (error) {
-            console.error('❌ Order creation error:', error);
+            console.error('❌ Order creation failed:', error);
             let errorMessage = 'Failed to create order';
-
-            if (error.response?.data) {
+    
+            if (error.code === 'ERR_NETWORK') {
+                errorMessage = 'Network error - please check your connection and server status';
+            } else if (error.response?.data) {
                 errorMessage = error.response.data.error ||
                     error.response.data.message ||
                     JSON.stringify(error.response.data);
             } else if (error.message) {
                 errorMessage = error.message;
             }
-
+    
             showErrorToast(errorMessage);
         }
     };
@@ -305,11 +325,12 @@ const NewOrders = () => {
 
     const handleAddSelection = () => {
         if (!selectedProduct) return;
-
+    
         if (selectedProduct.product_type === 'single' && selectedColors.length > 0) {
             const newSelections = selectedColors.map(color => ({
                 id: color.color_id,
                 product_id: selectedProduct.product_id,
+                color_id: color.color_id, // Make sure this is included
                 type: 'single',
                 name: selectedProduct.name,
                 color_name: color.name,
@@ -325,11 +346,11 @@ const NewOrders = () => {
                 category: selectedProduct.category,
                 specifications: selectedProduct.specifications
             }));
-
+    
             setSelectedProducts(prev => {
                 const existingIds = prev.map(p => p.id);
                 const newItems = newSelections.filter(item => !existingIds.includes(item.id));
-
+    
                 return [
                     ...prev,
                     ...newItems.map(item => ({
@@ -346,6 +367,7 @@ const NewOrders = () => {
                 id: `${selectedModel.model_id}-${color.color_id}`,
                 product_id: selectedProduct.product_id,
                 model_id: selectedModel.model_id,
+                color_id: color.color_id, // Make sure this is included
                 type: 'variable',
                 name: `${selectedProduct.name} - ${selectedModel.name}`,
                 color_name: color.name,
@@ -363,11 +385,11 @@ const NewOrders = () => {
                 category: selectedProduct.category,
                 specifications: [...selectedProduct.specifications, ...selectedModel.specifications]
             }));
-
+    
             setSelectedProducts(prev => {
                 const existingIds = prev.map(p => p.id);
                 const newItems = newSelections.filter(item => !existingIds.includes(item.id));
-
+    
                 return [
                     ...prev,
                     ...newItems.map(item => ({
@@ -379,13 +401,12 @@ const NewOrders = () => {
                 ];
             });
         }
-
+    
         setSelectionStep('product');
         setSelectedProduct(null);
         setSelectedModel(null);
         setSelectedColors([]);
     };
-
     const handleModalClose = (e) => {
         if (e.target === e.currentTarget) {
             setIsModalOpen(false);

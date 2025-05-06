@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { FiArrowLeft, FiSearch, FiFilter, FiChevronDown } from 'react-icons/fi';
 import './MainProducts.scss';
+import Loader from "../../Components/Loader/Loader";
+
 
 const MainProducts = () => {
   const { categoryId } = useParams();
@@ -154,7 +156,7 @@ const MainProducts = () => {
             <FiArrowLeft /> Back
           </button>
         </div>
-        <div className="loading-spinner">Loading products...</div>
+        <div>  <Loader/> </div>
       </div>
     );
   }

@@ -3,6 +3,7 @@ import { FaBoxOpen, FaEdit, FaPlus, FaMinus, FaSearch, FaFilter } from 'react-ic
 import axios from 'axios';
 import AdminLayout from '../AdminPanel/AdminLayout';
 import './Inventory.scss';
+import Loader from '../../../Components/Loader/Loader';
 
 const Inventory = () => {
   const [products, setProducts] = useState([]);
@@ -144,7 +145,7 @@ const Inventory = () => {
     }
   };
 
-  if (loading) return <AdminLayout><div className="loading-spinner"></div></AdminLayout>;
+  if (loading) return <AdminLayout><Loader/></AdminLayout>;
   if (error) return <AdminLayout><div className="error-message">Error: {error}</div></AdminLayout>;
 
   return (

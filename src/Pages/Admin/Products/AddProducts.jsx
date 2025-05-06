@@ -7,6 +7,7 @@ import axios from 'axios';
 import 'react-toastify/dist/ReactToastify.css';
 import './AddProducts.scss';
 import AdminLayout from '../AdminPanel/AdminLayout';
+import Loader from '../../../Components/Loader/Loader';
 
 const initialValues = {
   name: '',
@@ -551,7 +552,8 @@ const AddProducts = () => {
                           >
                             <option value="">Select main category</option>
                             {loadingCategories ? (
-                              <option disabled>Loading categories...</option>
+                              // <option disabled>Loading categories...</option>
+                              <Loader/>
                             ) : (
                               categories.map(category => (
                                 <option key={category.category_id} value={category.category_id}>
@@ -609,7 +611,8 @@ const AddProducts = () => {
                           >
                             <option value="">Select HSN Code</option>
                             {loadingHsn ? (
-                              <option disabled>Loading HSN codes...</option>
+                              // <option disabled>Loading HSN codes...</option>  
+                              <Loader/>
                             ) : (
                               hsnCodes.map(hsn => (
                                 <option key={hsn.hsn_id} value={hsn.hsn_id}>

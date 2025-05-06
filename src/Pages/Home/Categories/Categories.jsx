@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import './Categories.scss';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import errorImage from '../../../assets/Images/mtm-logo.jpg';
+import Loader from "../../../Components/Loader/Loader";
+
 
 const Categories = () => {
   const navigate = useNavigate();
@@ -52,7 +54,7 @@ const Categories = () => {
     });
   };
 
-  if (loading) return <div className="loading">Loading categories...</div>;
+  if (loading) return <Loader />;
   if (error) return <div className="error">Error: {error}</div>;
 
   return (

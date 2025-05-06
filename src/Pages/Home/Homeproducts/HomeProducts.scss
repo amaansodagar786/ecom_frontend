@@ -445,7 +445,7 @@
           }
   
           .product-name {
-            font-size: 0.95rem;
+            font-size: 0.7rem !important;
             min-height: 2.8em;
             margin-bottom: 8px;
           }
@@ -455,11 +455,11 @@
             flex-wrap: wrap;
   
             .current-price {
-              font-size: 1rem;
+              font-size: 0.7rem;
             }
   
             .original-price {
-              font-size: 0.8rem;
+              font-size: 0.7rem;
               margin-left: 6px;
             }
           }
@@ -553,9 +553,9 @@
           }
   
           .product-name {
-            font-size: 0.85rem;
+            font-size: 0.7rem !important;
             min-height: 2.5em;
-            line-height: 1.4;
+            line-height: 1.5;
             margin-bottom: 8px;
           }
   
@@ -563,17 +563,17 @@
             margin-bottom: 10px;
   
             .current-price {
-              font-size: 0.9rem;
+              font-size: 0.7rem ;
             }
   
             .original-price {
-              font-size: 0.75rem;
+              font-size: 0.7rem !important;
             }
           }
   
           .add-to-cart {
             padding: 8px;
-            font-size: 0.7rem;
+            font-size: 0.6rem;
             border-radius: 8px;
           }
         }

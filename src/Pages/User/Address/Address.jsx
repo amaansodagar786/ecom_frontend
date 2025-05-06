@@ -5,6 +5,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import AddressModal from './AddressModal';
 import { FiEdit, FiTrash2, FiX, FiChevronUp, FiChevronDown } from 'react-icons/fi';
+import Loader from '../../../Components/Loader/Loader';
 
 
 const Address = () => {
@@ -145,7 +146,7 @@ const Address = () => {
   if (isLoading && addresses.length === 0) {
     return (
       <UserLayout>
-        <div className="loading-spinner">Loading your addresses...</div>
+        <Loader/>
       </UserLayout>
     );
   }
