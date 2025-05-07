@@ -38,8 +38,8 @@ const NewOrders = () => {
     const [isCustomerLoading, setIsCustomerLoading] = useState(false);
     const [selectionStep, setSelectionStep] = useState('product');
     const [selectedProduct, setSelectedProduct] = useState(null);
-    const [selectedModel, setSelectedModel] = useState(null);
-    const [selectedColors, setSelectedColors] = useState([]);
+    const [selectedModels, setSelectedModels] = useState([]); // Changed to array for multiple selection
+    const [selectedSingleProducts, setSelectedSingleProducts] = useState([]); // For multiple single product selection
 
     // Fetch products from API
     useEffect(() => {
@@ -76,7 +76,6 @@ const NewOrders = () => {
         fetchStates();
     }, []);
 
-
     useEffect(() => {
         if (isModalOpen || isCustomerModalOpen || isNewCustomerModalOpen) {
             document.body.style.overflow = 'hidden';
@@ -89,7 +88,6 @@ const NewOrders = () => {
         };
     }, [isModalOpen, isCustomerModalOpen, isNewCustomerModalOpen]);
 
-
     const getStateName = (stateId) => {
         const state = states.find(s => s.state_id == stateId);
         return state ? state.name : '';
@@ -98,8 +96,8 @@ const NewOrders = () => {
     // Fetch customers from API when customer modal opens
     useEffect(() => {
         if (isCustomerModalOpen) {
-            fetchCustomers(); // This will fetch all customers immediately
-            setCustomerSearchTerm(''); // Reset search term
+            fetchCustomers();
+            setCustomerSearchTerm('');
         }
     }, [isCustomerModalOpen]);
 
@@ -113,12 +111,9 @@ const NewOrders = () => {
                     'Authorization': `Bearer ${token}`
                 }
             });
-
-            // Convert backend customers to frontend format
+    
             const frontendCustomers = response.data.map(backendCustomer => {
-                // Ensure addresses is always an array
                 const addresses = backendCustomer.addresses || [];
-
                 return {
                     id: backendCustomer.customer_id,
                     name: backendCustomer.name,
@@ -131,13 +126,15 @@ const NewOrders = () => {
                             addr.address_line.split(',').slice(1).join(',').trim() : '',
                         city: addr.city || '',
                         state: addr.state_name || addr.state_abbreviation || '',
+                        state_id: addr.state_id || '',
                         pincode: addr.pincode || '',
                         country: 'India',
-                        is_default: addr.is_default || false  // Ensure this is always boolean
+                        is_default: addr.is_default || false,
+                        is_available: addr.is_available // Add this line
                     }))
                 };
             });
-
+    
             setCustomers(frontendCustomers);
         } catch (error) {
             console.error('Error fetching customers:', error);
@@ -176,42 +173,37 @@ const NewOrders = () => {
             showErrorToast('Please select at least one product');
             return;
         }
-    
+
         if (!selectedCustomer) {
             showErrorToast('Please select a customer');
             return;
         }
-    
+
         try {
             const token = localStorage.getItem('token');
-    
-            // Prepare order items
+
             const orderItems = selectedProducts.map(product => {
                 if (!product.finalPrice || isNaN(product.finalPrice)) {
                     throw new Error(`Invalid price for product ${product.product_id}`);
                 }
-    
-                // Create the base item object
+
                 const item = {
                     product_id: product.product_id,
                     quantity: product.quantity,
                     unit_price: product.finalPrice
                 };
-    
-                // Add model_id if it exists
+
                 if (product.model_id) {
                     item.model_id = product.model_id;
                 }
-    
-                // Add color_id if it exists (this is the key change)
+
                 if (product.color_id) {
                     item.color_id = product.color_id;
                 }
-    
+
                 return item;
             });
-    
-            // Prepare complete order data with all required fields
+
             const orderData = {
                 customer_id: selectedCustomer.id,
                 items: orderItems,
@@ -224,11 +216,10 @@ const NewOrders = () => {
                 delivery_status: 'intransit',
                 fulfillment_status: false
             };
-    
-            // Rest of the function remains the same...
+
             console.log('📦 Full Order Data:', JSON.stringify(orderData, null, 2));
             console.log('🌐 Sending to:', `${import.meta.env.VITE_SERVER_API}/orders`);
-    
+
             const response = await axios.post(
                 `${import.meta.env.VITE_SERVER_API}/orders`,
                 orderData,
@@ -249,9 +240,9 @@ const NewOrders = () => {
                 }
                 throw error;
             });
-    
+
             console.log('✅ Order created:', response.data);
-    
+
             if (response.data?.order_id) {
                 showSuccessToast(`Order #${response.data.order_id} created successfully!`);
                 setSelectedProducts([]);
@@ -263,7 +254,7 @@ const NewOrders = () => {
         } catch (error) {
             console.error('❌ Order creation failed:', error);
             let errorMessage = 'Failed to create order';
-    
+
             if (error.code === 'ERR_NETWORK') {
                 errorMessage = 'Network error - please check your connection and server status';
             } else if (error.response?.data) {
@@ -273,164 +264,155 @@ const NewOrders = () => {
             } else if (error.message) {
                 errorMessage = error.message;
             }
-    
+
             showErrorToast(errorMessage);
         }
     };
 
     const getImageUrl = (imagePath) => {
         if (!imagePath) return null;
-
-        // If it's already a full URL (starts with http), use as is
-        if (imagePath.startsWith('http')) {
-            return imagePath;
-        }
-
-        // If it starts with / (like /product_images/...), prepend server URL
-        if (imagePath.startsWith('/')) {
-            return `${import.meta.env.VITE_SERVER_API}${imagePath}`;
-        }
-
-        // Otherwise, assume it's just a filename and use the old format
+        if (imagePath.startsWith('http')) return imagePath;
+        if (imagePath.startsWith('/')) return `${import.meta.env.VITE_SERVER_API}${imagePath}`;
         return `${import.meta.env.VITE_SERVER_API}/static/${imagePath}`;
     };
-
 
     const handleProductSelect = (product) => {
         setSelectedProduct(product);
         if (product.product_type === 'single') {
-            setSelectionStep('color');
-            setSelectedModel(null);
+            setSelectionStep('single-products');
+            setSelectedSingleProducts([product]); // Start with the selected product
         } else {
-            setSelectionStep('model');
-            setSelectedColors([]);
+            setSelectionStep('models');
+            setSelectedModels([]);
         }
     };
 
-    const handleModelSelect = (model) => {
-        setSelectedModel(model);
-        setSelectionStep('color');
+    const handleSingleProductToggle = (product) => {
+        setSelectedSingleProducts(prev => {
+            const isSelected = prev.some(p => p.product_id === product.product_id);
+            if (isSelected) {
+                return prev.filter(p => p.product_id !== product.product_id);
+            } else {
+                return [...prev, product];
+            }
+        });
     };
 
-    const handleColorSelect = (color) => {
-        setSelectedColors(prev => {
-            const isSelected = prev.some(c => c.color_id === color.color_id);
+    const handleModelToggle = (model) => {
+        setSelectedModels(prev => {
+            const isSelected = prev.some(m => m.model_id === model.model_id);
             if (isSelected) {
-                return prev.filter(c => c.color_id !== color.color_id);
+                return prev.filter(m => m.model_id !== model.model_id);
             } else {
-                return [...prev, color];
+                return [...prev, model];
             }
         });
     };
 
     const handleAddSelection = () => {
-        if (!selectedProduct) return;
-    
-        if (selectedProduct.product_type === 'single' && selectedColors.length > 0) {
-            const newSelections = selectedColors.map(color => ({
-                id: color.color_id,
-                product_id: selectedProduct.product_id,
-                color_id: color.color_id, // Make sure this is included
-                type: 'single',
-                name: selectedProduct.name,
-                color_name: color.name,
-                full_name: `${selectedProduct.name} - ${color.name}`,
-                image: color.images?.[0]?.image_url
-                    ? `${import.meta.env.VITE_SERVER_API}/${color.images[0].image_url}`
-                    : selectedProduct.images?.[0]?.image_url
-                        ? `${import.meta.env.VITE_SERVER_API}/${selectedProduct.images[0].image_url}`
-                        : '/placeholder-product.png',
-                stock: color.stock_quantity,
-                price: color.price,
-                original_price: color.original_price || color.price,
-                category: selectedProduct.category,
-                specifications: selectedProduct.specifications
-            }));
-    
-            setSelectedProducts(prev => {
-                const existingIds = prev.map(p => p.id);
-                const newItems = newSelections.filter(item => !existingIds.includes(item.id));
-    
-                return [
-                    ...prev,
-                    ...newItems.map(item => ({
-                        ...item,
-                        finalPrice: item.price,
-                        discountPercentage: 0,
-                        quantity: 1
-                    }))
-                ];
-            });
-        }
-        else if (selectedModel && selectedColors.length > 0) {
-            const newSelections = selectedColors.map(color => ({
-                id: `${selectedModel.model_id}-${color.color_id}`,
-                product_id: selectedProduct.product_id,
-                model_id: selectedModel.model_id,
-                color_id: color.color_id, // Make sure this is included
-                type: 'variable',
-                name: `${selectedProduct.name} - ${selectedModel.name}`,
-                color_name: color.name,
-                full_name: `${selectedProduct.name} - ${selectedModel.name} - ${color.name}`,
-                image: color.images?.[0]?.image_url
-                    ? `${import.meta.env.VITE_SERVER_API}/${color.images[0].image_url}`
-                    : selectedModel.images?.[0]?.image_url
-                        ? `${import.meta.env.VITE_SERVER_API}/${selectedModel.images[0].image_url}`
-                        : selectedProduct.images?.[0]?.image_url
-                            ? `${import.meta.env.VITE_SERVER_API}/${selectedProduct.images[0].image_url}`
+        if (selectionStep === 'single-products') {
+            // Add all selected single products
+            const newSelections = selectedSingleProducts.map(product => {
+                const defaultColor = product.colors?.[0];
+                if (!defaultColor) {
+                    showErrorToast(`No colors available for product ${product.name}`);
+                    return null;
+                }
+
+                return {
+                    id: defaultColor.color_id,
+                    product_id: product.product_id,
+                    color_id: defaultColor.color_id,
+                    type: 'single',
+                    name: product.name,
+                    color_name: defaultColor.name,
+                    full_name: `${product.name} - ${defaultColor.name}`,
+                    image: defaultColor.images?.[0]?.image_url
+                        ? `${import.meta.env.VITE_SERVER_API}/${defaultColor.images[0].image_url}`
+                        : product.images?.[0]?.image_url
+                            ? `${import.meta.env.VITE_SERVER_API}/${product.images[0].image_url}`
                             : '/placeholder-product.png',
-                stock: color.stock_quantity,
-                price: color.price,
-                original_price: color.original_price || color.price,
-                category: selectedProduct.category,
-                specifications: [...selectedProduct.specifications, ...selectedModel.specifications]
-            }));
-    
-            setSelectedProducts(prev => {
-                const existingIds = prev.map(p => p.id);
-                const newItems = newSelections.filter(item => !existingIds.includes(item.id));
-    
-                return [
-                    ...prev,
-                    ...newItems.map(item => ({
-                        ...item,
-                        finalPrice: item.price,
-                        discountPercentage: 0,
-                        quantity: 1
-                    }))
-                ];
-            });
+                    stock: defaultColor.stock_quantity,
+                    price: defaultColor.price,
+                    original_price: defaultColor.original_price || defaultColor.price,
+                    category: product.category,
+                    specifications: product.specifications,
+                    finalPrice: defaultColor.price,
+                    discountPercentage: 0,
+                    quantity: 1
+                };
+            }).filter(Boolean);
+
+            setSelectedProducts(prev => [...prev, ...newSelections]);
+        } 
+        else if (selectionStep === 'models' && selectedProduct) {
+            // Add all selected models with their default colors
+            const newSelections = selectedModels.map(model => {
+                const defaultColor = model.colors?.[0];
+                if (!defaultColor) {
+                    showErrorToast(`No colors available for model ${model.name}`);
+                    return null;
+                }
+
+                return {
+                    id: `${model.model_id}-${defaultColor.color_id}`,
+                    product_id: selectedProduct.product_id,
+                    model_id: model.model_id,
+                    color_id: defaultColor.color_id,
+                    type: 'variable',
+                    name: `${selectedProduct.name} - ${model.name}`,
+                    color_name: defaultColor.name,
+                    full_name: `${selectedProduct.name} - ${model.name} - ${defaultColor.name}`,
+                    image: defaultColor.images?.[0]?.image_url
+                        ? `${import.meta.env.VITE_SERVER_API}/${defaultColor.images[0].image_url}`
+                        : model.images?.[0]?.image_url
+                            ? `${import.meta.env.VITE_SERVER_API}/${model.images[0].image_url}`
+                            : selectedProduct.images?.[0]?.image_url
+                                ? `${import.meta.env.VITE_SERVER_API}/${selectedProduct.images[0].image_url}`
+                                : '/placeholder-product.png',
+                    stock: defaultColor.stock_quantity,
+                    price: defaultColor.price,
+                    original_price: defaultColor.original_price || defaultColor.price,
+                    category: selectedProduct.category,
+                    specifications: [...selectedProduct.specifications, ...model.specifications],
+                    finalPrice: defaultColor.price,
+                    discountPercentage: 0,
+                    quantity: 1
+                };
+            }).filter(Boolean);
+
+            setSelectedProducts(prev => [...prev, ...newSelections]);
         }
-    
+
+        setIsModalOpen(false);
         setSelectionStep('product');
         setSelectedProduct(null);
-        setSelectedModel(null);
-        setSelectedColors([]);
+        setSelectedModels([]);
+        setSelectedSingleProducts([]);
     };
+
     const handleModalClose = (e) => {
         if (e.target === e.currentTarget) {
             setIsModalOpen(false);
             setSelectionStep('product');
             setSelectedProduct(null);
-            setSelectedModel(null);
-            setSelectedColors([]);
+            setSelectedModels([]);
+            setSelectedSingleProducts([]);
         }
     };
 
     const handleQuantityChange = (id, newQuantity) => {
-        const product = selectedProducts.find(p => p.id === id);
-        if (!product) return;
-
-        const quantity = Math.max(1, Math.min(
-            product.stock,
-            parseInt(newQuantity) || 1
-        ));
-
         setSelectedProducts(prev =>
-            prev.map(p =>
-                p.id === id
-                    ? { ...p, quantity }
-                    : p
+            prev.map(product =>
+                product.id === id
+                    ? {
+                        ...product,
+                        quantity: Math.max(1, Math.min(
+                            product.stock,
+                            parseInt(newQuantity) || 1
+                        ))
+                    }
+                    : product
             )
         );
     };
@@ -498,12 +480,10 @@ const NewOrders = () => {
     };
 
     const handleCustomerSearch = (e) => {
-        const query = e.target.value.toLowerCase();
-        setCustomerSearchTerm(query);
+        setCustomerSearchTerm(e.target.value.toLowerCase());
     };
 
     const handleCustomerSelect = (customer) => {
-        // Map the addresses to include both state and state_id
         const mappedCustomer = {
             ...customer,
             addresses: customer.addresses.map(addr => ({
@@ -512,8 +492,6 @@ const NewOrders = () => {
             }))
         };
 
-        console.log('Selected customer:', mappedCustomer);
-        console.log('Customer addresses:', mappedCustomer.addresses);
         setSelectedCustomer(mappedCustomer);
         setSelectedAddress(null);
     };
@@ -528,20 +506,15 @@ const NewOrders = () => {
             return;
         }
 
-        // If customer has addresses but none selected, try to select default
         if (selectedCustomer.addresses?.length > 0 && !selectedAddress) {
-            const defaultAddress = selectedCustomer.addresses.find(addr => addr.is_default);
+            const defaultAddress = selectedCustomer.addresses.find(addr => addr.is_default) || 
+                                 selectedCustomer.addresses[0];
             if (defaultAddress) {
                 setSelectedAddress(defaultAddress);
-            } else {
-                // If no default address, select the first one
-                setSelectedAddress(selectedCustomer.addresses[0]);
             }
         }
 
         setIsCustomerModalOpen(false);
-
-        // Show success message if customer was selected
         if (selectedCustomer) {
             showSuccessToast(`Customer ${selectedCustomer.name} selected`);
         }
@@ -579,8 +552,6 @@ const NewOrders = () => {
 
         try {
             const token = localStorage.getItem('token');
-            const selectedState = states.find(state => state.state_id == newCustomer.addresses[0].state_id);
-
             const backendData = {
                 name: newCustomer.name,
                 mobile: newCustomer.phone,
@@ -612,56 +583,48 @@ const NewOrders = () => {
                 }
             );
 
-            // Check if the response indicates pincode is not serviceable
-            if (response.data.success === false) {
-                // Reset form
-                setNewCustomer({
-                    name: '',
-                    phone: '',
-                    email: '',
-                    addresses: [{
-                        address_line1: '',
-                        address_line2: '',
-                        city: '',
-                        state_id: '',
-                        pincode: '',
-                        country: 'India',
-                        is_default: true
-                    }]
-                });
-                showErrorToast(response.data.message || 'Service not available for this pincode. Please choose a different pincode.');
-                return;
-            }
-
-            // If we get here, customer was created successfully
+            // Check if address was saved but not serviceable
+        if (response.data.address && !response.data.address.is_available) {
+            showWarningToast('Customer added successfully, but delivery is not available for this pincode');
+        } else {
             showSuccessToast('Customer added successfully!');
-            setNewCustomer({
-                name: '',
-                phone: '',
-                email: '',
-                addresses: [{
-                    address_line1: '',
-                    address_line2: '',
-                    city: '',
-                    state_id: '',
-                    pincode: '',
-                    country: 'India',
-                    is_default: true
-                }]
-            });
-            setIsNewCustomerModalOpen(false);
-            fetchCustomers();
-        } catch (error) {
-            console.error('Error adding customer:', error);
-
-            // Handle pincode service error specifically if it comes from backend
-            if (error.response?.data?.message?.includes('pincode')) {
-                showErrorToast('Service not available for this pincode. Please choose a different pincode.');
-            } else {
-                showErrorToast(error.response?.data?.message || 'Failed to add customer');
-            }
         }
-    };
+
+        setNewCustomer({
+            name: '',
+            phone: '',
+            email: '',
+            addresses: [{
+                address_line1: '',
+                address_line2: '',
+                city: '',
+                state_id: '',
+                pincode: '',
+                country: 'India',
+                is_default: true
+            }]
+        });
+        setIsNewCustomerModalOpen(false);
+        fetchCustomers();
+    } catch (error) {
+        console.error('Error adding customer:', error);
+        showErrorToast(error.response?.data?.message || 'Failed to add customer');
+    }
+};
+
+
+const showWarningToast = (message) => {
+    toast.warning(message, {
+        position: "top-center",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+    });
+};
+
     const renderProductSelection = () => {
         return (
             <div className="product-list">
@@ -707,6 +670,91 @@ const NewOrders = () => {
         );
     };
 
+    const renderSingleProductsSelection = () => {
+        if (!selectedProduct || selectedProduct.product_type !== 'single') return null;
+
+        // Get all single products in the same category as the selected product
+        const similarProducts = products.filter(p => 
+            p.product_type === 'single' && 
+            p.category === selectedProduct.category &&
+            p.product_id !== selectedProduct.product_id
+        );
+
+        const allProducts = [selectedProduct, ...similarProducts];
+
+        return (
+            <div className="single-products-selection">
+                <button
+                    className="back-button"
+                    onClick={() => setSelectionStep('product')}
+                >
+                    ← Back to Products
+                </button>
+                <h4>Select Products</h4>
+                <div className="product-list" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                    {allProducts.map(product => {
+                        const defaultColor = product.colors?.[0];
+                        const isSelected = selectedSingleProducts.some(p => p.product_id === product.product_id);
+
+                        return (
+                            <div
+                                key={product.product_id}
+                                className={`product-item ${isSelected ? 'selected' : ''}`}
+                                onClick={() => handleSingleProductToggle(product)}
+                            >
+                                <div className="product-select-box">
+                                    {isSelected && <FaCheck className="check-icon" />}
+                                </div>
+                                <div className="product-image">
+                                    <img
+                                        src={product.images?.[0]?.image_url
+                                            ? getImageUrl(product.images[0].image_url)
+                                            : '/placeholder-product.png'}
+                                        alt={product.name}
+                                    />
+                                </div>
+                                <div className="product-info">
+                                    <h5>{product.name}</h5>
+                                    {defaultColor && (
+                                        <div className="product-details">
+                                            <span>Color: {defaultColor.name}</span>
+                                            <span>Price: ₹{defaultColor.price.toFixed(2)}</span>
+                                            <span className="stock-info">
+                                                {defaultColor.stock_quantity <= 0 ? 
+                                                    'Out of stock' : 
+                                                    `Stock: ${defaultColor.stock_quantity}`}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+                <div className="selection-actions">
+                    <button
+                        className="cancel-btn"
+                        onClick={() => {
+                            setSelectionStep('product');
+                            setSelectedSingleProducts([]);
+                        }}
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        className="confirm-btn"
+                        onClick={handleAddSelection}
+                        disabled={selectedSingleProducts.length === 0}
+                    >
+                        Add {selectedSingleProducts.length > 1 ? 
+                            `${selectedSingleProducts.length} Products to Order` : 
+                            'Product to Order'}
+                    </button>
+                </div>
+            </div>
+        );
+    };
+
     const renderModelSelection = () => {
         if (!selectedProduct || selectedProduct.product_type !== 'variable') return null;
 
@@ -718,131 +766,49 @@ const NewOrders = () => {
                 >
                     ← Back to Products
                 </button>
-                <h4>Select Model for {selectedProduct.name}</h4>
+                <h4>Select Models for {selectedProduct.name}</h4>
                 <div className="model-list" style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                    {selectedProduct.models.map(model => (
-                        <div
-                            key={model.model_id}
-                            className={`model-item ${selectedModel?.model_id === model.model_id ? 'selected' : ''}`}
-                            onClick={() => handleModelSelect(model)}
-                        >
-                            <div className="model-select-box">
-                                {selectedModel?.model_id === model.model_id && <FaCheck className="check-icon" />}
-                            </div>
-                            <div className="model-image">
-                                <img
-                                    src={model.images?.[0]?.image_url
-                                        ? getImageUrl(model.images[0].image_url)
-                                        : selectedProduct.images?.[0]?.image_url
-                                            ? getImageUrl(selectedProduct.images[0].image_url)
-                                            : '/placeholder-product.png'}
-                                    alt={model.name}
-                                />
-                            </div>
-                            <div className="model-info">
-                                <h5>{model.name}</h5>
-                                <div className="model-specs">
-                                    {model.specifications?.map(spec => (
-                                        <span key={spec.spec_id}>{spec.key}: {spec.value}</span>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-                <div className="selection-actions">
-                    <button
-                        className="cancel-btn"
-                        onClick={() => {
-                            setSelectionStep('product');
-                            setSelectedModel(null);
-                        }}
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        className="confirm-btn"
-                        onClick={() => {
-                            if (selectedModel) {
-                                setSelectionStep('color');
-                            } else {
-                                showErrorToast('Please select a model');
-                            }
-                        }}
-                        disabled={!selectedModel}
-                    >
-                        Next: Select Color
-                    </button>
-                </div>
-            </div>
-        );
-    };
-
-    const renderColorSelection = () => {
-        if (!selectedProduct) return null;
-
-        let colors = [];
-        if (selectedProduct.product_type === 'single') {
-            colors = selectedProduct.colors;
-        } else if (selectedModel) {
-            colors = selectedModel.colors;
-        } else {
-            return null;
-        }
-
-        return (
-            <div className="color-selection">
-                <button
-                    className="back-button"
-                    onClick={() => {
-                        selectedProduct.product_type === 'single'
-                            ? setSelectionStep('product')
-                            : setSelectionStep('model');
-                        setSelectedColors([]);
-                    }}
-                >
-                    ← Back to {selectedProduct.product_type === 'single' ? 'Products' : 'Models'}
-                </button>
-                <h4>
-                    Select Color for {selectedProduct.name}
-                    {selectedModel && ` - ${selectedModel.name}`}
-                </h4>
-                <div className="color-list" style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                    {colors.map(color => {
-                        const imageSrc = color.images?.[0]?.image_url
-                            ? `${import.meta.env.VITE_SERVER_API}/${color.images[0].image_url}`
-                            : selectedModel?.images?.[0]?.image_url
-                                ? `${import.meta.env.VITE_SERVER_API}/${selectedModel.images[0].image_url}`
-                                : selectedProduct.images?.[0]?.image_url
-                                    ? `${import.meta.env.VITE_SERVER_API}/${selectedProduct.images[0].image_url}`
-                                    : '/placeholder-product.png';
+                    {selectedProduct.models.map(model => {
+                        const defaultColor = model.colors?.[0];
+                        const isSelected = selectedModels.some(m => m.model_id === model.model_id);
 
                         return (
                             <div
-                                key={color.color_id}
-                                className={`color-item ${color.stock_quantity <= 0 ? 'out-of-stock' : ''} ${selectedColors.some(c => c.color_id === color.color_id) ? 'selected' : ''
-                                    }`}
-                                onClick={() => color.stock_quantity > 0 && handleColorSelect(color)}
+                                key={model.model_id}
+                                className={`model-item ${isSelected ? 'selected' : ''}`}
+                                onClick={() => handleModelToggle(model)}
                             >
-                                <div className="color-select-box">
-                                    {selectedColors.some(c => c.color_id === color.color_id) && (
-                                        <FaCheck className="check-icon" />
-                                    )}
+                                <div className="model-select-box">
+                                    {isSelected && <FaCheck className="check-icon" />}
                                 </div>
-                                <div className="color-image-container">
+                                <div className="model-image">
                                     <img
-                                        src={imageSrc}
-                                        alt={color.name}
-                                        className="color-image"
+                                        src={model.images?.[0]?.image_url
+                                            ? getImageUrl(model.images[0].image_url)
+                                            : selectedProduct.images?.[0]?.image_url
+                                                ? getImageUrl(selectedProduct.images[0].image_url)
+                                                : '/placeholder-product.png'}
+                                        alt={model.name}
                                     />
                                 </div>
-                                <div className="color-swatch" style={{ backgroundColor: color.hex_code || '#ccc' }}></div>
-                                <div className="color-info">
-                                    <span>{color.name}</span>
-                                    <span>₹{color.price.toFixed(2)}</span>
-                                    <span className="stock-info">
-                                        {color.stock_quantity <= 0 ? 'Out of stock' : `Stock: ${color.stock_quantity}`}
-                                    </span>
+                                <div className="model-info">
+                                    <h5>{model.name}</h5>
+                                    {defaultColor && (
+                                        <div className="model-details">
+                                            <span>Color: {defaultColor.name}</span>
+                                            <span>Price: ₹{defaultColor.price.toFixed(2)}</span>
+                                            <span className="stock-info">
+                                                {defaultColor.stock_quantity <= 0 ? 
+                                                    'Out of stock' : 
+                                                    `Stock: ${defaultColor.stock_quantity}`}
+                                            </span>
+                                        </div>
+                                    )}
+                                    <div className="model-specs">
+                                        {model.specifications?.map(spec => (
+                                            <span key={spec.spec_id}>{spec.key}: {spec.value}</span>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         );
@@ -852,27 +818,20 @@ const NewOrders = () => {
                     <button
                         className="cancel-btn"
                         onClick={() => {
-                            selectedProduct.product_type === 'single'
-                                ? setSelectionStep('product')
-                                : setSelectionStep('model');
-                            setSelectedColors([]);
+                            setSelectionStep('product');
+                            setSelectedModels([]);
                         }}
                     >
                         Cancel
                     </button>
                     <button
                         className="confirm-btn"
-                        onClick={() => {
-                            if (selectedColors.length > 0) {
-                                handleAddSelection();
-                                setIsModalOpen(false);
-                            } else {
-                                showErrorToast('Please select at least one color');
-                            }
-                        }}
-                        disabled={selectedColors.length === 0}
+                        onClick={handleAddSelection}
+                        disabled={selectedModels.length === 0}
                     >
-                        {selectedColors.length > 1 ? 'Add All to Order' : 'Add to Order'}
+                        Add {selectedModels.length > 1 ? 
+                            `${selectedModels.length} Models to Order` : 
+                            'Model to Order'}
                     </button>
                 </div>
             </div>
@@ -907,7 +866,7 @@ const NewOrders = () => {
                             placeholder="Search customer..."
                             className="search-input"
                             value={customerSearchTerm}
-                            onChange={(e) => setCustomerSearchTerm(e.target.value)}
+                            onChange={handleCustomerSearch}
                             onClick={() => setIsCustomerModalOpen(true)}
                         />
                         <button
@@ -1064,8 +1023,8 @@ const NewOrders = () => {
                             <div className="modal-header">
                                 <h3>
                                     {selectionStep === 'product' && 'Select Products'}
-                                    {selectionStep === 'model' && 'Select Model'}
-                                    {selectionStep === 'color' && 'Select Color'}
+                                    {selectionStep === 'single-products' && 'Select Products'}
+                                    {selectionStep === 'models' && 'Select Models'}
                                 </h3>
                                 <button
                                     className="close-modal-btn"
@@ -1073,8 +1032,8 @@ const NewOrders = () => {
                                         setIsModalOpen(false);
                                         setSelectionStep('product');
                                         setSelectedProduct(null);
-                                        setSelectedModel(null);
-                                        setSelectedColors([]);
+                                        setSelectedModels([]);
+                                        setSelectedSingleProducts([]);
                                     }}
                                 >
                                     ×
@@ -1111,8 +1070,8 @@ const NewOrders = () => {
                                         </div>
                                     </>
                                 )}
-                                {selectionStep === 'model' && renderModelSelection()}
-                                {selectionStep === 'color' && renderColorSelection()}
+                                {selectionStep === 'single-products' && renderSingleProductsSelection()}
+                                {selectionStep === 'models' && renderModelSelection()}
                             </div>
                         </div>
                     </div>
@@ -1197,33 +1156,33 @@ const NewOrders = () => {
                                                     <p>No addresses found for this customer.</p>
                                                 ) : (
                                                     <div className="address-list">
-                                                        {selectedCustomer.addresses?.map(address => {
-                                                            console.log("Rendering address:", address); // Add this
-                                                            console.log("State from state_id", address.state_id, getStateName(address.state_id)); // 🔥 ADD THIS HERE
-
-
-                                                            return (
-                                                                <div
-                                                                    key={address.id}
-                                                                    className={`address-item ${selectedAddress?.id === address.id ? 'selected' : ''}`}
-                                                                    onClick={() => handleAddressSelect(address)}
-                                                                >
-                                                                    <div className="address-select-box">
-                                                                        {selectedAddress?.id === address.id && <FaCheck className="check-icon" />}
-                                                                    </div>
-                                                                    <div className="address-details">
-                                                                        <p>{address.address_line1}</p>
-                                                                        {address.address_line2 && <p>{address.address_line2}</p>}
-                                                                        <p>
-                                                                            {address.city},
-                                                                            {address.state_id ? getStateName(address.state_id) : address.state} - {address.pincode}
-                                                                        </p>
-                                                                        {address.is_default && <span className="default-tag">Default</span>}
-                                                                    </div>
-                                                                </div>
-                                                            );
-                                                        })}
-                                                    </div>
+    {selectedCustomer.addresses?.map(address => (
+        <div
+            key={address.id}
+            className={`address-item ${selectedAddress?.id === address.id ? 'selected' : ''}`}
+            onClick={() => handleAddressSelect(address)}
+        >
+            <div className="address-select-box">
+                {selectedAddress?.id === address.id && <FaCheck className="check-icon" />}
+            </div>
+            <div className="address-details">
+                <p>{address.address_line1}</p>
+                {address.address_line2 && <p>{address.address_line2}</p>}
+                <p>
+                    {address.city},
+                    {address.state_id ? getStateName(address.state_id) : address.state} - {address.pincode}
+                </p>
+                {address.is_default && <span className="default-tag">Default</span>}
+                {address.is_available === false && (
+                    <div className="service-warning">
+                        <span className="warning-icon">⚠️</span>
+                        Delivery not available
+                    </div>
+                )}
+            </div>
+        </div>
+    ))}
+</div>
                                                 )}
                                             </div>
                                         )}
@@ -1404,4 +1363,3 @@ const NewOrders = () => {
 };
 
 export default NewOrders;
-

@@ -84,21 +84,12 @@ const Address = () => {
 
       const result = await response.json();
 
-      if (!response.ok || !result.success) {
-        throw new Error(result.message || 'Delivery not available for this pincode. Please choose a different one.');
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to save address');
       }
 
-      toast.success(isEditMode ? 'Address updated successfully!' : 'Address saved successfully!');
-
-      if (isEditMode) {
-        setAddresses(addresses.map(addr =>
-          addr.address_id === currentAddressId ? result.address : addr
-        ));
-      } else {
-        setAddresses([...addresses, result.address]);
-      }
-
-      return true;
+      // Return the full result including the address
+      return result;
     } catch (err) {
       console.error('Error saving address:', err);
       toast.error(err.message || 'An unexpected error occurred. Please try again.');
@@ -146,7 +137,7 @@ const Address = () => {
   if (isLoading && addresses.length === 0) {
     return (
       <UserLayout>
-        <Loader/>
+        <Loader />
       </UserLayout>
     );
   }
@@ -273,6 +264,7 @@ const Address = () => {
           )}
         </div>
 
+
         <AddressModal
           isOpen={isModalOpen}
           onClose={() => {
@@ -280,11 +272,25 @@ const Address = () => {
             setIsEditMode(false);
             setCurrentAddressId(null);
           }}
-          onSave={handleSaveAddress}
+          onSave={async (formData) => {
+            const result = await handleSaveAddress(formData);
+            if (result && result.address) {
+              if (isEditMode) {
+                // Update existing address
+                setAddresses(addresses.map(addr =>
+                  addr.address_id === currentAddressId ? result.address : addr
+                ));
+              } else {
+                // Add new address
+                setAddresses([...addresses, result.address]);
+              }
+            }
+            return result;
+          }}
           states={states}
           initialData={isEditMode ? addresses.find(a => a.address_id === currentAddressId) : null}
           isEditMode={isEditMode}
-          key={currentAddressId || 'create'} // Important for resetting form
+          key={currentAddressId || 'create'}
         />
 
         <ToastContainer

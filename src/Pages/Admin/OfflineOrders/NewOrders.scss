@@ -1572,3 +1572,203 @@
 body {
   overflow-x: hidden;
 }
+
+
+// Add this to your SCSS file, inside the .offline-orders-container section
+
+.single-products-selection {
+  padding: 1.5rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  .back-button {
+    background: none;
+    border: none;
+    color: #4a6cf7;
+    font-size: 0.9rem;
+    cursor: pointer;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    padding: 0.5rem;
+    transition: all 0.2s;
+    align-self: flex-start;
+
+    &:hover {
+      color: #3a5bd9;
+      text-decoration: underline;
+    }
+  }
+
+  h4 {
+    font-size: 1.2rem;
+    margin-bottom: 1.5rem;
+    color: #333;
+  }
+
+  .product-list {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+
+    .product-item {
+      display: flex;
+      align-items: center;
+      padding: 1rem;
+      border: 1px solid #f0f0f0;
+      border-radius: 8px;
+      margin-bottom: 0.8rem;
+      transition: all 0.3s;
+      cursor: pointer;
+
+      &:hover {
+        border-color: #4a6cf7;
+      }
+
+      &.selected {
+        border-color: #4a6cf7;
+        background-color: #f0f5ff;
+      }
+
+      .product-select-box {
+        width: 20px;
+        height: 20px;
+        border: 2px solid #ccc;
+        border-radius: 4px;
+        margin-right: 15px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+
+        .check-icon {
+          color: #4a6cf7;
+          font-size: 0.8rem;
+          opacity: 0;
+          transition: opacity 0.2s;
+        }
+      }
+
+      &.selected .product-select-box {
+        border-color: #4a6cf7;
+        background-color: #4a6cf7;
+
+        .check-icon {
+          opacity: 1;
+          color: white;
+        }
+      }
+
+      .product-image {
+        width: 60px;
+        height: 60px;
+        border-radius: 6px;
+        overflow: hidden;
+        margin-right: 1rem;
+        flex-shrink: 0;
+
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+      }
+
+      .product-info {
+        flex: 1;
+
+        h5 {
+          margin: 0 0 0.5rem 0;
+          color: #333;
+        }
+
+        .product-details {
+          span {
+            display: block;
+            margin-bottom: 0.3rem;
+
+            &:nth-child(2) {
+              color: #4a6cf7;
+              font-weight: 500;
+            }
+          }
+
+          .stock-info {
+            font-size: 0.8rem;
+            color: #666;
+          }
+        }
+      }
+    }
+  }
+
+  .selection-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #f0f0f0;
+
+    .cancel-btn {
+      background: #f5f5f5;
+      color: #666;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s;
+
+      &:hover {
+        background: #e0e0e0;
+      }
+    }
+
+    .confirm-btn {
+      background: #4a6cf7;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s;
+
+      &:hover {
+        background: #3a5bd9;
+      }
+
+      &:disabled {
+        background: #cccccc;
+        cursor: not-allowed;
+      }
+    }
+  }
+}
+
+
+.service-warning {
+  background-color: #fff3cd;
+  color: #856404;
+  padding: 3px 8px;
+  border-radius: 4px;
+  margin-top: 5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  
+  .warning-icon {
+      font-size: 14px;
+  }
+}
+
+.address-details {
+  .service-warning {
+      margin-top: 8px;
+  }
+}

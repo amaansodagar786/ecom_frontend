@@ -84,10 +84,19 @@ const AddressModal = ({
         return;
       }
     }
-
+  
     try {
       setIsLoading(true);
-      await onSave(formData);
+      const result = await onSave(formData);
+      
+      if (result && result.address) {
+        if (!result.address.is_available) {
+          toast.warning('Address saved ');
+        } else {
+          toast.success(isEditMode ? 'Address updated successfully!' : 'Address saved successfully!');
+        }
+      }
+      
       onClose();
     } catch (error) {
       console.error('Error saving address:', error);
