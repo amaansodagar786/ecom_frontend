@@ -4,12 +4,10 @@ import './Orders.scss';
 import { useNavigate } from 'react-router-dom';
 import Loader from "../../../Components/Loader/Loader"
 
-
 const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-
 
   useEffect(() => {
     fetchOrders();
@@ -69,6 +67,7 @@ const Orders = () => {
                   <th>Fulfilled</th>
                   <th>Delivery</th>
                   <th>Status</th>
+                  <th>Available</th>
                   <th>AWB</th>
                 </tr>
               </thead>
@@ -97,6 +96,9 @@ const Orders = () => {
                     <td>{order.delivery_method}</td>
                     <td className={`status ${order.delivery_status}`}>
                       {order.delivery_status}
+                    </td>
+                    <td className={String(order.address?.is_available).toLowerCase() === 'true' ? 'available' : 'unavailable'}>
+                      {String(order.address?.is_available).toLowerCase() === 'true' ? 'Yes' : 'No'}
                     </td>
                     <td>{order.awb_number || 'N/A'}</td>
                   </tr>

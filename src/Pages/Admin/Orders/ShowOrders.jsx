@@ -44,11 +44,11 @@ const OrderDetails = () => {
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
           let errorMessage = errorData.error || `HTTP error! status: ${response.status}`;
-          
+
           if (response.status === 500 && orderId.includes('#')) {
             errorMessage = 'Order ID format error. Please check backend route configuration.';
           }
-          
+
           throw new Error(errorMessage);
         }
 
@@ -62,6 +62,9 @@ const OrderDetails = () => {
         setOrder({
           order_id: data.order_id,
           customer_id: data.customer_id,
+          offline_customer_id: data.offline_customer_id,
+          customer_type: data.customer_type,
+          customer_display: data.customer_id || data.offline_customer_id || 'N/A',
           total_amount: data.total_amount || 0,
           subtotal: data.subtotal || 0,
           payment_status: data.payment_status,
@@ -69,7 +72,25 @@ const OrderDetails = () => {
           delivery_status: data.delivery_status,
           created_at: data.created_at,
           awb_number: data.awb_number || null,
-          upload_wbn: data.upload_wbn || null
+          upload_wbn: data.upload_wbn || null,
+          address: data.address || null
+        });
+
+        console.log('Fetched order:', {
+          order_id: data.order_id,
+          customer_id: data.customer_id,
+          offline_customer_id: data.offline_customer_id,
+          customer_type: data.customer_type,
+          customer_display: data.customer_id || data.offline_customer_id || 'N/A',
+          total_amount: data.total_amount || 0,
+          subtotal: data.subtotal || 0,
+          payment_status: data.payment_status,
+          fulfillment_status: data.fulfillment_status,
+          delivery_status: data.delivery_status,
+          created_at: data.created_at,
+          awb_number: data.awb_number || null,
+          upload_wbn: data.upload_wbn || null,
+          address: data.address || null
         });
 
         // Set items for both views
@@ -114,15 +135,29 @@ const OrderDetails = () => {
   };
 
   const fulfillOrder = async () => {
+
+    if (order.fulfillment_status) {
+      toast.info('Order has already been fulfilled');
+      return;
+    }
+
+
+    console.log('Address Availability:', order.address?.is_available ?? 'N/A');
+
+    if (!order.address?.is_available) {
+      toast.error('Delhivery service not available for this address');
+      return;
+    }
+
     setIsFulfillingOrder(true);
-  
+
     try {
       // Create pickup request - PROPERLY ENCODE THE ORDER ID
       const encodedOrderId = encodeURIComponent(orderId);
       const token = localStorage.getItem('token'); // or sessionStorage, depending on your app
 
       const pickupResponse = await fetch(
-        `${import.meta.env.VITE_SERVER_API}/order/${encodedOrderId}/add-pickup-req`, 
+        `${import.meta.env.VITE_SERVER_API}/order/${encodedOrderId}/add-pickup-req`,
         {
           method: 'PUT',
           headers: {
@@ -131,13 +166,13 @@ const OrderDetails = () => {
           }
         }
       );
-  
+
       if (!pickupResponse.ok) {
         throw new Error('Failed to create pickup request');
       }
-  
+
       const pickupData = await pickupResponse.json();
-  
+
       // Update local state with new delivery info
       setOrder(prev => ({
         ...prev,
@@ -146,7 +181,7 @@ const OrderDetails = () => {
         delivery_status: 'processing',
         fulfillment_status: true
       }));
-  
+
       toast.success('Pickup request created successfully');
     } catch (err) {
       console.error('Error creating pickup request:', err);
@@ -155,7 +190,7 @@ const OrderDetails = () => {
       setIsFulfillingOrder(false);
     }
   };
-  
+
 
   const areAllSrNosAssigned = () => {
     return expandedItems.every(detail => {
@@ -368,7 +403,7 @@ const OrderDetails = () => {
   if (loading) {
     return (
       <AdminLayout>
-        <Loader/>
+        <Loader />
       </AdminLayout>
     );
   }
@@ -400,19 +435,20 @@ const OrderDetails = () => {
         </button>
 
         <div className="order-header">
-          <h1>Order #{order.order_id || 'N/A'}</h1>
+          <h1>Order {order.order_id || 'N/A'}</h1>
           <div className="order-meta">
             <span>Date: {formatIST(order.created_at)}</span>
             {activeTab === 'orders' && (
               <>
-                <span>Customer ID: {order.customer_id || 'N/A'}</span>
+                <span>Customer ID: {order.customer_display}</span>
+                {/* <span>Customer Type: {order.customer_type}</span> */}
                 <span>Total Items: {orderItems.length}</span>
                 <span>Total Amount: ₹{(order.total_amount || 0).toFixed(2)}</span>
                 <span className={`status-badge ${order.payment_status}`}>
                   Payment: {order.payment_status || 'N/A'}
                 </span>
                 {!order.fulfillment_status && !showFulfillment && (
-                  <button 
+                  <button
                     className="initiate-fulfillment-button"
                     onClick={initiateFulfillment}
                   >
@@ -477,8 +513,8 @@ const OrderDetails = () => {
                       </td>
                       <td>₹{(item.unit_price || 0).toFixed(2)}</td>
                       <td>
-                        <span className={`status-badge ${item.status || 'fulfilled'}`}>
-                          {item.status || 'Fulfilled'}
+                        <span className={`status-badge ${item.status || 'pending'}`}>
+                          {item.status || 'Pending'}
                         </span>
                       </td>
                     </tr>
@@ -591,24 +627,32 @@ const OrderDetails = () => {
 
             {/* Fulfill Order Button - Only shown when all SR numbers are assigned */}
             {areAllSrNosAssigned() && (
-  <div className="fulfill-order-section">
-    <button
-      className="fulfill-order-button"
-      onClick={fulfillOrder}
-      disabled={isFulfillingOrder}
-    >
-      {isFulfillingOrder ? 'Processing...' : 'Fulfill Order for Delivery'}
-    </button>
-    {order.fulfillment_status && (
-      <div className="fulfillment-info">
-        <p>Order has been fulfilled</p>
-        {order.awb_number && (
-          <p>AWB Number: {order.awb_number}</p>
-        )}
-      </div>
-    )}
-  </div>
-)}
+              <div className="fulfill-order-section">
+                {order.address?.is_available === false ? (
+                  <div className="delivery-unavailable">
+                    <p>Delhivery service not available for this address</p>
+                    {order.address?.city && <p>Location: {order.address.city}</p>}
+                    {order.address?.pincode && <p>Pincode: {order.address.pincode}</p>}
+                  </div>
+                ) : (
+                  <>
+                    <button
+                      className="fulfill-order-button"
+                      onClick={fulfillOrder}
+                      disabled={isFulfillingOrder}
+                    >
+                      {isFulfillingOrder ? 'Processing...' : 'Fulfill Order for Delivery'}
+                    </button>
+                    {order.fulfillment_status && (
+                      <div className="fulfillment-info">
+                        <p>Order has been fulfilled</p>
+                        {order.awb_number && <p>AWB Number: {order.awb_number}</p>}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
           </>
         )}
       </div>

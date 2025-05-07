@@ -234,3 +234,79 @@
     font-size: 0.9rem;
     margin-top: 0.25rem;
   }
+
+  .initiate-fulfillment-button{
+    padding: 0.7rem 1.2rem;
+    background: #0d6efd;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  /* Add to your OrderDetails.scss */
+.delivery-unavailable {
+  padding: 1rem;
+  background: #fff3cd;
+  border-radius: 4px;
+  color: #856404;
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.fulfill-order-section {
+  margin-top: 2rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.fulfill-order-section {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  text-align: center;
+
+  .delivery-unavailable {
+    color: #dc3545;
+    background: #fff5f5;
+    padding: 1rem;
+    border-radius: 6px;
+    border: 1px solid #f1aeb5;
+    
+    p {
+      margin: 0.5rem 0;
+      font-size: 1rem;
+    }
+  }
+
+  .fulfill-order-button {
+    background-color: #28a745;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+
+    &:hover {
+      background-color: #218838;
+    }
+
+    &:disabled {
+      background-color: #6c757d;
+      cursor: not-allowed;
+    }
+  }
+
+  .fulfillment-info {
+    margin-top: 1rem;
+    color: #28a745;
+    font-size: 0.9rem;
+  }
+}

@@ -585,7 +585,7 @@ const NewOrders = () => {
 
             // Check if address was saved but not serviceable
         if (response.data.address && !response.data.address.is_available) {
-            showWarningToast('Customer added successfully, but delivery is not available for this pincode');
+            showWarningToast('Customer added successfully');
         } else {
             showSuccessToast('Customer added successfully!');
         }
