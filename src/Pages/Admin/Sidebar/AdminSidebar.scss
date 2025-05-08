@@ -83,6 +83,10 @@ $navbar-height: 75px; // Added navbar height
   padding: 1rem 0;
   height: calc(100% - 70px);
   overflow-y: auto;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
   
   .nav-item {
     display: flex;

@@ -310,3 +310,34 @@
     font-size: 0.9rem;
   }
 }
+
+.payment-status-dropdown {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  
+  .status-select {
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    border: 1px solid #ddd;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-transform: capitalize;
+    cursor: pointer;
+    
+    &.paid {
+      background: #d4edda;
+      color: #155724;
+    }
+    
+    &.unpaid {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    
+    &.pending {
+      background: #fff3cd;
+      color: #856404;
+    }
+  }
+}

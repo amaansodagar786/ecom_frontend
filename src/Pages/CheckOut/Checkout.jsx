@@ -11,19 +11,14 @@ import Loader from '../../Components/Loader/Loader';
 const Checkout = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    // const { getToken } = useAuth();
-    // const cartItems = location.state?.cartItems || [];
-
     const { getToken, cartItems: contextCartItems } = useAuth();
 
-    // Get items from either buyNow flow or cart flow
     const initialItems = location.state?.isBuyNowFlow
         ? [location.state.buyNowItem]
         : location.state?.cartItems || contextCartItems || [];
 
     const [cartItems, setCartItems] = useState(initialItems);
     const [isBuyNowFlow] = useState(location.state?.isBuyNowFlow || false);
-
     const [activeStep, setActiveStep] = useState(1);
     const [addresses, setAddresses] = useState([]);
     const [selectedAddress, setSelectedAddress] = useState(null);
@@ -32,6 +27,7 @@ const Checkout = () => {
     const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
     const [states, setStates] = useState([]);
     const [paymentMethod, setPaymentMethod] = useState('');
+    const [isUPIModalOpen, setIsUPIModalOpen] = useState(false);
 
     // Calculate order totals
     const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -51,11 +47,9 @@ const Checkout = () => {
     const taxes = 0;
     const total = subtotal + deliveryCharge + taxes;
 
-
     useEffect(() => {
         window.scrollTo(0, 0);
-    }, [activeStep]); // Add dependencies that should trigger scroll to top
-
+    }, [activeStep]);
 
     // Fetch user addresses and states
     useEffect(() => {
@@ -119,13 +113,10 @@ const Checkout = () => {
         setActiveStep(2);
     };
 
-    const handlePlaceOrder = async () => {
+    const handlePlaceOrder = async (isUPIPaymentCompleted = false) => {
         try {
-            // Determine if this is a buy now flow (single item) or cart flow
             const isBuyNowFlow = cartItems.length === 1 && location.state?.isBuyNowFlow;
 
-
-            // Validate required data
             if (!selectedAddress) {
                 throw new Error('Please select a delivery address');
             }
@@ -133,27 +124,27 @@ const Checkout = () => {
                 throw new Error('Please select a payment method');
             }
 
-            // Prepare the base order data
+            // For UPI, only proceed if payment is marked as completed
+            if (paymentMethod === 'UPI' && !isUPIPaymentCompleted) {
+                setIsUPIModalOpen(true);
+                return;
+            }
+
             const baseOrderData = {
                 address_id: selectedAddress,
                 payment_status: paymentMethod === 'Cash on Delivery' ? 'pending' : 'paid',
                 delivery_method: 'standard',
                 delivery_charge: deliveryCharge,
-                // discount_percent: totalDiscount > 0 ? ((totalDiscount / originalSubtotal) * 100) : 0,
                 tax_percent: 0
             };
 
-            // Prepare the complete order data based on flow type
             const orderData = isBuyNowFlow
                 ? {
                     ...baseOrderData,
                     product_id: cartItems[0].product_id,
                     model_id: cartItems[0].model_id || null,
                     color_id: cartItems[0].color_id || null,
-                    quantity: cartItems[0].quantity,
-                    address_id: selectedAddress,
-                    payment_status: paymentMethod === 'Cash on Delivery' ? 'pending' : 'paid',
-                    delivery_method: 'standard'
+                    quantity: cartItems[0].quantity
                 }
                 : {
                     ...baseOrderData,
@@ -162,35 +153,21 @@ const Checkout = () => {
                         model_id: item.model_id || null,
                         color_id: item.color_id || null,
                         quantity: item.quantity,
-                        price: item.price,
-                        address_id: selectedAddress,
-                        payment_status: paymentMethod === 'Cash on Delivery' ? 'pending' : 'paid',
-                        delivery_method: 'standard'
+                        price: item.price
                     }))
                 };
 
-            // Determine the appropriate API endpoint
             const endpoint = isBuyNowFlow
                 ? '/order/add-to-order'
                 : '/order/place-order';
 
-            console.log('Order Data:', orderData);
-            console.log('Using endpoint:', endpoint);
-            console.log('Flow type:', isBuyNowFlow ? 'Buy Now' : 'Cart Checkout');
-
-            // Send order to backend
             const response = await axios.post(
                 `${import.meta.env.VITE_SERVER_API}${endpoint}`,
                 orderData,
-                {
-                    headers: { Authorization: `Bearer ${getToken()}` }
-                }
+                { headers: { Authorization: `Bearer ${getToken()}` } }
             );
 
             if (response.data.success) {
-                console.log('Order placed successfully:', response.data.order);
-
-                // Show success notification
                 toast.success('Order placed successfully!', {
                     position: "top-center",
                     autoClose: 3000,
@@ -201,12 +178,6 @@ const Checkout = () => {
                     progress: undefined,
                 });
 
-                // Clear cart if this was a regular checkout (not buy now)
-                if (!isBuyNowFlow) {
-                    // You might want to add cart clearing logic here if needed
-                }
-
-                // Redirect to confirmation page
                 setTimeout(() => {
                     sessionStorage.setItem('orderInfo', JSON.stringify({
                         order: response.data.order,
@@ -215,17 +186,13 @@ const Checkout = () => {
                     }));
                     window.location.href = '/order-confirmation';
                 }, 3000);
-
             } else {
                 throw new Error(response.data.error || 'Failed to place order');
             }
         } catch (error) {
-            console.error('Order placement error:', {
-                error: error.response?.data || error.message,
-                stack: error.stack
-            });
-
+            console.error('Order placement error:', error);
             let errorMessage = 'Failed to place order. Please try again.';
+            
             if (error.response?.status === 400) {
                 errorMessage = error.response.data.error || errorMessage;
             } else if (error.response?.status === 403) {
@@ -242,7 +209,6 @@ const Checkout = () => {
                 progress: undefined,
             });
 
-            // If session expired, redirect to login
             if (error.response?.status === 403) {
                 setTimeout(() => {
                     navigate('/login', { state: { from: location.pathname } });
@@ -253,13 +219,6 @@ const Checkout = () => {
 
     const handlePaymentMethodSelect = (method) => {
         setPaymentMethod(method);
-        // For immediate payment methods, you might want to handle payment processing here
-        if (method !== 'Cash on Delivery') {
-            toast.info(`You selected ${method}. Payment processing would be implemented here.`, {
-                position: "top-center",
-                autoClose: 3000,
-            });
-        }
     };
 
     if (cartItems.length === 0) {
@@ -317,7 +276,6 @@ const Checkout = () => {
                     <h2>Select Delivery Address</h2>
 
                     {loading ? (
-                        // <div className="loading">Loading addresses...</div>
                         <Loader/>
                     ) : error ? (
                         <div className="error">{error}</div>
@@ -483,22 +441,10 @@ const Checkout = () => {
                     <h2>Payment Methods</h2>
                     <div className="payment-methods">
                         <button
-                            className={`payment-option ${paymentMethod === 'Credit/Debit Card' ? 'selected' : ''}`}
-                            onClick={() => handlePaymentMethodSelect('Credit/Debit Card')}
-                        >
-                            Credit/Debit Card
-                        </button>
-                        <button
-                            className={`payment-option ${paymentMethod === 'Net Banking' ? 'selected' : ''}`}
-                            onClick={() => handlePaymentMethodSelect('Net Banking')}
-                        >
-                            Net Banking
-                        </button>
-                        <button
                             className={`payment-option ${paymentMethod === 'UPI' ? 'selected' : ''}`}
                             onClick={() => handlePaymentMethodSelect('UPI')}
                         >
-                            UPI
+                            UPI Payment
                         </button>
                         <button
                             className={`payment-option ${paymentMethod === 'Cash on Delivery' ? 'selected' : ''}`}
@@ -518,10 +464,43 @@ const Checkout = () => {
                             </button>
                             <button
                                 className="place-order-btn"
-                                onClick={handlePlaceOrder}
+                                onClick={() => handlePlaceOrder(false)}
                                 disabled={!paymentMethod}
                             >
-                                {paymentMethod === 'Cash on Delivery' ? 'Place Order' : `Pay ₹${total.toFixed(2)}`}
+                                {paymentMethod === 'Cash on Delivery' ? 'Place Order' : 'Pay'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* UPI Payment Modal */}
+            {isUPIModalOpen && (
+                <div className="upi-modal-overlay">
+                    <div className="upi-modal">
+                        <div className="upi-modal-header">
+                            <h3>Complete UPI Payment</h3>
+                            <button onClick={() => setIsUPIModalOpen(false)}>×</button>
+                        </div>
+                        <div className="upi-modal-content">
+                            <div className="upi-qr-code">
+                                {/* Replace with your actual QR code image */}
+                                <img src="/upi-qr-code.png" alt="UPI QR Code" />
+                                <p>Scan this QR code to pay</p>
+                            </div>
+                            <div className="upi-payment-details">
+                                <p>Amount to pay: <strong>₹{total.toFixed(2)}</strong></p>
+                                <p>UPI ID: <strong>yourstore@upi</strong></p>
+                                <p>Please complete the payment and then click the button below</p>
+                            </div>
+                            <button 
+                                className="payment-done-btn"
+                                onClick={() => {
+                                    setIsUPIModalOpen(false);
+                                    handlePlaceOrder(true);
+                                }}
+                            >
+                                I've Completed the Payment
                             </button>
                         </div>
                     </div>

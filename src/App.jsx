@@ -47,6 +47,7 @@ import CategoryUpdate from './Pages/Admin/CateHsnUpdate/CategoryUpdate';
 import Device from './Pages/Admin/Device/Device';
 import ShowOrders from './Pages/Admin/Orders/ShowOrders';
 import OrderConfirm from './Components/OrderConfirm/OrderConfirm';
+import AcceptReject from './Pages/Admin/OrderAccept/AcceptReject';
 // import Dummyorders from './Pages/Admin/Orders/Dummyorders';
 
 
@@ -107,6 +108,7 @@ function App() {
           <Route path="/categoryupdate" element={<AdminRoute> <CategoryUpdate /> </AdminRoute> } />
           <Route path="/device" element={<AdminRoute> <Device /> </AdminRoute> } />
           <Route path="/orders/:orderId" element={<AdminRoute> <ShowOrders /> </AdminRoute> } />
+          <Route path="/ordersacceptreject" element={<AdminRoute> <AcceptReject /> </AdminRoute> } />
           {/* <Route path="/orders/:orderId" element={<AdminRoute> <Dummyorders /> </AdminRoute> } /> */}
 
 

@@ -5,7 +5,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import axios from 'axios';
 import './Userdashboard.scss';
-import Loader from '../../../Components/Loader/Loader';
+// import Loader from '../../../Components/Loader/Loader';
 
 const ProfileDashboard = () => {
   const [userData, setUserData] = useState({
@@ -99,13 +99,13 @@ const ProfileDashboard = () => {
     }
   };
 
-  if (isLoading) {
-    return (
-      <UserLayout>
-        <Loader />
-      </UserLayout>
-    );
-  }
+  // if (isLoading) {
+  //   return (
+  //     <UserLayout>
+  //       <Loader />
+  //     </UserLayout>
+  //   );
+  // }
 
   return (
     <UserLayout>

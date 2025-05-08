@@ -16,8 +16,7 @@ const OrderDetails = () => {
   const [orderItems, setOrderItems] = useState([]);
   const [expandedItems, setExpandedItems] = useState([]);
   const [error, setError] = useState(null);
-
-  // SR No management state
+  const [paymentStatus, setPaymentStatus] = useState('pending'); 
   const [srNoInput, setSrNoInput] = useState('');
   const [validatedSrNos, setValidatedSrNos] = useState([]);
   const [savedSrNos, setSavedSrNos] = useState({});
@@ -75,6 +74,8 @@ const OrderDetails = () => {
           upload_wbn: data.upload_wbn || null,
           address: data.address || null
         });
+        setPaymentStatus(data.payment_status || 'pending');
+
 
         console.log('Fetched order:', {
           order_id: data.order_id,
@@ -444,8 +445,17 @@ const OrderDetails = () => {
                 {/* <span>Customer Type: {order.customer_type}</span> */}
                 <span>Total Items: {orderItems.length}</span>
                 <span>Total Amount: ₹{(order.total_amount || 0).toFixed(2)}</span>
-                <span className={`status-badge ${order.payment_status}`}>
-                  Payment: {order.payment_status || 'N/A'}
+                <span className="payment-status-dropdown">
+                  Payment:
+                  <select
+                    value={paymentStatus}
+                    onChange={(e) => setPaymentStatus(e.target.value)}
+                    className={`status-select ${paymentStatus}`}
+                  >
+                    <option value="paid">Paid</option>
+                    <option value="unpaid">Unpaid</option>
+                    <option value="pending">Pending</option>
+                  </select>
                 </span>
                 {!order.fulfillment_status && !showFulfillment && (
                   <button
@@ -509,7 +519,7 @@ const OrderDetails = () => {
                       </td>
                       <td>
                         {item.model_name && <div>Model: {item.model_name}</div>}
-                        {item.color_name && <div>Color: {item.color_name}</div>}
+                        {/* {item.color_name && <div>Color: {item.color_name}</div>} */}
                       </td>
                       <td>₹{(item.unit_price || 0).toFixed(2)}</td>
                       <td>

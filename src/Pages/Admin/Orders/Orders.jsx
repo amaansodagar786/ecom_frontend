@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import AdminLayout from '../AdminPanel/AdminLayout';
 import './Orders.scss';
 import { useNavigate } from 'react-router-dom';
-import Loader from "../../../Components/Loader/Loader"
+import Loader from "../../../Components/Loader/Loader";
+import { toast , ToastContainer } from 'react-toastify';
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
@@ -44,6 +45,14 @@ const Orders = () => {
     return order.address?.name || 'Walk-in Customer';
   };
 
+  const handleOrderClick = (order) => {
+    if (order.order_status === 'PENDING') {
+      toast.warning('Please review and approve this order first');
+    } else {
+      navigate(`/orders/${encodeURIComponent(order.order_id)}`);
+    }
+  };
+
   return (
     <AdminLayout>
       <div className="orders-container">
@@ -65,9 +74,8 @@ const Orders = () => {
                   <th>Channel</th>
                   <th>Payment</th>
                   <th>Fulfilled</th>
-                  <th>Delivery</th>
                   <th>Status</th>
-                  <th>Available</th>
+                  <th>Delhivery</th>
                   <th>AWB</th>
                 </tr>
               </thead>
@@ -75,7 +83,7 @@ const Orders = () => {
                 {orders.map((order) => (
                   <tr
                     key={order.order_id}
-                    onClick={() => navigate(`/orders/${encodeURIComponent(order.order_id)}`)}
+                    onClick={() => handleOrderClick(order)}
                     className="clickable-row"
                   >
                     <td>{order.order_id}</td>
@@ -93,9 +101,8 @@ const Orders = () => {
                     <td className={order.fulfillment_status ? 'fulfilled' : 'pending'}>
                       {order.fulfillment_status ? 'Yes' : 'No'}
                     </td>
-                    <td>{order.delivery_method}</td>
-                    <td className={`status ${order.delivery_status}`}>
-                      {order.delivery_status}
+                    <td className={`status ${order.order_status}`}>
+                      {order.order_status}
                     </td>
                     <td className={String(order.address?.is_available).toLowerCase() === 'true' ? 'available' : 'unavailable'}>
                       {String(order.address?.is_available).toLowerCase() === 'true' ? 'Yes' : 'No'}
@@ -108,6 +115,18 @@ const Orders = () => {
           </div>
         )}
       </div>
+
+      <ToastContainer
+              position="top-center"
+              autoClose={2500}
+              hideProgressBar={false}
+              newestOnTop={true}
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+            />
     </AdminLayout>
   );
 };

@@ -14,6 +14,7 @@ const AdminSidebar = ({ isOpen, toggleSidebar, isMobile }) => {
     { path: '/createorders', name: 'Offline Order', icon: <FiSettings /> },
     { path: '/admininventory', name: 'Inventory', icon: <FiPackage /> },
     { path: '/adminorders', name: 'Orders', icon: <FiShoppingCart /> },
+    { path: '/ordersacceptreject', name: 'Accept', icon: <FiShoppingCart /> },
     { path: '/admininpayment', name: 'Payments', icon: <FiCreditCard /> },
   ];
 

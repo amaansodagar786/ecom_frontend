@@ -56,7 +56,7 @@ const Footer = () => {
                         <li><a href="#">Featured Products</a></li>
                         <li><a href="#">Best Sellers</a></li>
                         <li><a href="#">Special Offers</a></li>
-                        <li><a href="#">Gift Cards</a></li>
+                        {/* <li><a href="#">Gift Cards</a></li> */}
                     </ul>
                 </div>
 
@@ -67,7 +67,7 @@ const Footer = () => {
                         <li><a href="#">FAQs</a></li>
                         <li><a href="#">Shipping Policy</a></li>
                         <li><a href="#">Returns & Exchanges</a></li>
-                        <li><a href="#">Size Guide</a></li>
+                        {/* <li><a href="#">Size Guide</a></li> */}
                     </ul>
                 </div>
 
@@ -95,12 +95,12 @@ const Footer = () => {
             </div>
 
             <div className="footer-bottom">
-                <div className="payment-methods">
+                {/* <div className="payment-methods">
                     <span><FaCcVisa /></span>
                     <span><FaCcMastercard /></span>
                     <span><SiRazorpay /></span>
                     <span><FaCcAmazonPay /></span>
-                </div>
+                </div> */}
                 <p>&copy; {new Date().getFullYear()} by Maseehum Task Manager Pvt. Ltd. All Rights Reserved. | Designed with ❤ by Aesa Solutions</p>
             </div>
         </footer>

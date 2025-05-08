@@ -19,7 +19,7 @@
 
   .table-container {
     width: 100%;
-    overflow-x: auto;
+    overflow-x: scroll;
     -webkit-overflow-scrolling: touch;
     border-radius: 12px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
@@ -33,7 +33,7 @@
       right: 0;
       top: 0;
       bottom: 0;
-      width: 30px;
+      width: 20px;
       background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 100%);
       pointer-events: none;
       opacity: 0;
@@ -51,10 +51,11 @@
     min-width: 1200px;
 
     th, td {
-      padding: 14px 16px;
+      padding: 14px 10px;
       text-align: left;
       border-bottom: 1px solid #f0f0f0;
       font-size: 0.9rem;
+      // width: fit-content;
     }
 
     th {

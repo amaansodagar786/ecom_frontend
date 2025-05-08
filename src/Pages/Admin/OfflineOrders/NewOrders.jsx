@@ -717,7 +717,7 @@ const showWarningToast = (message) => {
                                     <h5>{product.name}</h5>
                                     {defaultColor && (
                                         <div className="product-details">
-                                            <span>Color: {defaultColor.name}</span>
+                                            {/* <span>Color: {defaultColor.name}</span> */}
                                             <span>Price: ₹{defaultColor.price.toFixed(2)}</span>
                                             <span className="stock-info">
                                                 {defaultColor.stock_quantity <= 0 ? 
@@ -795,7 +795,7 @@ const showWarningToast = (message) => {
                                     <h5>{model.name}</h5>
                                     {defaultColor && (
                                         <div className="model-details">
-                                            <span>Color: {defaultColor.name}</span>
+                                            {/* <span>Color: {defaultColor.name}</span> */}
                                             <span>Price: ₹{defaultColor.price.toFixed(2)}</span>
                                             <span className="stock-info">
                                                 {defaultColor.stock_quantity <= 0 ? 
