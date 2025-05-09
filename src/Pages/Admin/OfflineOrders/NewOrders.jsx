@@ -40,6 +40,7 @@ const NewOrders = () => {
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [selectedModels, setSelectedModels] = useState([]); // Changed to array for multiple selection
     const [selectedSingleProducts, setSelectedSingleProducts] = useState([]); // For multiple single product selection
+    const [singleProductSearchTerm, setSingleProductSearchTerm] = useState('');
 
     // Fetch products from API
     useEffect(() => {
@@ -288,6 +289,12 @@ const NewOrders = () => {
     };
 
     const handleSingleProductToggle = (product) => {
+        const defaultColor = product.colors?.[0];
+        if (!defaultColor || defaultColor.stock_quantity <= 0) {
+            showErrorToast('This product is out of stock');
+            return;
+        }
+    
         setSelectedSingleProducts(prev => {
             const isSelected = prev.some(p => p.product_id === product.product_id);
             if (isSelected) {
@@ -299,6 +306,12 @@ const NewOrders = () => {
     };
 
     const handleModelToggle = (model) => {
+        const defaultColor = model.colors?.[0];
+        if (!defaultColor || defaultColor.stock_quantity <= 0) {
+            showErrorToast('This model is out of stock');
+            return;
+        }
+    
         setSelectedModels(prev => {
             const isSelected = prev.some(m => m.model_id === model.model_id);
             if (isSelected) {
@@ -672,16 +685,24 @@ const showWarningToast = (message) => {
 
     const renderSingleProductsSelection = () => {
         if (!selectedProduct || selectedProduct.product_type !== 'single') return null;
-
+    
         // Get all single products in the same category as the selected product
         const similarProducts = products.filter(p => 
             p.product_type === 'single' && 
             p.category === selectedProduct.category &&
             p.product_id !== selectedProduct.product_id
         );
-
+    
         const allProducts = [selectedProduct, ...similarProducts];
-
+    
+        // Filter products based on search term and stock availability
+        const filteredProducts = allProducts.filter(product => {
+            const matchesSearch = product.name.toLowerCase().includes(singleProductSearchTerm.toLowerCase());
+            const defaultColor = product.colors?.[0];
+            const inStock = defaultColor && defaultColor.stock_quantity > 0;
+            return matchesSearch && inStock;
+        });
+    
         return (
             <div className="single-products-selection">
                 <button
@@ -691,45 +712,59 @@ const showWarningToast = (message) => {
                     ← Back to Products
                 </button>
                 <h4>Select Products</h4>
+                <div className="search-bar" style={{ marginBottom: '15px' }}>
+                    <input
+                        type="text"
+                        placeholder="Search products..."
+                        value={singleProductSearchTerm}
+                        onChange={(e) => setSingleProductSearchTerm(e.target.value)}
+                        className="search-input"
+                    />
+                </div>
                 <div className="product-list" style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                    {allProducts.map(product => {
-                        const defaultColor = product.colors?.[0];
-                        const isSelected = selectedSingleProducts.some(p => p.product_id === product.product_id);
-
-                        return (
-                            <div
-                                key={product.product_id}
-                                className={`product-item ${isSelected ? 'selected' : ''}`}
-                                onClick={() => handleSingleProductToggle(product)}
-                            >
-                                <div className="product-select-box">
-                                    {isSelected && <FaCheck className="check-icon" />}
+                    {filteredProducts.length === 0 ? (
+                        <div className="no-products-found">
+                            {singleProductSearchTerm ? 
+                                'No matching products found' : 
+                                'No available products in this category'}
+                        </div>
+                    ) : (
+                        filteredProducts.map(product => {
+                            const defaultColor = product.colors?.[0];
+                            const isSelected = selectedSingleProducts.some(p => p.product_id === product.product_id);
+    
+                            return (
+                                <div
+                                    key={product.product_id}
+                                    className={`product-item ${isSelected ? 'selected' : ''}`}
+                                    onClick={() => handleSingleProductToggle(product)}
+                                >
+                                    <div className="product-select-box">
+                                        {isSelected && <FaCheck className="check-icon" />}
+                                    </div>
+                                    <div className="product-image">
+                                        <img
+                                            src={product.images?.[0]?.image_url
+                                                ? getImageUrl(product.images[0].image_url)
+                                                : '/placeholder-product.png'}
+                                            alt={product.name}
+                                        />
+                                    </div>
+                                    <div className="product-info">
+                                        <h5>{product.name}</h5>
+                                        {defaultColor && (
+                                            <div className="product-details">
+                                                <span>Price: ₹{defaultColor.price.toFixed(2)}</span>
+                                                <span className="stock-info">
+                                                    Stock: {defaultColor.stock_quantity}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                                <div className="product-image">
-                                    <img
-                                        src={product.images?.[0]?.image_url
-                                            ? getImageUrl(product.images[0].image_url)
-                                            : '/placeholder-product.png'}
-                                        alt={product.name}
-                                    />
-                                </div>
-                                <div className="product-info">
-                                    <h5>{product.name}</h5>
-                                    {defaultColor && (
-                                        <div className="product-details">
-                                            {/* <span>Color: {defaultColor.name}</span> */}
-                                            <span>Price: ₹{defaultColor.price.toFixed(2)}</span>
-                                            <span className="stock-info">
-                                                {defaultColor.stock_quantity <= 0 ? 
-                                                    'Out of stock' : 
-                                                    `Stock: ${defaultColor.stock_quantity}`}
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        );
-                    })}
+                            );
+                        })
+                    )}
                 </div>
                 <div className="selection-actions">
                     <button
@@ -737,6 +772,7 @@ const showWarningToast = (message) => {
                         onClick={() => {
                             setSelectionStep('product');
                             setSelectedSingleProducts([]);
+                            setSingleProductSearchTerm('');
                         }}
                     >
                         Cancel

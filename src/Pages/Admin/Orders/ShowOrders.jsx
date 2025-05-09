@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AdminLayout from '../AdminPanel/AdminLayout';
+import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './OrderDetails.scss';
@@ -16,7 +17,7 @@ const OrderDetails = () => {
   const [orderItems, setOrderItems] = useState([]);
   const [expandedItems, setExpandedItems] = useState([]);
   const [error, setError] = useState(null);
-  const [paymentStatus, setPaymentStatus] = useState('pending'); 
+  const [paymentStatus, setPaymentStatus] = useState('pending');
   const [srNoInput, setSrNoInput] = useState('');
   const [validatedSrNos, setValidatedSrNos] = useState([]);
   const [savedSrNos, setSavedSrNos] = useState({});
@@ -33,6 +34,10 @@ const OrderDetails = () => {
   const [creatingDevice, setCreatingDevice] = useState(false);
   const [isFulfillingOrder, setIsFulfillingOrder] = useState(false);
   const [showFulfillment, setShowFulfillment] = useState(false);
+
+  const [file, setFile] = useState(null);
+  const [uploadStatus, setUploadStatus] = useState('');
+  const [showUploadModal, setShowUploadModal] = useState(false);
 
   useEffect(() => {
     const fetchOrderDetails = async () => {
@@ -128,6 +133,56 @@ const OrderDetails = () => {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+
+  const handleFileChange = (e) => {
+    setFile(e.target.files[0]);
+    setUploadStatus('');
+  };
+
+  const handleUpload = async () => {
+    if (!file) {
+      setUploadStatus('Please select a file first.');
+      toast.error('Please select a file first.');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(
+        `${import.meta.env.VITE_SERVER_API}/upload-device-transaction`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+
+      const successMessage = response.data.message || 'Upload successful!';
+      setUploadStatus(successMessage);
+      setFile(null);
+      setShowUploadModal(false);
+      toast.success(successMessage);
+
+    } catch (error) {
+      console.error('Upload Error:', error);
+      let errorMessage = 'Upload failed.';
+
+      if (error.response) {
+        errorMessage = error.response.data.message || errorMessage;
+      } else if (error.request) {
+        errorMessage = 'No response from server. Check your connection.';
+      }
+
+      setUploadStatus(errorMessage);
+      toast.error(errorMessage);
+    }
   };
 
   const initiateFulfillment = () => {
@@ -558,6 +613,13 @@ const OrderDetails = () => {
                 >
                   Create New Device
                 </button>
+                {/* Add this new button */}
+                <button
+                  className="upload-button"
+                  onClick={() => setShowUploadModal(true)}
+                >
+                  Upload Device
+                </button>
               </div>
               {validatedSrNos.length > 0 && (
                 <div className="validated-srnos">
@@ -766,6 +828,59 @@ const OrderDetails = () => {
           </div>
         </div>
       )}
+
+      {/* Upload Transactions Modal */}
+      {showUploadModal && (
+        <div className="device-creation-modal">
+          <div className="device-creation-modal__content">
+            <div className="device-creation-modal__header">
+              <h3>Upload Device Transactions</h3>
+              <button onClick={() => {
+                setShowUploadModal(false);
+                setUploadStatus('');
+                setFile(null);
+              }}>×</button>
+            </div>
+
+            <div className="device-creation-modal__body">
+              <div className="device-creation-modal__form-group">
+                <label>Select File (CSV or Excel)</label>
+                <input
+                  type="file"
+                  accept=".csv, .xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                  onChange={handleFileChange}
+                />
+              </div>
+              {uploadStatus && (
+                <p className={`upload-status ${uploadStatus.includes('success') ? 'success' : 'error'}`}>
+                  {uploadStatus}
+                </p>
+              )}
+            </div>
+
+            <div className="device-creation-modal__footer">
+              <button
+                className="device-creation-modal__footer--cancel"
+                onClick={() => {
+                  setShowUploadModal(false);
+                  setUploadStatus('');
+                  setFile(null);
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="device-creation-modal__footer--submit"
+                onClick={handleUpload}
+                disabled={!file}
+              >
+                Upload
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </AdminLayout>
   );
 };

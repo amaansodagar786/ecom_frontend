@@ -1772,3 +1772,22 @@ body {
       margin-top: 8px;
   }
 }
+
+.single-products-selection .search-bar {
+  padding: 0 15px;
+}
+
+.single-products-selection .search-bar input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.no-products-found {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+}
+

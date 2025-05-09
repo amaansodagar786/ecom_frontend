@@ -3,7 +3,7 @@ import UserLayout from '../../User/UserPanel/UserLayout';
 import { useParams, useNavigate } from 'react-router-dom';
 import './UserOrderDetails.scss';
 import Loader from "../../../Components/Loader/Loader";
-import { FaStar, FaRegStar } from 'react-icons/fa';
+import { FaStar, FaRegStar, FaCheck, FaTruck, FaBoxOpen, FaThumbsUp, FaCreditCard } from 'react-icons/fa';
 
 const UserOrderDetails = () => {
   const [order, setOrder] = useState(null);
@@ -21,34 +21,21 @@ const UserOrderDetails = () => {
   useEffect(() => {
     const fetchOrderDetails = async () => {
       try {
-        const encodedOrderId = encodeURIComponent(orderId);
         const response = await fetch(
-          `${import.meta.env.VITE_SERVER_API}/order/${encodedOrderId}/items`
+          `${import.meta.env.VITE_SERVER_API}/order/${encodeURIComponent(orderId)}/items`
         );
-        
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || `Order not found (${response.status})`);
-        }
-        
+
+        if (!response.ok) throw new Error('Order not found');
+
         const data = await response.json();
-        
-        // Log image URLs for debugging
-        console.log('Order items with images:', data.items.map(item => ({
-          product_id: item.product_id,
-          image_url: item.product_image
-        })));
-        
+
         setOrder({
           ...data,
           items: data.items.map(item => ({
             ...item,
-            // Prepend server URL if the image path is relative
-            product_image: item.product_image 
-              ? item.product_image.startsWith('http')
-                ? item.product_image
-                : `${import.meta.env.VITE_SERVER_API}${item.product_image}`
-              : '/images/placeholder-product.jpg'
+            product_image: item.product_image?.startsWith('http')
+              ? item.product_image
+              : `${import.meta.env.VITE_SERVER_API}${item.product_image}`
           }))
         });
       } catch (err) {
@@ -57,10 +44,35 @@ const UserOrderDetails = () => {
         setLoading(false);
       }
     };
-  
+
     fetchOrderDetails();
   }, [orderId]);
 
+  // Status functions
+  const getStatusBadge = (orderStatus, deliveryStatus) => {
+    if (orderStatus?.toUpperCase() === 'PENDING') {
+      return <span className="status-badge pending-approval">Waiting Approval</span>;
+    }
+
+    if (orderStatus?.toUpperCase() === 'APPROVED') {
+      switch (deliveryStatus?.toLowerCase()) {
+        case 'delivered': return <span className="status-badge delivered">Delivered</span>;
+        case 'shipped': return <span className="status-badge shipped">Shipped</span>;
+        case 'processing': return <span className="status-badge processing">Processing</span>;
+        case 'cancelled': return <span className="status-badge cancelled">Cancelled</span>;
+        default: return <span className="status-badge confirmed">Order Confirmed</span>;
+      }
+    }
+
+    return <span className="status-badge pending">Pending</span>;
+  };
+
+  const formatDate = (dateString) => {
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    return new Date(dateString).toLocaleDateString(undefined, options);
+  };
+
+  // Review functions
   const handleReviewClick = (product) => {
     setSelectedProduct(product);
     setShowReviewModal(true);
@@ -76,8 +88,6 @@ const UserOrderDetails = () => {
     }
 
     setIsSubmitting(true);
-    setSubmitError(null);
-
     try {
       const response = await fetch(`${import.meta.env.VITE_SERVER_API}/review`, {
         method: 'POST',
@@ -92,14 +102,8 @@ const UserOrderDetails = () => {
         })
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to submit review');
-      }
-
-      // Close modal and reset form
+      if (!response.ok) throw new Error('Failed to submit review');
       setShowReviewModal(false);
-      // Optionally: Refresh the order data or show success message
     } catch (err) {
       setSubmitError(err.message);
     } finally {
@@ -107,64 +111,89 @@ const UserOrderDetails = () => {
     }
   };
 
-  const getStatusBadge = (status) => {
-    switch (status?.toLowerCase()) {
-      case 'delivered':
-        return <span className="status-badge delivered">Delivered</span>;
-      case 'shipped':
-        return <span className="status-badge shipped">Shipped</span>;
-      case 'processing':
-        return <span className="status-badge processing">Processing</span>;
-      case 'cancelled':
-        return <span className="status-badge cancelled">Cancelled</span>;
-      default:
-        return <span className="status-badge pending">Pending</span>;
-    }
+  // Stepper component
+  const OrderStepper = ({ orderStatus, deliveryStatus }) => {
+    const status = orderStatus?.toUpperCase();
+    const delivery = deliveryStatus?.toLowerCase();
+
+    const steps = [
+      {
+        id: 1,
+        name: 'Order Placed',
+        icon: <FaCreditCard />,
+        active: true,
+        completed: true
+      },
+      {
+        id: 2,
+        name: status === 'PENDING' ? 'Waiting Approval' : 'Approved',
+        icon: status === 'PENDING' ? <FaThumbsUp /> : <FaCheck />,
+        active: status === 'PENDING',
+        completed: status === 'APPROVED'
+      },
+      {
+        id: 3,
+        name: 'Processing',
+        icon: <FaBoxOpen />,
+        active: status === 'APPROVED' && ['processing', 'shipped', 'delivered'].includes(delivery),
+        completed: ['shipped', 'delivered'].includes(delivery)
+      },
+      {
+        id: 4,
+        name: 'Shipped',
+        icon: <FaTruck />,
+        active: delivery === 'shipped',
+        completed: delivery === 'delivered'
+      },
+      {
+        id: 5,
+        name: 'Delivered',
+        icon: <FaCheck />,
+        active: delivery === 'delivered',
+        completed: delivery === 'delivered'
+      }
+    ];
+
+    return (
+      <div className="order-stepper">
+        {steps.map((step, index) => (
+          <React.Fragment key={step.id}>
+            <div className={`step ${step.active ? 'active' : ''} ${step.completed ? 'completed' : ''}`}>
+              <div className="step-icon">{step.icon}</div>
+              <div className="step-name">{step.name}</div>
+            </div>
+            {index < steps.length - 1 && (
+              <div className={`connector ${steps[index + 1].completed ? 'completed' : ''}`}></div>
+            )}
+          </React.Fragment>
+        ))}
+      </div>
+    );
   };
 
-  const formatDate = (dateString) => {
-    const options = { year: 'numeric', month: 'short', day: 'numeric' };
-    return new Date(dateString).toLocaleDateString(undefined, options);
-  };
-
-  if (loading) {
-    return (
-      <UserLayout>
-        <Loader />
-      </UserLayout>
-    );
-  }
-
-  if (error) {
-    return (
-      <UserLayout>
-        <div className="user-order-details-container">
-          <div className="orders-error">
-            <p>Error: {error}</p>
-            <button className="back-btn" onClick={() => navigate(-1)}>
-              Back to Orders
-            </button>
-          </div>
+  if (loading) return <UserLayout><Loader /></UserLayout>;
+  if (error) return (
+    <UserLayout>
+      <div className="user-order-details-container">
+        <div className="orders-error">
+          <p>Error: {error}</p>
+          <button className="back-btn" onClick={() => navigate(-1)}>Back to Orders</button>
         </div>
-      </UserLayout>
-    );
-  }
+      </div>
+    </UserLayout>
+  );
 
-  if (!order) {
-    return (
-      <UserLayout>
-        <div className="user-order-details-container">
-          <div className="no-orders">
-            <h3>Order Not Found</h3>
-            <p>The requested order could not be loaded.</p>
-            <button className="back-btn" onClick={() => navigate(-1)}>
-              Back to Orders
-            </button>
-          </div>
+  if (!order) return (
+    <UserLayout>
+      <div className="user-order-details-container">
+        <div className="no-orders">
+          <h3>Order Not Found</h3>
+          <p>The requested order could not be loaded.</p>
+          <button className="back-btn" onClick={() => navigate(-1)}>Back to Orders</button>
         </div>
-      </UserLayout>
-    );
-  }
+      </div>
+    </UserLayout>
+  );
 
   return (
     <UserLayout>
@@ -172,9 +201,11 @@ const UserOrderDetails = () => {
         <button className="user-order-back-btn" onClick={() => navigate(-1)}>
           &larr; Back to Orders
         </button>
-        
+
         <h1 className="user-order-title">Order Details {order.order_id}</h1>
-        
+
+
+
         <div className="user-order-main-card">
           <div className="user-order-card-header">
             <div className="user-order-meta">
@@ -182,7 +213,7 @@ const UserOrderDetails = () => {
               <span className="user-order-date">Placed on {formatDate(order.created_at)}</span>
             </div>
             <div className="user-order-status">
-              {getStatusBadge(order.delivery_status)}
+              {getStatusBadge(order.order_status, order.delivery_status)}
             </div>
           </div>
 
@@ -190,12 +221,10 @@ const UserOrderDetails = () => {
             {order.items?.map((item, index) => (
               <div key={index} className="user-order-item">
                 <div className="user-order-item-image">
-                  <img 
-                    src={item.product_image} 
+                  <img
+                    src={item.product_image}
                     alt={item.product_name}
-                    onError={(e) => {
-                      e.target.src = '/images/placeholder-product.jpg';
-                    }}
+                    onError={(e) => e.target.src = '/images/placeholder-product.jpg'}
                   />
                 </div>
                 <div className="user-order-item-details">
@@ -204,10 +233,9 @@ const UserOrderDetails = () => {
                   <div className="user-order-item-meta">
                     <span className="user-order-item-qty">Qty: {item.quantity}</span>
                     {item.model && <span className="user-order-item-model">Model: {item.model}</span>}
-                    {/* {item.color && <span className="user-order-item-color">Color: {item.color}</span>} */}
                   </div>
-                  {order.delivery_status?.toLowerCase() === 'pending' && (
-                    <button 
+                  {order.delivery_status?.toLowerCase() === 'delivered' && (
+                    <button
                       className="user-order-review-btn"
                       onClick={() => handleReviewClick(item)}
                     >
@@ -231,6 +259,14 @@ const UserOrderDetails = () => {
               </span>
             </div>
           </div>
+
+          {/* Mind-blowing stepper */}
+          <div className="order-stepper-container">
+            <OrderStepper
+              orderStatus={order.order_status}
+              deliveryStatus={order.delivery_status}
+            />
+          </div>
         </div>
 
         {/* Review Modal */}
@@ -239,28 +275,26 @@ const UserOrderDetails = () => {
             <div className="user-order-review-modal">
               <div className="user-order-modal-header">
                 <div className="user-order-modal-product-info">
-                  <img 
-                    src={selectedProduct.product_image} 
+                  <img
+                    src={selectedProduct.product_image}
                     alt={selectedProduct.product_name}
                     className="user-order-modal-product-image"
-                    onError={(e) => {
-                      e.target.src = '/images/placeholder-product.jpg';
-                    }}
+                    onError={(e) => e.target.src = '/images/placeholder-product.jpg'}
                   />
                   <h3>{selectedProduct.product_name}</h3>
                 </div>
-                <button 
+                <button
                   className="user-order-modal-close-btn"
                   onClick={() => setShowReviewModal(false)}
                 >
                   &times;
                 </button>
               </div>
-              
+
               <div className="user-order-rating-section">
                 <div className="user-order-rating-stars">
                   {[1, 2, 3, 4, 5].map((star) => (
-                    <span 
+                    <span
                       key={star}
                       className="user-order-rating-star"
                       onClick={() => setRating(star)}
@@ -270,14 +304,14 @@ const UserOrderDetails = () => {
                   ))}
                 </div>
                 <p className="user-order-rating-text">
-                  {rating === 0 ? 'Select rating' : 
-                   rating === 1 ? 'Poor' :
-                   rating === 2 ? 'Fair' :
-                   rating === 3 ? 'Good' :
-                   rating === 4 ? 'Very Good' : 'Excellent'}
+                  {rating === 0 ? 'Select rating' :
+                    rating === 1 ? 'Poor' :
+                      rating === 2 ? 'Fair' :
+                        rating === 3 ? 'Good' :
+                          rating === 4 ? 'Very Good' : 'Excellent'}
                 </p>
               </div>
-              
+
               <div className="user-order-review-section">
                 <label htmlFor="user-order-review-text">Your Review (Optional)</label>
                 <textarea
@@ -288,9 +322,9 @@ const UserOrderDetails = () => {
                   rows={4}
                 />
               </div>
-              
+
               {submitError && <p className="user-order-error-message">{submitError}</p>}
-              
+
               <div className="user-order-modal-actions">
                 <button
                   className="user-order-modal-cancel-btn"

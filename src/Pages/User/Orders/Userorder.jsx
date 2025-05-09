@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import UserLayout from '../../User/UserPanel/UserLayout';
 import { useNavigate } from 'react-router-dom';
 import './UserOrders.scss';
-import Loader from "../../../Components/Loader/Loader" ;
+import Loader from "../../../Components/Loader/Loader";
 
 const UserOrders = () => {
   const [orders, setOrders] = useState([]);
@@ -20,18 +20,14 @@ const UserOrders = () => {
 
     const fetchOrders = async () => {
       try {
-        // First fetch order summaries
         const ordersResponse = await fetch(
           `${import.meta.env.VITE_SERVER_API}/customer/${userData.customer_id}/orders`
         );
         
-        if (!ordersResponse.ok) {
-          throw new Error('Failed to fetch orders');
-        }
+        if (!ordersResponse.ok) throw new Error('Failed to fetch orders');
         
         const ordersData = await ordersResponse.json();
         
-        // Then fetch items for each order
         const ordersWithItems = await Promise.all(
           ordersData.map(async (order) => {
             try {
@@ -40,10 +36,7 @@ const UserOrders = () => {
                 `${import.meta.env.VITE_SERVER_API}/order/${encodedOrderId}/items`
               );
               
-              if (!itemsResponse.ok) {
-                console.error(`Failed to fetch items for order ${order.order_id}`);
-                return {...order, items: []};
-              }
+              if (!itemsResponse.ok) return {...order, items: []};
               
               const itemsData = await itemsResponse.json();
               return {
@@ -51,7 +44,6 @@ const UserOrders = () => {
                 items: itemsData.items || []
               };
             } catch (err) {
-              console.error(`Error fetching items for order ${order.order_id}:`, err);
               return {...order, items: []};
             }
           })
@@ -68,19 +60,22 @@ const UserOrders = () => {
     fetchOrders();
   }, []);
 
-  const getStatusBadge = (status) => {
-    switch (status?.toLowerCase()) {
-      case 'delivered':
-        return <span className="status-badge delivered">Delivered</span>;
-      case 'shipped':
-        return <span className="status-badge shipped">Shipped</span>;
-      case 'processing':
-        return <span className="status-badge processing">Processing</span>;
-      case 'cancelled':
-        return <span className="status-badge cancelled">Cancelled</span>;
-      default:
-        return <span className="status-badge pending">Pending</span>;
+  const getStatusBadge = (orderStatus, deliveryStatus) => {
+    if (orderStatus?.toUpperCase() === 'PENDING') {
+      return <span className="status-badge pending-approval">Waiting Approval</span>;
     }
+    
+    if (orderStatus?.toUpperCase() === 'APPROVED') {
+      switch (deliveryStatus?.toLowerCase()) {
+        case 'delivered': return <span className="status-badge delivered">Delivered</span>;
+        case 'shipped': return <span className="status-badge shipped">Shipped</span>;
+        case 'processing': return <span className="status-badge processing">Processing</span>;
+        case 'cancelled': return <span className="status-badge cancelled">Cancelled</span>;
+        default: return <span className="status-badge confirmed">Order Confirmed</span>;
+      }
+    }
+
+    return <span className="status-badge pending">Pending</span>;
   };
 
   const formatDate = (dateString) => {
@@ -89,43 +84,28 @@ const UserOrders = () => {
   };
 
   const handleViewDetails = (orderId) => {
-    // Properly encode the order ID for URL
-    const encodedOrderId = encodeURIComponent(orderId);
-    navigate(`/user/orders/${encodedOrderId}`);
+    navigate(`/user/orders/${encodeURIComponent(orderId)}`);
   };
 
-  if (loading) {
-    return (
-      <UserLayout>
-        <Loader />
-      </UserLayout>
-    );
-  }
+  if (loading) return <UserLayout><Loader /></UserLayout>;
+  if (error) return (
+    <UserLayout>
+      <div className="orders-error">
+        <p>Error: {error}</p>
+      </div>
+    </UserLayout>
+  );
 
-  if (error) {
-    return (
-      <UserLayout>
-        <div className="orders-error">
-          <p>Error: {error}</p>
-        </div>
-      </UserLayout>
-    );
-  }
-
-  if (orders.length === 0) {
-    return (
-      <UserLayout>
-        <div className="no-orders">
-          <div className="no-orders-icon">
-            <i className="fas fa-box-open"></i>
-          </div>
-          <h3>No Orders Found</h3>
-          <p>You haven't placed any orders yet.</p>
-          <button className="shop-now-btn">Shop Now</button>
-        </div>
-      </UserLayout>
-    );
-  }
+  if (orders.length === 0) return (
+    <UserLayout>
+      <div className="no-orders">
+        <div className="no-orders-icon"><i className="fas fa-box-open"></i></div>
+        <h3>No Orders Found</h3>
+        <p>You haven't placed any orders yet.</p>
+        <button className="shop-now-btn">Shop Now</button>
+      </div>
+    </UserLayout>
+  );
 
   return (
     <UserLayout>
@@ -141,41 +121,28 @@ const UserOrders = () => {
                   <span className="order-date">Placed on {formatDate(order.created_at)}</span>
                 </div>
                 <div className="order-status">
-                  {getStatusBadge(order.delivery_status)}
+                  {getStatusBadge(order.order_status, order.delivery_status)}
                 </div>
               </div>
 
-              {/* Show first 2-3 items preview */}
               <div className="order-items-preview">
-                {order.items?.slice(0, 3).map((item, index) => {
-                  // Log the image URL for debugging
-                  console.log(`Product ${item.product_id} image URL:`, item.product_image);
-                  
-                  return (
-                    <div key={index} className="preview-item">
-                      <div className="preview-image">
-                        {item.product_image ? (
-                          <img 
-                            src={`${import.meta.env.VITE_SERVER_API}${item.product_image}`} 
-                            alt={item.product_name}
-                            onError={(e) => {
-                              // e.target.src = '/images/placeholder-product.jpg';
-                            }}
-                          />
-                        ) : (
-                          <img 
-                            // src="/images/placeholder-product.jpg" 
-                            alt={item.product_name}
-                          />
-                        )}
-                      </div>
-                      <div className="preview-details">
-                        <span className="preview-name">{item.product_name}</span>
-                        <span className="preview-qty">Qty: {item.quantity}</span>
-                      </div>
+                {order.items?.slice(0, 3).map((item, index) => (
+                  <div key={index} className="preview-item">
+                    <div className="preview-image">
+                      <img 
+                        src={item.product_image?.startsWith('http') 
+                          ? item.product_image 
+                          : `${import.meta.env.VITE_SERVER_API}${item.product_image}`} 
+                        alt={item.product_name}
+                        onError={(e) => e.target.src = '/images/placeholder-product.jpg'}
+                      />
                     </div>
-                  );
-                })}
+                    <div className="preview-details">
+                      <span className="preview-name">{item.product_name}</span>
+                      <span className="preview-qty">Qty: {item.quantity}</span>
+                    </div>
+                  </div>
+                ))}
                 {order.items?.length > 3 && (
                   <div className="more-items">+{order.items.length - 3} more items</div>
                 )}
