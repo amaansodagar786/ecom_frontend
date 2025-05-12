@@ -57,24 +57,32 @@ const Cart = ({ isOpen, onClose }) => {
     };
   };
 
-  const getImageUrl = (image) => {
-    if (!image) return null;
+const getImageUrl = (image) => {
+  if (!image) {
+    console.log('No image provided');
+    return null;
+  }
 
-    // If it's already a full URL (starts with http), use as is
-    if (image.startsWith('http')) {
-      return image;
-    }
-    // If it starts with / (like /product_images/...), prepend server URL
-    else if (image.startsWith('/')) {
-      // Remove any leading slashes from the image path to prevent double slashes
-      const cleanPath = image.replace(/^\//, '');
-      return `${import.meta.env.VITE_SERVER_API}/static/${cleanPath}`;
-    }
-    // Otherwise, assume it's just a filename and use the old format
-    else {
-      return `${import.meta.env.VITE_SERVER_API}/static/${image}`;
-    }
-  };
+  // If it's already a full URL (starts with http), use as is
+  if (image.startsWith('http')) {
+    console.log('Using full URL:', image);
+    return image;
+  }
+  // If it starts with / (like /product_images/...), prepend server URL
+  else if (image.startsWith('/')) {
+    // Remove any leading slashes from the image path to prevent double slashes
+    const cleanPath = image.replace(/^\//, '');
+    const url = `${import.meta.env.VITE_SERVER_API}/static/${cleanPath}`;
+    console.log('Constructed URL from path:', url);
+    return url;
+  }
+  // Otherwise, assume it's just a filename and use the old format
+  else {
+    const url = `${import.meta.env.VITE_SERVER_API}/static/${image}`;
+    console.log('Constructed URL from filename:', url);
+    return url;
+  }
+};
 
   const totals = calculateTotals(cartItems);
 
@@ -193,6 +201,7 @@ const Cart = ({ isOpen, onClose }) => {
                   const hasDiscount = originalPrice > item.price;
                   // const imageUrl = `${import.meta.env.VITE_SERVER_API}/static/${item.image}`;
                   const imageUrl = getImageUrl(item.image);
+                  console.log('Final image URL for product:', item.name, 'is:', imageUrl);
                   const isVideo = item.image && /\.(mp4)$/i.test(item.image);
 
                   return (

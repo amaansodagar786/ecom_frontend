@@ -259,7 +259,89 @@
       }
     }
   }
+
+  @media (max-width: 768px) {
+    padding: 0.75rem;
+
+    .order-header {
+      h1 {
+        font-size: 1.3rem;
+      }
+
+      .order-meta {
+        flex-direction: column;
+        gap: 0.5rem;
+
+        .meta-item {
+          flex-wrap: wrap;
+        }
+      }
+    }
+
+    .items-table {
+      display: block;
+      overflow-x: auto;
+      white-space: nowrap;
+      -webkit-overflow-scrolling: touch;
+
+      th, td {
+        min-width: 120px;
+      }
+    }
+
+    .product-group {
+      padding: 1rem;
+
+      .product-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+      }
+
+      .detail-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+        padding: 0.75rem 0;
+
+        .detail-info {
+          flex-direction: column;
+          gap: 0.3rem;
+        }
+      }
+    }
+
+    .srno-input-section {
+      padding: 1rem;
+
+      .srno-input-group {
+        flex-direction: column;
+        gap: 0.5rem;
+
+        input, button {
+          width: 100%;
+        }
+      }
+    }
+  }
+
+  @media (max-width: 480px) {
+    .order-details-tabs {
+      .tab-button {
+        padding: 0.6rem 1rem;
+        font-size: 0.85rem;
+      }
+    }
+
+    .device-creation-modal {
+      &__content {
+        width: 95%;
+        max-width: none;
+      }
+    }
+  }
 }
+
 
 .device-creation-modal {
   position: fixed;

@@ -185,6 +185,48 @@ const OrderDetails = () => {
     }
   };
 
+  const updatePaymentStatus = async (newStatus) => {
+    try {
+      const encodedOrderId = encodeURIComponent(orderId);
+      const token = localStorage.getItem('token');
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER_API}/update-payment-status/${encodedOrderId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ payment_status: newStatus })
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update payment status');
+      }
+
+      // Update local state
+      setOrder(prev => ({ ...prev, payment_status: newStatus }));
+      setPaymentStatus(newStatus);
+      toast.success('Payment status updated successfully');
+    } catch (error) {
+      console.error('Error updating payment status:', error);
+      toast.error(error.message || 'Failed to update payment status');
+      // Revert the dropdown to previous value
+      setPaymentStatus(order.payment_status || 'pending');
+    }
+  };
+
+  const handlePaymentStatusChange = (e) => {
+    const newStatus = e.target.value;
+    setPaymentStatus(newStatus); // Optimistic UI update
+    updatePaymentStatus(newStatus);
+  };
+
+
+
   const initiateFulfillment = () => {
     setShowFulfillment(true);
     setActiveTab('srno');
@@ -498,13 +540,13 @@ const OrderDetails = () => {
               <>
                 <span>Customer ID: {order.customer_display}</span>
                 {/* <span>Customer Type: {order.customer_type}</span> */}
-                <span>Total Items: {orderItems.length}</span>
-                <span>Total Amount: ₹{(order.total_amount || 0).toFixed(2)}</span>
+                <span>Items: {orderItems.length}</span>
+                <span>Total: ₹{(order.total_amount || 0).toFixed(2)}</span>
                 <span className="payment-status-dropdown">
                   Payment:
                   <select
                     value={paymentStatus}
-                    onChange={(e) => setPaymentStatus(e.target.value)}
+                    onChange={handlePaymentStatusChange}
                     className={`status-select ${paymentStatus}`}
                   >
                     <option value="paid">Paid</option>
@@ -574,12 +616,11 @@ const OrderDetails = () => {
                       </td>
                       <td>
                         {item.model_name && <div>Model: {item.model_name}</div>}
-                        {/* {item.color_name && <div>Color: {item.color_name}</div>} */}
                       </td>
                       <td>₹{(item.unit_price || 0).toFixed(2)}</td>
                       <td>
-                        <span className={`status-badge ${item.status || 'pending'}`}>
-                          {item.status || 'Pending'}
+                        <span className={`status-badge ${order.fulfillment_status ? 'fulfilled' : 'pending'}`}>
+                          {order.fulfillment_status ? 'Done' : 'Pending'}
                         </span>
                       </td>
                     </tr>

@@ -1416,7 +1416,7 @@ const NewProduct = () => {
                 </div>
                 <div className="product-details">
                   <h3>{product.name}</h3>
-                  <p className="product-description">{product.description.substring(0, 50)}...</p>
+                  {/* <p className="product-description">{product.description.substring(0, 50)}...</p> */}
                   <div className="product-meta">
                     <span className="product-type">{product.product_type}</span>
                     <span className="product-category">{product.category || 'No category'}</span>

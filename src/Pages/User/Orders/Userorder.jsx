@@ -154,7 +154,7 @@ const UserOrders = () => {
                   <span className="total-amount">₹{order.total_amount?.toFixed(2)}</span>
                 </div>
                 <div className="order-actions">
-                  <button className="action-btn track-btn">Track Order</button>
+                  {/* <button className="action-btn track-btn">Track Order</button> */}
                   <button 
                     className="action-btn details-btn"
                     onClick={() => handleViewDetails(order.order_id)}

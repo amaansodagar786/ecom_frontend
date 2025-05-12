@@ -1,13 +1,11 @@
 import React, { useEffect } from 'react';
 import {
-    FaReact, FaNodeJs, FaShoppingBag, FaUser, FaSearch, FaHeart,
+    
     FaFacebookF, FaInstagram, FaTwitter, FaWhatsapp,
     FaMapMarkerAlt, FaPhoneAlt, FaEnvelope,
-    FaCcVisa, FaCcAmazonPay, FaCcMastercard
 } from 'react-icons/fa';
-import { SiRazorpay } from "react-icons/si";
+import { FaShoppingCart, FaMobileAlt, FaLaptop, FaHeadphones, FaTv, FaCameraRetro } from 'react-icons/fa';
 import './Footer.scss';
-import logo from "../../assets/Logo/logo.png";
 
 const Footer = () => {
     useEffect(() => {
@@ -27,26 +25,27 @@ const Footer = () => {
 
     return (
         <footer className="footer">
-            <div className="floating-social-icons">
-                <div className="social-bubble"><FaShoppingBag /></div>
-                <div className="social-bubble"><FaUser /></div>
-                <div className="social-bubble"><FaSearch /></div>
-                <div className="social-bubble"><FaHeart /></div>
-                <div className="social-bubble"><FaReact /></div>
-                <div className="social-bubble"><FaNodeJs /></div>
-            </div>
+        
+             <div className="floating-social-icons">
+            <div className="social-bubble"><FaShoppingCart /></div>
+            <div className="social-bubble"><FaMobileAlt /></div>
+            <div className="social-bubble"><FaLaptop /></div>
+            <div className="social-bubble"><FaHeadphones /></div>
+            <div className="social-bubble"><FaTv /></div>
+            <div className="social-bubble"><FaCameraRetro /></div>
+        </div>
 
             <div className="footer-content">
                 <div className="footer-about">
                     <a href="#" className="footer-logo">MTM Store</a>
                     <p>Your premium destination for quality products and exceptional shopping experiences.</p>
-                    <div className="footer-newsletter">
+                    {/* <div className="footer-newsletter">
                         <h4>Subscribe to Newsletter</h4>
                         <div className="newsletter-form">
                             <input type="email" placeholder="Your email address" />
                             <button>Subscribe</button>
                         </div>
-                    </div>
+                    </div> */}
                 </div>
 
                 <div className="footer-links hide-on-mobile">
@@ -95,12 +94,7 @@ const Footer = () => {
             </div>
 
             <div className="footer-bottom">
-                {/* <div className="payment-methods">
-                    <span><FaCcVisa /></span>
-                    <span><FaCcMastercard /></span>
-                    <span><SiRazorpay /></span>
-                    <span><FaCcAmazonPay /></span>
-                </div> */}
+                
                 <p>&copy; {new Date().getFullYear()} by Maseehum Task Manager Pvt. Ltd. All Rights Reserved. | Designed with ❤ by Aesa Solutions</p>
             </div>
         </footer>

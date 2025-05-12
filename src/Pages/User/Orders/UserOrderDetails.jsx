@@ -17,6 +17,8 @@ const UserOrderDetails = () => {
   const [reviewText, setReviewText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
+  const [trackingData, setTrackingData] = useState(null);
+
 
   useEffect(() => {
     const fetchOrderDetails = async () => {
@@ -47,6 +49,104 @@ const UserOrderDetails = () => {
 
     fetchOrderDetails();
   }, [orderId]);
+
+
+
+  useEffect(() => {
+    if (order && order.order_status?.toUpperCase() === 'APPROVED') {
+      const fetchTrackingData = async () => {
+        try {
+          const response = await fetch(
+            `${import.meta.env.VITE_SERVER_API}/order/${encodeURIComponent(orderId)}/track`,
+            {
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              }
+            }
+          );
+
+          if (!response.ok) throw new Error('Tracking data not available');
+
+          const data = await response.json();
+          setTrackingData(data.ShipmentData?.[0]?.Shipment);
+        } catch (err) {
+          console.error('Failed to fetch tracking data:', err);
+        }
+      };
+
+      fetchTrackingData();
+    }
+  }, [order, orderId]);
+
+  // Update the OrderStepper component to use tracking data
+  // const OrderStepper = ({ orderStatus, deliveryStatus, trackingData }) => {
+  //   const status = orderStatus?.toUpperCase();
+  //   const delivery = deliveryStatus?.toLowerCase();
+
+  //   // Check tracking data for shipped/delivered status
+  //   const isShipped = trackingData?.Scans?.some(scan => 
+  //     scan.ScanDetail.Scan === 'In Transit' || 
+  //     scan.ScanDetail.Scan === 'Dispatched'
+  //   );
+
+  //   const isDelivered = trackingData?.Scans?.some(scan => 
+  //     scan.ScanDetail.Scan === 'Delivered'
+  //   );
+
+  //   const steps = [
+  //     {
+  //       id: 1,
+  //       name: 'Order Placed',
+  //       icon: <FaCreditCard />,
+  //       active: true,
+  //       completed: true
+  //     },
+  //     {
+  //       id: 2,
+  //       name: status === 'PENDING' ? 'Waiting Approval' : 'Approved',
+  //       icon: status === 'PENDING' ? <FaThumbsUp /> : <FaCheck />,
+  //       active: status === 'PENDING',
+  //       completed: status === 'APPROVED'
+  //     },
+  //     {
+  //       id: 3,
+  //       name: 'Processing',
+  //       icon: <FaBoxOpen />,
+  //       active: status === 'APPROVED' && ['processing', 'shipped', 'delivered'].includes(delivery),
+  //       completed: ['shipped', 'delivered'].includes(delivery)
+  //     },
+  //     {
+  //       id: 4,
+  //       name: 'Shipped',
+  //       icon: <FaTruck />,
+  //       active: isShipped || delivery === 'shipped',
+  //       completed: isDelivered || delivery === 'delivered'
+  //     },
+  //     {
+  //       id: 5,
+  //       name: 'Delivered',
+  //       icon: <FaCheck />,
+  //       active: isDelivered || delivery === 'delivered',
+  //       completed: isDelivered || delivery === 'delivered'
+  //     }
+  //   ];
+
+  //   return (
+  //     <div className="order-stepper">
+  //       {steps.map((step, index) => (
+  //         <React.Fragment key={step.id}>
+  //           <div className={`step ${step.active ? 'active' : ''} ${step.completed ? 'completed' : ''}`}>
+  //             <div className="step-icon">{step.icon}</div>
+  //             <div className="step-name">{step.name}</div>
+  //           </div>
+  //           {index < steps.length - 1 && (
+  //             <div className={`connector ${steps[index + 1].completed ? 'completed' : ''}`}></div>
+  //           )}
+  //         </React.Fragment>
+  //       ))}
+  //     </div>
+  //   );
+  // };
 
   // Status functions
   const getStatusBadge = (orderStatus, deliveryStatus) => {
@@ -265,6 +365,7 @@ const UserOrderDetails = () => {
             <OrderStepper
               orderStatus={order.order_status}
               deliveryStatus={order.delivery_status}
+              trackingData={trackingData}
             />
           </div>
         </div>

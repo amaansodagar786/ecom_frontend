@@ -112,7 +112,7 @@ const NewOrders = () => {
                     'Authorization': `Bearer ${token}`
                 }
             });
-    
+
             const frontendCustomers = response.data.map(backendCustomer => {
                 const addresses = backendCustomer.addresses || [];
                 return {
@@ -135,7 +135,7 @@ const NewOrders = () => {
                     }))
                 };
             });
-    
+
             setCustomers(frontendCustomers);
         } catch (error) {
             console.error('Error fetching customers:', error);
@@ -294,7 +294,7 @@ const NewOrders = () => {
             showErrorToast('This product is out of stock');
             return;
         }
-    
+
         setSelectedSingleProducts(prev => {
             const isSelected = prev.some(p => p.product_id === product.product_id);
             if (isSelected) {
@@ -311,7 +311,7 @@ const NewOrders = () => {
             showErrorToast('This model is out of stock');
             return;
         }
-    
+
         setSelectedModels(prev => {
             const isSelected = prev.some(m => m.model_id === model.model_id);
             if (isSelected) {
@@ -357,7 +357,7 @@ const NewOrders = () => {
             }).filter(Boolean);
 
             setSelectedProducts(prev => [...prev, ...newSelections]);
-        } 
+        }
         else if (selectionStep === 'models' && selectedProduct) {
             // Add all selected models with their default colors
             const newSelections = selectedModels.map(model => {
@@ -520,8 +520,8 @@ const NewOrders = () => {
         }
 
         if (selectedCustomer.addresses?.length > 0 && !selectedAddress) {
-            const defaultAddress = selectedCustomer.addresses.find(addr => addr.is_default) || 
-                                 selectedCustomer.addresses[0];
+            const defaultAddress = selectedCustomer.addresses.find(addr => addr.is_default) ||
+                selectedCustomer.addresses[0];
             if (defaultAddress) {
                 setSelectedAddress(defaultAddress);
             }
@@ -597,46 +597,46 @@ const NewOrders = () => {
             );
 
             // Check if address was saved but not serviceable
-        if (response.data.address && !response.data.address.is_available) {
-            showWarningToast('Customer added successfully');
-        } else {
-            showSuccessToast('Customer added successfully!');
+            if (response.data.address && !response.data.address.is_available) {
+                showWarningToast('Customer added successfully');
+            } else {
+                showSuccessToast('Customer added successfully!');
+            }
+
+            setNewCustomer({
+                name: '',
+                phone: '',
+                email: '',
+                addresses: [{
+                    address_line1: '',
+                    address_line2: '',
+                    city: '',
+                    state_id: '',
+                    pincode: '',
+                    country: 'India',
+                    is_default: true
+                }]
+            });
+            setIsNewCustomerModalOpen(false);
+            fetchCustomers();
+        } catch (error) {
+            console.error('Error adding customer:', error);
+            showErrorToast(error.response?.data?.message || 'Failed to add customer');
         }
+    };
 
-        setNewCustomer({
-            name: '',
-            phone: '',
-            email: '',
-            addresses: [{
-                address_line1: '',
-                address_line2: '',
-                city: '',
-                state_id: '',
-                pincode: '',
-                country: 'India',
-                is_default: true
-            }]
+
+    const showWarningToast = (message) => {
+        toast.warning(message, {
+            position: "top-center",
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
         });
-        setIsNewCustomerModalOpen(false);
-        fetchCustomers();
-    } catch (error) {
-        console.error('Error adding customer:', error);
-        showErrorToast(error.response?.data?.message || 'Failed to add customer');
-    }
-};
-
-
-const showWarningToast = (message) => {
-    toast.warning(message, {
-        position: "top-center",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-    });
-};
+    };
 
     const renderProductSelection = () => {
         return (
@@ -685,24 +685,20 @@ const showWarningToast = (message) => {
 
     const renderSingleProductsSelection = () => {
         if (!selectedProduct || selectedProduct.product_type !== 'single') return null;
-    
+
         // Get all single products in the same category as the selected product
-        const similarProducts = products.filter(p => 
-            p.product_type === 'single' && 
-            p.category === selectedProduct.category &&
+        const similarProducts = products.filter(p =>
+            p.product_type === 'single' &&
             p.product_id !== selectedProduct.product_id
         );
-    
+
         const allProducts = [selectedProduct, ...similarProducts];
-    
-        // Filter products based on search term and stock availability
+
+        // Filter products based only on search term (remove stock check)
         const filteredProducts = allProducts.filter(product => {
-            const matchesSearch = product.name.toLowerCase().includes(singleProductSearchTerm.toLowerCase());
-            const defaultColor = product.colors?.[0];
-            const inStock = defaultColor && defaultColor.stock_quantity > 0;
-            return matchesSearch && inStock;
+            return product.name.toLowerCase().includes(singleProductSearchTerm.toLowerCase());
         });
-    
+
         return (
             <div className="single-products-selection">
                 <button
@@ -724,23 +720,25 @@ const showWarningToast = (message) => {
                 <div className="product-list" style={{ maxHeight: '400px', overflowY: 'auto' }}>
                     {filteredProducts.length === 0 ? (
                         <div className="no-products-found">
-                            {singleProductSearchTerm ? 
-                                'No matching products found' : 
-                                'No available products in this category'}
+                            {singleProductSearchTerm ?
+                                'No matching products found' :
+                                'No products in this category'}
                         </div>
                     ) : (
                         filteredProducts.map(product => {
                             const defaultColor = product.colors?.[0];
                             const isSelected = selectedSingleProducts.some(p => p.product_id === product.product_id);
-    
+                            const isOutOfStock = !defaultColor || defaultColor.stock_quantity <= 0;
+
                             return (
                                 <div
                                     key={product.product_id}
-                                    className={`product-item ${isSelected ? 'selected' : ''}`}
+                                    className={`product-item ${isSelected ? 'selected' : ''} ${isOutOfStock ? 'out-of-stock' : ''}`}
                                     onClick={() => handleSingleProductToggle(product)}
                                 >
                                     <div className="product-select-box">
                                         {isSelected && <FaCheck className="check-icon" />}
+                                        {isOutOfStock && <div className="out-of-stock-overlay">Out of Stock</div>}
                                     </div>
                                     <div className="product-image">
                                         <img
@@ -755,8 +753,8 @@ const showWarningToast = (message) => {
                                         {defaultColor && (
                                             <div className="product-details">
                                                 <span>Price: ₹{defaultColor.price.toFixed(2)}</span>
-                                                <span className="stock-info">
-                                                    Stock: {defaultColor.stock_quantity}
+                                                <span className={`stock-info ${isOutOfStock ? 'out-of-stock' : ''}`}>
+                                                    {isOutOfStock ? 'Out of stock' : `Stock: ${defaultColor.stock_quantity}`}
                                                 </span>
                                             </div>
                                         )}
@@ -782,8 +780,8 @@ const showWarningToast = (message) => {
                         onClick={handleAddSelection}
                         disabled={selectedSingleProducts.length === 0}
                     >
-                        Add {selectedSingleProducts.length > 1 ? 
-                            `${selectedSingleProducts.length} Products to Order` : 
+                        Add {selectedSingleProducts.length > 1 ?
+                            `${selectedSingleProducts.length} Products to Order` :
                             'Product to Order'}
                     </button>
                 </div>
@@ -807,15 +805,17 @@ const showWarningToast = (message) => {
                     {selectedProduct.models.map(model => {
                         const defaultColor = model.colors?.[0];
                         const isSelected = selectedModels.some(m => m.model_id === model.model_id);
+                        const isOutOfStock = !defaultColor || defaultColor.stock_quantity <= 0;
 
                         return (
                             <div
                                 key={model.model_id}
-                                className={`model-item ${isSelected ? 'selected' : ''}`}
+                                className={`model-item ${isSelected ? 'selected' : ''} ${isOutOfStock ? 'out-of-stock' : ''}`}
                                 onClick={() => handleModelToggle(model)}
                             >
                                 <div className="model-select-box">
                                     {isSelected && <FaCheck className="check-icon" />}
+                                    {isOutOfStock && <div className="out-of-stock-overlay">Out of Stock</div>}
                                 </div>
                                 <div className="model-image">
                                     <img
@@ -831,12 +831,9 @@ const showWarningToast = (message) => {
                                     <h5>{model.name}</h5>
                                     {defaultColor && (
                                         <div className="model-details">
-                                            {/* <span>Color: {defaultColor.name}</span> */}
                                             <span>Price: ₹{defaultColor.price.toFixed(2)}</span>
-                                            <span className="stock-info">
-                                                {defaultColor.stock_quantity <= 0 ? 
-                                                    'Out of stock' : 
-                                                    `Stock: ${defaultColor.stock_quantity}`}
+                                            <span className={`stock-info ${isOutOfStock ? 'out-of-stock' : ''}`}>
+                                                {isOutOfStock ? 'Out of stock' : `Stock: ${defaultColor.stock_quantity}`}
                                             </span>
                                         </div>
                                     )}
@@ -865,8 +862,8 @@ const showWarningToast = (message) => {
                         onClick={handleAddSelection}
                         disabled={selectedModels.length === 0}
                     >
-                        Add {selectedModels.length > 1 ? 
-                            `${selectedModels.length} Models to Order` : 
+                        Add {selectedModels.length > 1 ?
+                            `${selectedModels.length} Models to Order` :
                             'Model to Order'}
                     </button>
                 </div>
@@ -1192,33 +1189,33 @@ const showWarningToast = (message) => {
                                                     <p>No addresses found for this customer.</p>
                                                 ) : (
                                                     <div className="address-list">
-    {selectedCustomer.addresses?.map(address => (
-        <div
-            key={address.id}
-            className={`address-item ${selectedAddress?.id === address.id ? 'selected' : ''}`}
-            onClick={() => handleAddressSelect(address)}
-        >
-            <div className="address-select-box">
-                {selectedAddress?.id === address.id && <FaCheck className="check-icon" />}
-            </div>
-            <div className="address-details">
-                <p>{address.address_line1}</p>
-                {address.address_line2 && <p>{address.address_line2}</p>}
-                <p>
-                    {address.city},
-                    {address.state_id ? getStateName(address.state_id) : address.state} - {address.pincode}
-                </p>
-                {address.is_default && <span className="default-tag">Default</span>}
-                {address.is_available === false && (
-                    <div className="service-warning">
-                        <span className="warning-icon">⚠️</span>
-                        Delivery not available
-                    </div>
-                )}
-            </div>
-        </div>
-    ))}
-</div>
+                                                        {selectedCustomer.addresses?.map(address => (
+                                                            <div
+                                                                key={address.id}
+                                                                className={`address-item ${selectedAddress?.id === address.id ? 'selected' : ''}`}
+                                                                onClick={() => handleAddressSelect(address)}
+                                                            >
+                                                                <div className="address-select-box">
+                                                                    {selectedAddress?.id === address.id && <FaCheck className="check-icon" />}
+                                                                </div>
+                                                                <div className="address-details">
+                                                                    <p>{address.address_line1}</p>
+                                                                    {address.address_line2 && <p>{address.address_line2}</p>}
+                                                                    <p>
+                                                                        {address.city},
+                                                                        {address.state_id ? getStateName(address.state_id) : address.state} - {address.pincode}
+                                                                    </p>
+                                                                    {address.is_default && <span className="default-tag">Default</span>}
+                                                                    {address.is_available === false && (
+                                                                        <div className="service-warning">
+                                                                            <span className="warning-icon">⚠️</span>
+                                                                            Delivery not available
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
                                                 )}
                                             </div>
                                         )}

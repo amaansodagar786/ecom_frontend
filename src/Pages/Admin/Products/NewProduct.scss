@@ -1219,3 +1219,162 @@ $transition: all 0.3s ease;
       padding: 5px !important;
   }
 }
+
+
+
+// Update the product card name styling
+.product-card {
+  h3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    height: 2.8em; // Adjust based on your line-height
+    line-height: 1.4em;
+    
+    @media (max-width: 768px) {
+      font-size: 0.9rem;
+      height: 2.5em;
+    }
+  }
+}
+
+// Update filters for mobile
+.product-filters {
+  @media (max-width: 768px) {
+    display: flex;
+    // flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 10px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; // For Firefox
+    &::-webkit-scrollbar {
+      display: none; // For Chrome/Safari
+    }
+
+    .filter-group {
+      flex: 0 0 auto;
+      width: 150px;
+      margin-right: 10px;
+      margin-bottom: 0;
+      
+      label {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+  }
+}
+
+// Update edit form for mobile
+.product-form-container {
+  @media (max-width: 768px) {
+    padding: 1rem;
+    
+    .form-group {
+      margin-bottom: 1rem;
+      
+      label {
+        font-size: 0.9rem;
+      }
+      
+      input, select, textarea {
+        font-size: 0.9rem;
+        padding: 0.6rem;
+      }
+    }
+    
+    .variant-details-grid {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    
+    .specification-item {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+  }
+}
+
+// Ensure full width visibility
+.product-management {
+  @media (max-width: 768px) {
+    padding: 1rem;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+    
+    .product-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+    }
+    
+    .product-card {
+      padding: 0.75rem;
+      
+      .product-images {
+        height: 120px;
+      }
+      
+      .product-actions {
+        button {
+          padding: 0.4rem;
+          font-size: 0.8rem;
+        }
+      }
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .product-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+// Additional mobile-specific adjustments
+@media (max-width: 768px) {
+  .product-list-header {
+    flex-direction: column;
+    align-items: flex-start;
+    
+    h2 {
+      margin-bottom: 0.5rem;
+    }
+  }
+  
+  .form-header {
+    h2 {
+      font-size: 1.3rem;
+    }
+  }
+  
+  .btn-back {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+  }
+  
+  .media-thumbnail {
+    width: 80px !important;
+    height: 80px !important;
+  }
+  
+  .spec-input {
+    font-size: 0.8rem;
+    padding: 0.5rem;
+  }
+  
+  .btn-add-spec, .btn-save-specs {
+    font-size: 0.8rem;
+    padding: 0.5rem 0.75rem;
+  }
+}
+
+// Prevent horizontal scrolling
+body {
+  overflow-x: hidden;
+  width: 100%;
+}

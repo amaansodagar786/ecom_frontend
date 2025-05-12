@@ -12,7 +12,8 @@ const AcceptReject = () => {
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [processingOrder, setProcessingOrder] = useState(null);
-  const [activeTab, setActiveTab] = useState('pending'); // 'pending' or 'rejected'
+  const [activeTab, setActiveTab] = useState('pending');
+  const [rejectionReasons, setRejectionReasons] = useState({});
 
   useEffect(() => {
     if (activeTab === 'pending') {
@@ -31,8 +32,10 @@ const AcceptReject = () => {
           Authorization: `Bearer ${token}`
         }
       });
-      const pendingOrders = response.data.filter(order => order.order_status === 'PENDING');
-      setOrders(pendingOrders);
+      const pendingOrders = response.data.filter(order => 
+        order?.order_status === 'PENDING'
+      );
+      setOrders(pendingOrders || []);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -45,13 +48,22 @@ const AcceptReject = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${import.meta.env.VITE_SERVER_API}/orders`, {
+      const response = await axios.get(`${import.meta.env.VITE_SERVER_API}/orders/rejected`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
-      const rejectedOrders = response.data.filter(order => order.order_status === 'REJECTED');
-      setRejectedOrders(rejectedOrders);
+      setRejectedOrders(response.data || []);
+
+      // Create a map of rejection reasons if available in the response
+      const reasons = {};
+      response.data?.forEach(order => {
+        if (order?.rejection_reason) {
+          reasons[order.order_id] = order.rejection_reason;
+        }
+      });
+      setRejectionReasons(reasons);
+      
       setLoading(false);
     } catch (error) {
       console.error('Error fetching rejected orders:', error);
@@ -101,12 +113,28 @@ const AcceptReject = () => {
   };
 
   const formatDate = (dateString) => {
-    const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
-    return new Date(dateString).toLocaleDateString('en-US', options);
+    try {
+      const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+      return new Date(dateString).toLocaleDateString('en-US', options);
+    } catch (e) {
+      return 'Invalid date';
+    }
   };
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
+    try {
+      return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount || 0);
+    } catch (e) {
+      return '₹0.00';
+    }
+  };
+
+  const getOrderStatusClass = (status) => {
+    if (!status) return '';
+    const statusStr = String(status).toLowerCase();
+    if (statusStr === 'pending') return 'pending';
+    if (statusStr === 'rejected') return 'rejected';
+    return '';
   };
 
   const renderOrders = (orders, showActions = true) => {
@@ -119,7 +147,7 @@ const AcceptReject = () => {
       );
     }
 
-    if (orders.length === 0) {
+    if (!orders || orders.length === 0) {
       return (
         <div className="no-orders">
           <i className="fas fa-check-circle"></i>
@@ -132,39 +160,48 @@ const AcceptReject = () => {
       <div className="orders-grid">
         {orders.map(order => (
           <div
-            key={order.order_id}
-            className={`order-card ${selectedOrder === order.order_id ? 'expanded' : ''}`}
-            onClick={() => setSelectedOrder(selectedOrder === order.order_id ? null : order.order_id)}
+            key={order?.order_id || Math.random()}
+            className={`order-card ${selectedOrder === order?.order_id ? 'expanded' : ''}`}
+            onClick={() => setSelectedOrder(selectedOrder === order?.order_id ? null : order?.order_id)}
           >
             <div className="order-header">
-              <div className="order-id">Order #{order.order_id}</div>
-              <div className="order-date">{formatDate(order.created_at)}</div>
-              <div className="order-amount">{formatCurrency(order.total_amount)}</div>
-              <div className={`order-status ${order.order_status.toLowerCase()}`}>
-                {order.order_status}
+              <div className="order-id">Order #{order?.order_id || 'N/A'}</div>
+              <div className="order-date">{formatDate(order?.created_at)}</div>
+              <div className="order-amount">{formatCurrency(order?.total_amount)}</div>
+              <div className={`order-status ${getOrderStatusClass(order?.order_status)}`}>
+                {order?.order_status || 'UNKNOWN'}
               </div>
             </div>
 
             <div className="order-details">
+              {!showActions && rejectionReasons[order?.order_id] && (
+                <div className="rejection-reason">
+                  <h3>Rejection Reason</h3>
+                  <div className="reason-box">
+                    {rejectionReasons[order.order_id] || 'No reason provided'}
+                  </div>
+                </div>
+              )}
+
               <div className="customer-section">
                 <h3>Customer Details</h3>
-                <p><strong>Customer ID:</strong> {order.customer_id}</p>
+                <p><strong>Customer ID:</strong> {order?.customer_id || 'N/A'}</p>
                 <p><strong>Delivery Address:</strong></p>
                 <div className="address-box">
-                  <p>{order.address.name}</p>
-                  <p>{order.address.address_line}, {order.address.locality}</p>
-                  <p>{order.address.city}, {order.address.state.name} - {order.address.pincode}</p>
-                  <p><strong>Phone:</strong> {order.address.mobile}</p>
+                  <p>{order?.address?.name || 'N/A'}</p>
+                  <p>{order?.address?.address_line || ''}, {order?.address?.locality || ''}</p>
+                  <p>{order?.address?.city || ''}, {order?.address?.state?.name || ''} - {order?.address?.pincode || ''}</p>
+                  <p><strong>Phone:</strong> {order?.address?.mobile || 'N/A'}</p>
                 </div>
               </div>
 
               <div className="items-section">
-                <h3>Order Items ({order.total_items})</h3>
+                <h3>Order Items ({order?.total_items || 0})</h3>
                 <div className="items-grid">
-                  {order.items.map((item, index) => (
+                  {(order?.items || []).map((item, index) => (
                     <div key={index} className="item-card">
                       <div className="item-image">
-                        {item.image_url ? (
+                        {item?.image_url ? (
                           <img
                             src={`${import.meta.env.VITE_SERVER_API}/${item.image_url.replace(/^\/+/, '')}`}
                             alt="Product"
@@ -174,10 +211,10 @@ const AcceptReject = () => {
                         )}
                       </div>
                       <div className="item-details">
-                        <p><strong>Product ID:</strong> {item.product_id}</p>
-                        <p><strong>Model Id:</strong> {item.model_id}</p>
-                        <p><strong>Qty:</strong> {item.quantity}</p>
-                        <p><strong>Price:</strong> {formatCurrency(item.unit_price)}</p>
+                        <p><strong>Product ID:</strong> {item?.product_id || 'N/A'}</p>
+                        <p><strong>Model Id:</strong> {item?.model_id || 'N/A'}</p>
+                        <p><strong>Qty:</strong> {item?.quantity || 0}</p>
+                        <p><strong>Price:</strong> {formatCurrency(item?.unit_price)}</p>
                       </div>
                     </div>
                   ))}
@@ -189,23 +226,23 @@ const AcceptReject = () => {
                 <div className="summary-grid">
                   <div className="summary-row">
                     <span>Subtotal:</span>
-                    <span>{formatCurrency(order.subtotal)}</span>
+                    <span>{formatCurrency(order?.subtotal)}</span>
                   </div>
                   <div className="summary-row">
-                    <span>Discount ({order.discount_percent}%):</span>
-                    <span>-{formatCurrency(order.subtotal * (order.discount_percent / 100))}</span>
+                    <span>Discount ({order?.discount_percent || 0}%):</span>
+                    <span>-{formatCurrency((order?.subtotal || 0) * ((order?.discount_percent || 0) / 100))}</span>
                   </div>
                   <div className="summary-row">
-                    <span>Tax ({order.tax_percent}%):</span>
-                    <span>{formatCurrency((order.subtotal - (order.subtotal * (order.discount_percent / 100))) * (order.tax_percent / 100))}</span>
+                    <span>Tax ({order?.tax_percent || 0}%):</span>
+                    <span>{formatCurrency(((order?.subtotal || 0) - ((order?.subtotal || 0) * ((order?.discount_percent || 0) / 100)) * ((order?.tax_percent || 0) / 100)))}</span>
                   </div>
                   <div className="summary-row">
                     <span>Delivery Charge:</span>
-                    <span>{formatCurrency(order.delivery_charge)}</span>
+                    <span>{formatCurrency(order?.delivery_charge)}</span>
                   </div>
                   <div className="summary-row total">
                     <span>Total Amount:</span>
-                    <span>{formatCurrency(order.total_amount)}</span>
+                    <span>{formatCurrency(order?.total_amount)}</span>
                   </div>
                 </div>
               </div>
@@ -217,33 +254,35 @@ const AcceptReject = () => {
                   className="approve-btn"
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleApprove(order.order_id);
+                    if (order?.order_id) handleApprove(order.order_id);
                   }}
-                  disabled={processingOrder === order.order_id}
+                  disabled={processingOrder === order?.order_id || !order?.order_id}
                 >
-                  {processingOrder === order.order_id && (
+                  {processingOrder === order?.order_id ? (
                     <span className="button-spinner">
                       <i className="fas fa-spinner fa-spin"></i>
                     </span>
+                  ) : (
+                    <i className="fas fa-check-circle"></i>
                   )}
-                  <i className="fas fa-check-circle"></i> 
-                  {processingOrder === order.order_id ? 'Approving...' : 'Approve Order'}
+                  {processingOrder === order?.order_id ? 'Approving...' : 'Approve Order'}
                 </button>
                 <button
                   className="reject-btn"
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleReject(order.order_id);
+                    if (order?.order_id) handleReject(order.order_id);
                   }}
-                  disabled={processingOrder === order.order_id}
+                  disabled={processingOrder === order?.order_id || !order?.order_id}
                 >
-                  {processingOrder === order.order_id && (
+                  {processingOrder === order?.order_id ? (
                     <span className="button-spinner">
                       <i className="fas fa-spinner fa-spin"></i>
                     </span>
+                  ) : (
+                    <i className="fas fa-times-circle"></i>
                   )}
-                  <i className="fas fa-times-circle"></i> 
-                  {processingOrder === order.order_id ? 'Rejecting...' : 'Reject Order'}
+                  {processingOrder === order?.order_id ? 'Rejecting...' : 'Reject Order'}
                 </button>
               </div>
             )}
@@ -264,12 +303,14 @@ const AcceptReject = () => {
             onClick={() => setActiveTab('pending')}
           >
             <i className="fas fa-clock"></i> Pending Orders
+            {orders.length > 0 && <span className="badge">{orders.length}</span>}
           </div>
           <div 
             className={`tab ${activeTab === 'rejected' ? 'active' : ''}`}
             onClick={() => setActiveTab('rejected')}
           >
             <i className="fas fa-times-circle"></i> Rejected Orders
+            {rejectedOrders.length > 0 && <span className="badge">{rejectedOrders.length}</span>}
           </div>
         </div>
 
@@ -281,6 +322,10 @@ const AcceptReject = () => {
         ) : (
           <>
             <h2 className="section-title">Rejected Orders</h2>
+            <div className="info-message">
+              <i className="fas fa-info-circle"></i>
+              <p>These are orders that have been rejected by the admin team.</p>
+            </div>
             {renderOrders(rejectedOrders, false)}
           </>
         )}

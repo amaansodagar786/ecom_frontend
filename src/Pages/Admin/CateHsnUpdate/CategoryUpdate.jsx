@@ -336,19 +336,19 @@ const CategoryUpdate = () => {
           className={mode === 'update' ? 'active' : ''}
           onClick={() => setMode('update')}
         >
-          Update Product Codes
+          Update 
         </button>
         <button 
           className={mode === 'edit' ? 'active' : ''}
           onClick={() => setMode('edit')}
         >
-          Edit HSN Codes
+          Edit HSN 
         </button>
         <button 
           className={mode === 'delete' ? 'active' : ''}
           onClick={() => setMode('delete')}
         >
-          Delete Codes
+          Delete 
         </button>
       </div>
 
@@ -508,8 +508,8 @@ const CategoryUpdate = () => {
                   </div>
                   <div className="product-info">
                     <h3>{product.name}</h3>
-                    <p>Category: {product.category || 'None'}</p>
-                    <p>Subcategory: {product.subcategory || 'None'}</p>
+                    <p>Cat: {product.category || 'None'}</p>
+                    <p>Sub: {product.subcategory || 'None'}</p>
                     <p>HSN: {product.hsn || 'None'}</p>
                   </div>
                 </div>
@@ -528,19 +528,19 @@ const CategoryUpdate = () => {
           className={mode === 'update' ? 'active' : ''}
           onClick={() => setMode('update')}
         >
-          Update Product Codes
+          Update 
         </button>
         <button 
           className={mode === 'edit' ? 'active' : ''}
           onClick={() => setMode('edit')}
         >
-          Edit HSN Codes
+          Edit HSN 
         </button>
         <button 
           className={mode === 'delete' ? 'active' : ''}
           onClick={() => setMode('delete')}
         >
-          Delete Codes
+          Delete 
         </button>
       </div>
 
@@ -595,9 +595,9 @@ const CategoryUpdate = () => {
           <table className="hsn-table">
             <thead>
               <tr>
-                <th>HSN Code</th>
+                <th>HSN </th>
                 <th>Description</th>
-                <th>Actions</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -629,19 +629,19 @@ const CategoryUpdate = () => {
           className={mode === 'update' ? 'active' : ''}
           onClick={() => setMode('update')}
         >
-          Update Product Codes
+          Update 
         </button>
         <button 
           className={mode === 'edit' ? 'active' : ''}
           onClick={() => setMode('edit')}
         >
-          Edit HSN Codes
+          Edit HSN 
         </button>
         <button 
           className={mode === 'delete' ? 'active' : ''}
           onClick={() => setMode('delete')}
         >
-          Delete Codes
+          Delete 
         </button>
       </div>
 
@@ -663,7 +663,7 @@ const CategoryUpdate = () => {
             className={deleteType === 'hsn' ? 'active' : ''}
             onClick={() => setDeleteType('hsn')}
           >
-            HSN Codes
+            HSN 
           </button>
         </div>
 
@@ -673,9 +673,9 @@ const CategoryUpdate = () => {
             <table className="delete-table">
               <thead>
                 <tr>
-                  <th>Category Name</th>
-                  <th>Subcategories Count</th>
-                  <th>Actions</th>
+                  <th>Category </th>
+                  <th>Subcategories</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -705,9 +705,9 @@ const CategoryUpdate = () => {
             <table className="delete-table">
               <thead>
                 <tr>
-                  <th>Subcategory Name</th>
-                  <th>Parent Category</th>
-                  <th>Actions</th>
+                  <th>Subcategory </th>
+                  <th> Category</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -741,7 +741,7 @@ const CategoryUpdate = () => {
                 <tr>
                   <th>HSN Code</th>
                   <th>Description</th>
-                  <th>Actions</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>

@@ -709,3 +709,117 @@ $font-bold: 700;
         }
     }
 }
+
+
+// Add this media query at the bottom of your SCSS file
+@media (max-width: $breakpoint-mobile) {
+  .product-page {
+    padding: 1rem;
+    
+    .product-container {
+      margin-top: 0.5rem;
+    }
+    
+    .product-details {
+      .product-header {
+        h1 {
+          font-size: 1.5rem !important; // Reduced from 2rem
+          margin-bottom: 0.25rem;
+        }
+        
+        .product-meta {
+          font-size: 0.8rem;
+          gap: 1rem;
+        }
+      }
+      
+      .price-container {
+        margin-bottom: 1rem;
+        
+        .current-price {
+          font-size: 1.4rem !important; // Reduced from 1.8rem
+        }
+        
+        .original-price {
+          font-size: 1rem !important; // Reduced from 1.2rem
+        }
+        
+        .discount-badge {
+          font-size: 0.7rem;
+          padding: 0.15rem 0.4rem;
+        }
+      }
+      
+      .availability {
+        font-size: 0.8rem;
+        margin-bottom: 1rem;
+      }
+      
+      .option-selector {
+        margin-bottom: 1rem;
+        
+        h3 {
+          font-size: 0.9rem;
+          margin-bottom: 0.5rem;
+        }
+      }
+      
+      .quantity-selector {
+        margin-bottom: 1.5rem;
+        
+        h3 {
+          font-size: 0.9rem;
+          margin-bottom: 0.5rem;
+        }
+        
+        .quantity-control {
+          button {
+            width: 35px;
+            height: 35px;
+            font-size: 1rem;
+          }
+          
+          span {
+            width: 40px;
+          }
+        }
+      }
+      
+      .action-buttons {
+        button {
+          padding: 0.8rem;
+          font-size: 0.9rem;
+          
+          &.wishlist {
+            width: 48px;
+          }
+        }
+      }
+    }
+    
+    .tabbed-content {
+      margin-top: 2rem;
+      
+      .tabs {
+        .tab {
+          padding: 0.5rem 1rem;
+          font-size: 0.9rem;
+        }
+      }
+      
+      .tab-content {
+        font-size: 0.9rem;
+        line-height: 1.5;
+        
+        .specifications-content {
+          table {
+            td {
+              padding: 0.5rem 0;
+              font-size: 0.9rem;
+            }
+          }
+        }
+      }
+    }
+  }
+}

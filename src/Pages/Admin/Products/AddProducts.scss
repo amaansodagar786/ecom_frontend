@@ -1,20 +1,4 @@
-// * {
-//   box-sizing: border-box;
-//   margin: 0;
-//   padding: 0;
-// }
 
-// html, body {
-//   width: 100%;
-//   overflow-x: hidden; // Prevent horizontal scrolling
-// }
-
-
-// AddProducts.scss
-
-// =============================================
-// Design Variables
-// =============================================
 $primary-color: #4361ee;
 $primary-light: #e0e7ff;
 $secondary-color: #3f37c9;
@@ -589,5 +573,145 @@ $input-height: 3rem;
   img {
     max-width: 100%;
     height: auto;
+  }
+}
+
+
+// =============================================
+// Responsive Adjustments - Mobile Only
+// =============================================
+@media (max-width: $breakpoint-md) {
+  .admin-panel {
+    margin-top: 60px;
+    padding: 0.5rem;
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  .admin-container {
+    border-radius: 0;
+    box-shadow: none;
+    width: 100%;
+  }
+
+  .product-form {
+    padding: 0.5rem;
+    width: 100%;
+    box-sizing: border-box;
+
+    .form-section {
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .form-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+  }
+
+  // Font size adjustments
+  .admin-header {
+    padding: 1rem;
+    
+    .admin-title {
+      font-size: 1.5rem;
+    }
+    
+    .admin-subtitle {
+      font-size: 0.9rem;
+    }
+  }
+
+  .section-title {
+    font-size: 1.2rem !important;
+  }
+
+  .form-group {
+    .form-label {
+      font-size: 0.9rem;
+    }
+    
+    .form-input {
+      font-size: 0.9rem;
+      height: 2.75rem;
+      padding: 0 1rem;
+      
+      &.textarea {
+        padding: 0.75rem 1rem;
+        min-height: 100px;
+      }
+    }
+  }
+
+  // Card adjustments
+  .model-card, .color-card {
+    padding: 1rem !important;
+    margin: 1rem 0 !important;
+    width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  // Specifications row
+  .spec-row {
+    flex-direction: column;
+    gap: 0.5rem;
+    
+    .form-group {
+      width: 100%;
+    }
+    
+    .remove-button {
+      width: 100% !important;
+      margin-top: 0.5rem;
+    }
+  }
+
+  // Select with button
+  .select-with-button {
+    flex-direction: column;
+    
+    .form-input, .add-button {
+      width: 100% !important;
+    }
+  }
+
+  // Image previews
+  .image-previews {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    
+    .image-preview {
+      max-width: 100%;
+    }
+  }
+
+  // Modal adjustments
+  .modal {
+    width: 95%;
+    padding: 1.5rem;
+    
+    h3 {
+      font-size: 1.3rem;
+    }
+  }
+
+  // Form actions
+  .form-actions {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    
+    .submit-button {
+      width: 100%;
+      padding: 0.9rem;
+    }
+  }
+
+  // Radio group
+  .radio-group {
+    flex-direction: column;
+    gap: 0.5rem;
   }
 }

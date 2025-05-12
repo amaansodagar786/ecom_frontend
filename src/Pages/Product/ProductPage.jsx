@@ -575,7 +575,7 @@ const ProductPage = () => {
                                         ({product.raters || 0} reviews)
                                     </span>
                                 </div>
-                                <span className="sku">SKU: {product.sku_id}</span>
+                                {/* <span className="sku">SKU: {product.sku_id}</span> */}
                             </div>
                         </div>
 

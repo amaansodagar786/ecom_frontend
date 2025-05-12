@@ -391,4 +391,73 @@ $transition: all 0.3s ease;
   }
 }
 
-// Rest of your existing SCSS remains the same
+.rejection-reason {
+  margin-bottom: 1.5rem;
+  
+  h3 {
+    color: $danger-color;
+    margin-bottom: 0.5rem;
+  }
+  
+  .reason-box {
+    background: rgba($danger-color, 0.1);
+    padding: 1rem;
+    border-radius: $border-radius;
+    border-left: 3px solid $danger-color;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+}
+
+.info-message {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba($primary-color, 0.1);
+  padding: 1rem;
+  border-radius: $border-radius;
+  margin-bottom: 1.5rem;
+  
+  i {
+    color: $primary-color;
+    font-size: 1.5rem;
+  }
+  
+  p {
+    margin: 0;
+    color: darken($primary-color, 10%);
+    font-size: 0.95rem;
+  }
+}
+
+.badge {
+  background: $danger-color;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  margin-left: 0.5rem;
+}
+
+.tab {
+  position: relative;
+  
+  .badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: $danger-color;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+  }
+}
