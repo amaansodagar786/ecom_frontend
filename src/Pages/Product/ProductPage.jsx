@@ -4,6 +4,17 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './ProductPage.scss';
 import { useAuth } from '../../Components/Context/AuthContext';
+import useMetaTags from '../../Components/Hooks/useMetaTags';
+import Cart from '../../Pages/Cart/Cart';
+import WhatsAppIcon from '@mui/icons-material/WhatsApp'; // or use your own WhatsApp icon
+
+
+// Move this outside the component
+const extractProductNameFromUrl = () => {
+    const pathParts = window.location.pathname.split('/products/');
+    if (pathParts.length !== 2) return null;
+    return pathParts[1]; // Get everything after '/products/'
+};
 
 const ProductPage = () => {
     const location = useLocation();
@@ -14,6 +25,10 @@ const ProductPage = () => {
         wishlistItems,
         isAuthenticated
     } = useAuth();
+
+
+    const productSlug = extractProductNameFromUrl();
+
 
     // State management
     const [product, setProduct] = useState(location.state?.product || null);
@@ -27,6 +42,8 @@ const ProductPage = () => {
     const [reviews, setReviews] = useState([]);
     const [showReviewsModal, setShowReviewsModal] = useState(false);
     const [reviewsLoading, setReviewsLoading] = useState(false);
+    const [isCartOpen, setIsCartOpen] = useState(false);
+
 
     const [cartStatus, setCartStatus] = useState({
         loading: false,
@@ -43,8 +60,34 @@ const ProductPage = () => {
         }
 
         if (!isAuthenticated) {
-            setCartStatus({ error: 'Please login to proceed', success: false, loading: false });
-            navigate('/login', { state: { from: location.pathname } });
+            const buyNowItem = {
+                product_id: product.product_id,
+                name: product.name,
+                price: selectedColor?.price || selectedModel?.colors?.[0]?.price || product.price || 0,
+                original_price: selectedColor?.original_price || selectedModel?.colors?.[0]?.original_price || product.original_price || null,
+                image: product.images?.[0]?.image_url || product.images?.[0],
+                color: selectedColor?.name,
+                model: selectedModel?.name,
+                color_id: selectedColor?.color_id || null,
+                model_id: selectedModel?.model_id || null,
+                quantity: quantity
+            };
+
+            // Clear any existing pending items first
+            sessionStorage.removeItem('pendingCartItem');
+            sessionStorage.removeItem('pendingBuyNowItem');
+
+            // Store the buy now item
+            sessionStorage.setItem('pendingBuyNowItem', JSON.stringify(buyNowItem));
+            sessionStorage.setItem('returnAfterLogin', '/checkout'); // Explicitly set checkout as destination
+
+            navigate('/login', {
+                state: {
+                    from: location.pathname,
+                    isFromBuyNow: true
+                },
+                replace: false  // This ensures state is preserved
+            });
             return;
         }
 
@@ -88,6 +131,8 @@ const ProductPage = () => {
 
 
 
+
+
     const fetchProductReviews = async () => {
         if (!product) return;
 
@@ -104,13 +149,86 @@ const ProductPage = () => {
         }
     };
 
-    // Extract product ID from URL
-    // For URL like "/products/some-product-name"
-    const extractProductNameFromUrl = () => {
-        const pathParts = window.location.pathname.split('/products/');
-        if (pathParts.length !== 2) return null;
-        return pathParts[1]; // Get everything after '/products/'
-    };
+
+
+
+    useEffect(() => {
+        const fetchProductWithFallback = async (slug) => {
+            try {
+                console.log('🟡 Fetching product:', slug);
+                setLoading(true);
+                setError(null);
+
+                // 1️⃣ Try fetching from main API
+                const response = await axios.get(
+                    `${import.meta.env.VITE_SERVER_API}/product/slug/${slug}`,
+                    {
+                        params: { full_details: true },
+                        headers: { 'Accept': 'application/json' }
+                    }
+                );
+
+                if (!response.data) throw new Error('Product not found');
+                const productData = response.data;
+
+                // Fix image URLs
+                if (productData.images?.length > 0) {
+                    productData.images = productData.images.map(img => ({
+                        ...img,
+                        image_url: img.image_url.startsWith('http')
+                            ? img.image_url
+                            : `${import.meta.env.VITE_SERVER_API}/static/${img.image_url.replace(/^\//, '')}`
+                    }));
+                }
+
+                console.log('✅ Product fetched from API:', productData);
+                setProduct(productData);
+                setLoading(false);
+
+            } catch (err) {
+                console.warn('⚠️ API fetch failed, trying fallback:', err.message);
+                try {
+                    const metadataResponse = await axios.get(
+                        `${import.meta.env.VITE_SERVER_API}/products/${slug}`,
+                        { headers: { 'Accept': 'text/html' } }
+                    );
+
+                    const parser = new DOMParser();
+                    const htmlDoc = parser.parseFromString(metadataResponse.data, 'text/html');
+
+                    const title = htmlDoc.querySelector('title')?.textContent || 'Product';
+                    const description = htmlDoc.querySelector('meta[name="description"]')?.content || '';
+                    const ogImage = htmlDoc.querySelector('meta[property="og:image"]')?.content || '';
+                    const ogPrice = htmlDoc.querySelector('meta[property="og:price:amount"]')?.content || '0';
+
+                    const fallbackProduct = {
+                        name: title,
+                        description,
+                        price: parseFloat(ogPrice),
+                        images: ogImage ? [{ image_url: ogImage }] : [],
+                        product_id: `meta-${slug}`,
+                        product_type: 'single',
+                        stock_quantity: 0
+                    };
+
+                    console.log('✅ Product from metadata:', fallbackProduct);
+                    setProduct(fallbackProduct);
+                    setLoading(false);
+
+                } catch (metadataError) {
+                    console.error('❌ Metadata fetch failed:', metadataError);
+                    setError('Product not found');
+                    setLoading(false);
+                    if (err.response?.status === 404) {
+                        navigate('/not-found', { replace: true });
+                    }
+                }
+            }
+        };
+        if (productSlug) {
+            fetchProductWithFallback(productSlug);
+        }
+    }, [productSlug, navigate]);
 
     // Inside your ProductPage component
     useEffect(() => {
@@ -136,50 +254,10 @@ const ProductPage = () => {
         fetchAndLogProductByName();
     }, []); // Empty dependency array means this runs on mount
 
-    // Keep your existing fetchProductData useEffect (for location.state products)
-    //   useEffect(() => {
-    //     const fetchProductData = async () => {
-    //       if (location.state?.product) {
-    //         setProduct(location.state.product);
-    //         setLoading(false);
-    //         return;
-    //       }
-
-    //       const productId = extractProductId();
-    //       if (!productId) {
-    //         setError('Invalid product URL');
-    //         setLoading(false);
-    //         return;
-    //       }
-
-    //       try {
-    //         setLoading(true);
-    //         setError(null);
-    //         const response = await axios.get(
-    //           `${import.meta.env.VITE_SERVER_API}/product/${productId}`
-    //         );
-    //         if (!response.data) throw new Error('Product data not found');
-    //         setProduct(response.data);
-    //       } catch (err) {
-    //         console.error('Fetch error:', err);
-    //         setError(err.response?.data?.message || err.message || 'Failed to load product');
-    //         if (err.response?.status === 404) {
-    //           navigate('/not-found', { replace: true });
-    //         }
-    //       } finally {
-    //         setLoading(false);
-    //       }
-    //     };
-
-    //     if (!location.state?.product) {
-    //       fetchProductData();
-    //     }
-    //   }, [location, navigate]);
-
-    // Replace your current fetchProductData useEffect with this:
 
     useEffect(() => {
         const fetchProductData = async () => {
+            // If product is passed via state (client-side navigation)
             if (location.state?.product) {
                 setProduct(location.state.product);
                 setLoading(false);
@@ -190,35 +268,71 @@ const ProductPage = () => {
                 setLoading(true);
                 setError(null);
 
-                // First try to get product by slug from URL
-                const productSlug = extractProductNameFromUrl();
+                // Extract product slug from URL
+                const productSlug = window.location.pathname.split('/products/')[1];
                 if (!productSlug) {
                     throw new Error('Invalid product URL');
                 }
 
-                // Step 1: Fetch basic product details by slug to get the ID
-                const slugResponse = await axios.get(
-                    `${import.meta.env.VITE_SERVER_API}/product/slug/${productSlug}`
+                // Enhanced crawler detection (before any API calls)
+                const isCrawler = /WhatsApp|Twitterbot|facebookexternalhit|LinkedInBot|TelegramBot|Slackbot/i.test(
+                    navigator.userAgent
                 );
 
-                if (!slugResponse.data) {
-                    throw new Error('Product not found by slug');
+                // If crawler detected, redirect to Flask meta endpoint
+                if (isCrawler) {
+                    console.log('Crawler detected - redirecting to meta endpoint');
+                    window.location.href = `${import.meta.env.VITE_SERVER_API}/products/${encodeURIComponent(productSlug)}`;
+                    return;
                 }
 
-                console.log("Product details from slug:", slugResponse.data);
+                console.log('Normal user flow - fetching product data');
 
-                // Step 2: Now fetch full product details by ID
-                const fullProductResponse = await axios.get(
-                    `${import.meta.env.VITE_SERVER_API}/product/${slugResponse.data.product_id}`
+                // Normal client flow - fetch product data in single request
+                const response = await axios.get(
+                    `${import.meta.env.VITE_SERVER_API}/product/slug/${productSlug}`,
+                    {
+                        params: {
+                            full_details: true // Ask backend to return complete product data
+                        }
+                    }
                 );
 
-                if (!fullProductResponse.data) {
-                    throw new Error('Full product data not found');
+                if (!response.data) {
+                    throw new Error('Product not found');
                 }
 
-                setProduct(fullProductResponse.data);
+                // Process product data
+                const productData = response.data;
+
+                // Ensure image URLs are absolute
+                if (productData.images && productData.images.length > 0) {
+                    productData.images = productData.images.map(img => {
+                        if (typeof img === 'string') {
+                            return {
+                                image_url: img.startsWith('http')
+                                    ? img
+                                    : `${import.meta.env.VITE_SERVER_API}/static/${img.replace(/^\//, '')}`
+                            };
+                        }
+                        return {
+                            ...img,
+                            image_url: img.image_url.startsWith('http')
+                                ? img.image_url
+                                : `${import.meta.env.VITE_SERVER_API}/static/${img.image_url.replace(/^\//, '')}`
+                        };
+                    });
+                }
+
+                setProduct(productData);
+
             } catch (err) {
-                console.error('Fetch error:', err);
+                console.error('Product fetch error:', {
+                    error: err,
+                    message: err.message,
+                    response: err.response?.data
+                });
+
                 setError(err.response?.data?.message || err.message || 'Failed to load product');
 
                 if (err.response?.status === 404) {
@@ -229,9 +343,17 @@ const ProductPage = () => {
             }
         };
 
+        // Only fetch if no product in state
         if (!location.state?.product) {
             fetchProductData();
         }
+
+        // Cleanup function
+        return () => {
+            // Cancel any ongoing requests if component unmounts
+            const source = axios.CancelToken.source();
+            source.cancel('Component unmounted');
+        };
     }, [location, navigate]);
 
     useEffect(() => {
@@ -241,6 +363,9 @@ const ProductPage = () => {
             fetchProductReviews();
         }
     }, [product]);
+
+
+
     // Handle initial selections and preselections
     useEffect(() => {
         if (product && !loading) {
@@ -296,12 +421,22 @@ const ProductPage = () => {
 
         // Case 1: Direct path string (from MainProducts)
         if (typeof img === 'string') {
+            // If it's already a full URL, return it directly
+            if (img.startsWith('http')) {
+                return img;
+            }
+            // Handle relative paths
             const cleanPath = img.startsWith('/') ? img.slice(1) : img;
             return `${import.meta.env.VITE_SERVER_API}/static/${cleanPath}`;
         }
 
         // Case 2: Object with image_url (from HomeProducts)
         if (typeof img === 'object' && img.image_url) {
+            // If it's already a full URL, return it directly
+            if (img.image_url.startsWith('http')) {
+                return img.image_url;
+            }
+            // Handle relative paths
             const cleanPath = img.image_url.startsWith('/')
                 ? img.image_url.slice(1)
                 : img.image_url;
@@ -311,6 +446,16 @@ const ProductPage = () => {
         return null;
     };
 
+    // Inside ProductPage component
+    useMetaTags({
+        title: product?.name || "Product",
+        description: product?.description?.substring(0, 160) || "",
+        imageUrl: product?.images?.[0]
+            ? `${import.meta.env.VITE_SERVER_API}/static/${product.images[0].image_url}`
+            : 'https://yourdomain.com/default-product.jpg',
+        url: window.location.href
+    });
+
     const handleAddToCart = async () => {
         if (!product) {
             setCartStatus({ error: 'Product not loaded', success: false, loading: false });
@@ -318,8 +463,35 @@ const ProductPage = () => {
         }
 
         if (!isAuthenticated) {
-            setCartStatus({ error: 'Please login to add items to cart', success: false, loading: false });
-            navigate('/login', { state: { from: location.pathname } });
+            // Store the cart item data in sessionStorage before redirecting
+            const cartItem = {
+                product_id: product.product_id,
+                name: product.name,
+                price: selectedColor?.price ||
+                    selectedModel?.colors?.[0]?.price ||
+                    product.price ||
+                    0,
+                original_price: selectedColor?.original_price ||
+                    selectedModel?.colors?.[0]?.original_price ||
+                    product.original_price ||
+                    null,
+                image: product.images?.[0]?.image_url || product.images?.[0],
+                color: selectedColor?.name,
+                model: selectedModel?.name,
+                color_id: selectedColor?.color_id || null,
+                model_id: selectedModel?.model_id || null,
+                quantity: quantity
+            };
+
+            sessionStorage.setItem('pendingCartItem', JSON.stringify(cartItem));
+            sessionStorage.setItem('returnAfterLogin', window.location.pathname);
+
+            navigate('/login', {
+                state: {
+                    from: location.pathname,
+                    isFromCart: true
+                }
+            });
             return;
         }
 
@@ -380,6 +552,35 @@ const ProductPage = () => {
         }
     };
 
+
+    // In ProductPage.jsx, update the useEffect for cart opening:
+    useEffect(() => {
+        if (location.state?.shouldOpenCart) {
+            // Get the pending cart item from sessionStorage
+            const pendingCartItem = JSON.parse(sessionStorage.getItem('pendingCartItem'));
+            setIsCartOpen(true);
+
+            if (pendingCartItem) {
+                // Add the item to the cart context
+                addToCart(pendingCartItem);
+
+                // Open the cart - we need to dispatch the event properly
+                const event = new CustomEvent('openCart', {
+                    detail: { open: true }  // Add this detail to match your cart implementation
+                });
+                window.dispatchEvent(event);
+
+                // Clear the stored data
+                sessionStorage.removeItem('pendingCartItem');
+                sessionStorage.removeItem('returnAfterLogin');
+            }
+
+            // Clear the state to prevent reopening on refresh
+            navigate(location.pathname, { replace: true, state: {} });
+        }
+    }, [location.state, navigate, addToCart]);
+
+
     const handleWishlistToggle = async () => {
         if (isWishlisting || !product) return;
         setIsWishlisting(true);
@@ -393,29 +594,11 @@ const ProductPage = () => {
         }
     };
 
-    // const currentStock = selectedColor?.stock_quantity ||
-    //     selectedModel?.colors?.reduce((acc, color) => acc + color.stock_quantity, 0) ||
-    //     product.stock_quantity ||
-    //     0;
 
     const incrementQuantity = () => setQuantity(prev => Math.min(currentStock, prev + 1));
     const decrementQuantity = () => setQuantity(prev => Math.max(1, prev - 1));
 
-    // const isInWishlist = wishlistItems.some(item =>
-    //     item.product_id === product.product_id &&
-    //     item.model_id === (selectedModel?.model_id || null) &&
-    //     item.color_id === (selectedColor?.color_id || null)
-    // );
 
-    // const currentPrice = selectedColor?.price ||
-    //     selectedModel?.colors?.[0]?.price ||
-    //     product.price ||
-    //     0;
-    // const originalPrice = selectedColor?.original_price ||
-    //     selectedModel?.colors?.[0]?.original_price ||
-    //     null;
-
-    // const inStock = currentStock > 0;
 
     if (loading || selectionsLoading) {
         return <div className="loading-state">Loading...</div>;
@@ -490,6 +673,7 @@ const ProductPage = () => {
                                                 src={imageUrl}
                                                 alt={`${product.name} thumbnail ${index + 1}`}
                                                 onError={(e) => {
+                                                    e.target.src = '/path/to/fallback-image.jpg'; // Add a fallback image
                                                     e.target.style.objectFit = 'contain';
                                                     console.error('Thumbnail load failed:', {
                                                         attemptedUrl: imageUrl,
@@ -526,6 +710,7 @@ const ProductPage = () => {
                                                 src={mainImageUrl}
                                                 alt={product.name}
                                                 onError={(e) => {
+                                                    e.target.src = '/path/to/fallback-image.jpg'; // Add a fallback image
                                                     e.target.style.objectFit = 'contain';
                                                     console.error('Image load failed:', {
                                                         attemptedUrl: e.target.src,
@@ -829,6 +1014,18 @@ const ProductPage = () => {
                 </div>
             )}
 
+            <Cart isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+
+            <div className="whatsapp-float">
+                <a
+                    href="https://wa.me/message/YWM7XQZDBAECD1"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Chat on WhatsApp"
+                >
+                    <WhatsAppIcon className="whatsapp-icon" />
+                </a>
+            </div>
         </>
     );
 };

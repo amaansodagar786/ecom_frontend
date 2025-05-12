@@ -11,6 +11,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./Cart.scss";
 import { useAuth } from "../../Components/Context/AuthContext";
+import FallbackImage from "../../assets/Logo/logo.jpg";
 
 const Cart = ({ isOpen, onClose }) => {
   const {
@@ -31,6 +32,20 @@ const Cart = ({ isOpen, onClose }) => {
   useEffect(() => {
     console.log('Current cart items:', cartItems);
   }, [cartItems]);
+
+
+  // In your Cart component (likely Cart.jsx), add this useEffect:
+  useEffect(() => {
+    const handleOpenCart = (e) => {
+      setIsOpen(e.detail?.open ?? true); // Open the cart when event is received
+    };
+
+    window.addEventListener('openCart', handleOpenCart);
+
+    return () => {
+      window.removeEventListener('openCart', handleOpenCart);
+    };
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -57,32 +72,42 @@ const Cart = ({ isOpen, onClose }) => {
     };
   };
 
-const getImageUrl = (image) => {
-  if (!image) {
-    console.log('No image provided');
-    return null;
-  }
+  const getImageUrl = (image) => {
+    console.log('Raw image data received:', image); // Log the raw input
 
-  // If it's already a full URL (starts with http), use as is
-  if (image.startsWith('http')) {
-    console.log('Using full URL:', image);
-    return image;
-  }
-  // If it starts with / (like /product_images/...), prepend server URL
-  else if (image.startsWith('/')) {
-    // Remove any leading slashes from the image path to prevent double slashes
-    const cleanPath = image.replace(/^\//, '');
-    const url = `${import.meta.env.VITE_SERVER_API}/static/${cleanPath}`;
-    console.log('Constructed URL from path:', url);
-    return url;
-  }
-  // Otherwise, assume it's just a filename and use the old format
-  else {
-    const url = `${import.meta.env.VITE_SERVER_API}/static/${image}`;
-    console.log('Constructed URL from filename:', url);
-    return url;
-  }
-};
+    if (!image) {
+      console.log('No image provided');
+      return null;
+    }
+
+    // Handle cases where image might be an object with different properties
+    if (typeof image === 'object') {
+      console.log('Image is an object, keys:', Object.keys(image));
+      image = image.url || image.path || image.image_url || image.filename;
+    }
+
+    // If it's already a full URL (starts with http), use as is
+    if (image?.startsWith('http')) {
+      console.log('Using full URL:', image);
+      return image;
+    }
+    // If it starts with / (like /product_images/...), prepend server URL
+    else if (image?.startsWith('/')) {
+      const cleanPath = image.replace(/^\//, '');
+      const url = `${import.meta.env.VITE_SERVER_API}/static/${cleanPath}`;
+      console.log('Constructed URL from path:', url);
+      return url;
+    }
+    // Otherwise, assume it's just a filename
+    else if (image) {
+      const url = `${import.meta.env.VITE_SERVER_API}/static/${image}`;
+      console.log('Constructed URL from filename:', url);
+      return url;
+    }
+
+    console.log('No valid image format found');
+    return null;
+  };
 
   const totals = calculateTotals(cartItems);
 
@@ -229,7 +254,7 @@ const getImageUrl = (image) => {
                               loading="lazy"
                               onError={(e) => {
                                 console.error("Image failed to load for:", imageUrl);
-                                // e.target.src = '/fallback-image.jpg';
+                                e.target.src = { FallbackImage };
                               }}
                             />
                           )

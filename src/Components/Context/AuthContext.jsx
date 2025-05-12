@@ -51,17 +51,41 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
 
-  const fetchServerCart = async () => {
-    try {
-      const token = getToken();
-      const response = await axios.get(
-        `${import.meta.env.VITE_SERVER_API}/cart/getbycustid`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
-      if (response.data.success && response.data.cart.items) {
-        // Convert server cart items to frontend format
-        const formattedItems = response.data.cart.items.map(item => ({
+const fetchServerCart = async () => {
+  try {
+    const token = getToken();
+    console.log('Fetching server cart...');
+    const response = await axios.get(
+      `${import.meta.env.VITE_SERVER_API}/cart/getbycustid`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    
+    console.log('Server cart response:', response.data);
+    
+    if (response.data.success && response.data.cart.items) {
+      const formattedItems = response.data.cart.items.map(item => {
+        // Debug the image structure
+        console.log('Original item image data:', {
+          product_image: item.product?.image_url,
+          color_image: item.color?.image_url,
+          item_images: item.product?.images,
+          color_images: item.color?.images
+        });
+
+        // Get the first available image in priority order:
+        // 1. Color-specific image
+        // 2. Product image
+        // 3. First image from product images array
+        const firstImage = 
+          item.color?.image_url || 
+          item.product?.image_url ||
+          (item.product?.images?.[0]?.image_url) ||
+          (item.color?.images?.[0]?.image_url) ||
+          null;
+
+        console.log('Selected image:', firstImage);
+
+        return {
           product_id: item.product.product_id,
           name: item.product.name,
           price: item.product.price || (item.color ? item.color.price : null),
@@ -71,17 +95,18 @@ export const AuthProvider = ({ children }) => {
           model: item.model ? item.model.name : '',
           color_id: item.color ? item.color.color_id : null,
           model_id: item.model ? item.model.model_id : null,
-          image: item.color?.images?.[0]?.image_url || 
-                 item.product?.images?.[0]?.image_url
-        }));
-        
-        setCartItems(formattedItems);
-        localStorage.setItem('cart', JSON.stringify(formattedItems));
-      }
-    } catch (err) {
-      console.error('Error fetching cart:', err);
+          image: firstImage
+        };
+      });
+      
+      console.log('Formatted cart items:', formattedItems);
+      setCartItems(formattedItems);
+      localStorage.setItem('cart', JSON.stringify(formattedItems));
     }
-  };
+  } catch (err) {
+    console.error('Error fetching cart:', err.response?.data || err.message);
+  }
+};
 
   const login = async (token, user, navigate) => {
     try {
@@ -107,6 +132,9 @@ export const AuthProvider = ({ children }) => {
     try {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      sessionStorage.removeItem('pendingCartItem');
+      sessionStorage.removeItem('returnAfterLogin');
+      
       setAuthState({
         isAuthenticated: false,
         user: null,

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import AdminLayout from '../AdminPanel/AdminLayout';
-import { toast } from 'react-toastify';
+import { toast , ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './AcceptReject.scss';
 import Loader from '../../../Components/Loader/Loader';
@@ -11,9 +11,13 @@ const AcceptReject = () => {
   const [rejectedOrders, setRejectedOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [processingOrder, setProcessingOrder] = useState(null);
+  const [approvingOrder, setApprovingOrder] = useState(null); // Separate state for approve
+  const [rejectingOrder, setRejectingOrder] = useState(null); // Separate state for reject
   const [activeTab, setActiveTab] = useState('pending');
   const [rejectionReasons, setRejectionReasons] = useState({});
+
+  // Make sure you have ToastContainer somewhere in your app (typically in App.js)
+  // If not, add: <ToastContainer position="top-right" autoClose={5000} />
 
   useEffect(() => {
     if (activeTab === 'pending') {
@@ -74,7 +78,7 @@ const AcceptReject = () => {
 
   const handleApprove = async (orderId) => {
     try {
-      setProcessingOrder(orderId);
+      setApprovingOrder(orderId); // Only set approving state
       const token = localStorage.getItem('token');
       const encodedOrderId = encodeURIComponent(orderId);
       await axios.get(`${import.meta.env.VITE_SERVER_API}/approve-order/${encodedOrderId}`, {
@@ -82,19 +86,35 @@ const AcceptReject = () => {
           Authorization: `Bearer ${token}`
         }
       });
-      toast.success('Order approved successfully!');
+      toast.success('Order approved successfully!', {
+        position: "top-center",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
       fetchPendingOrders();
     } catch (error) {
       console.error('Error approving order:', error);
-      toast.error(error.response?.data?.error || 'Failed to approve order');
+      toast.error(error.response?.data?.error || 'Failed to approve order', {
+        position: "top-center",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
     } finally {
-      setProcessingOrder(null);
+      setApprovingOrder(null);
     }
   };
 
   const handleReject = async (orderId) => {
     try {
-      setProcessingOrder(orderId);
+      setRejectingOrder(orderId); // Only set rejecting state
       const token = localStorage.getItem('token');
       const encodedOrderId = encodeURIComponent(orderId);
       await axios.delete(`${import.meta.env.VITE_SERVER_API}/reject-order/${encodedOrderId}`, {
@@ -102,13 +122,29 @@ const AcceptReject = () => {
           Authorization: `Bearer ${token}`
         }
       });
-      toast.success('Order rejected successfully!');
+      toast.success('Order rejected successfully!', {
+        position: "top-center",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
       fetchPendingOrders();
     } catch (error) {
       console.error('Error rejecting order:', error);
-      toast.error(error.response?.data?.error || 'Failed to reject order');
+      toast.error(error.response?.data?.error || 'Failed to reject order', {
+        position: "top-center",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
     } finally {
-      setProcessingOrder(null);
+      setRejectingOrder(null);
     }
   };
 
@@ -256,16 +292,16 @@ const AcceptReject = () => {
                     e.stopPropagation();
                     if (order?.order_id) handleApprove(order.order_id);
                   }}
-                  disabled={processingOrder === order?.order_id || !order?.order_id}
+                  disabled={approvingOrder === order?.order_id || rejectingOrder === order?.order_id || !order?.order_id}
                 >
-                  {processingOrder === order?.order_id ? (
+                  {approvingOrder === order?.order_id ? (
                     <span className="button-spinner">
                       <i className="fas fa-spinner fa-spin"></i>
                     </span>
                   ) : (
                     <i className="fas fa-check-circle"></i>
                   )}
-                  {processingOrder === order?.order_id ? 'Approving...' : 'Approve Order'}
+                  {approvingOrder === order?.order_id ? 'Approving...' : 'Approve Order'}
                 </button>
                 <button
                   className="reject-btn"
@@ -273,16 +309,16 @@ const AcceptReject = () => {
                     e.stopPropagation();
                     if (order?.order_id) handleReject(order.order_id);
                   }}
-                  disabled={processingOrder === order?.order_id || !order?.order_id}
+                  disabled={rejectingOrder === order?.order_id || approvingOrder === order?.order_id || !order?.order_id}
                 >
-                  {processingOrder === order?.order_id ? (
+                  {rejectingOrder === order?.order_id ? (
                     <span className="button-spinner">
                       <i className="fas fa-spinner fa-spin"></i>
                     </span>
                   ) : (
                     <i className="fas fa-times-circle"></i>
                   )}
-                  {processingOrder === order?.order_id ? 'Rejecting...' : 'Reject Order'}
+                  {rejectingOrder === order?.order_id ? 'Rejecting...' : 'Reject Order'}
                 </button>
               </div>
             )}
@@ -330,6 +366,18 @@ const AcceptReject = () => {
           </>
         )}
       </div>
+
+      <ToastContainer
+        position="top-center"
+        autoClose={2500}
+        hideProgressBar={false}
+        newestOnTop={true}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
     </AdminLayout>
   );
 };

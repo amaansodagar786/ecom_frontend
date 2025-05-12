@@ -11,11 +11,11 @@ const AdminSidebar = ({ isOpen, toggleSidebar, isMobile }) => {
     { path: '/addproducts', name: 'List Products', icon: <FiBox /> },
     { path: '/updateproducts', name: 'Update Products', icon: <FiBox /> },
     { path: '/categoryupdate', name: 'Category & Hsn', icon: <FiSettings /> },
-    { path: '/createorders', name: 'Offline Order', icon: <FiSettings /> },
     { path: '/admininventory', name: 'Inventory', icon: <FiPackage /> },
-    { path: '/adminorders', name: 'Orders', icon: <FiShoppingCart /> },
+    { path: '/createorders', name: 'Offline Order', icon: <FiSettings /> },
     { path: '/ordersacceptreject', name: 'Accept', icon: <FiShoppingCart /> },
-    { path: '/admininpayment', name: 'Payments', icon: <FiCreditCard /> },
+    { path: '/adminorders', name: 'Orders', icon: <FiShoppingCart /> },
+    // { path: '/admininpayment', name: 'Payments', icon: <FiCreditCard /> },
   ];
 
   const handleNavClick = (path) => {
@@ -33,11 +33,11 @@ const AdminSidebar = ({ isOpen, toggleSidebar, isMobile }) => {
         </button>
         {isOpen && <h2 className="sidebar-title">Admin Panel</h2>}
       </div>
-      
+
       <nav className="sidebar-nav">
         {navItems.map((item) => (
-          <Link 
-            to={item.path} 
+          <Link
+            to={item.path}
             key={item.path}
             className={`nav-item ${location.pathname === item.path ? 'active' : ''}`}
             onClick={() => handleNavClick(item.path)}

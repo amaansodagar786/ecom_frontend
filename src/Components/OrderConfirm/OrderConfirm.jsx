@@ -5,7 +5,7 @@ import './OrderConfirm.scss';
 
 const OrderConfirm = () => {
   const [orderData, setOrderData] = useState(null);
-  const [countdown, setCountdown] = useState(10);
+  const [countdown, setCountdown] = useState(30);
   const navigate = useNavigate();
   const [animationData, setAnimationData] = useState(null);
 
@@ -18,7 +18,8 @@ const OrderConfirm = () => {
 
     const data = sessionStorage.getItem('orderInfo');
     if (data) {
-      setOrderData(JSON.parse(data));
+      const parsedData = JSON.parse(data);
+      setOrderData(parsedData);
       sessionStorage.removeItem('orderInfo');
     }
 
@@ -36,6 +37,20 @@ const OrderConfirm = () => {
 
     return () => clearInterval(timer);
   }, [navigate]);
+
+  // Function to format the address
+  const formatAddress = (address) => {
+    if (!address) return '';
+    return `
+      ${address.name}, 
+      ${address.address_line}, 
+      ${address.locality}, 
+      ${address.city}, 
+      ${address.state} - ${address.pincode}
+      Mobile: ${address.mobile}
+      ${address.landmark ? `Landmark: ${address.landmark}` : ''}
+    `;
+  };
 
   return (
     <div className="order-confirm-container">
@@ -57,15 +72,39 @@ const OrderConfirm = () => {
         <p className="confirmation-text">
           We're processing your order and will notify you once it's confirmed.
         </p>
+        
+        {orderData && (
+          <div className="order-details-section">
+            <div className="order-info">
+              <h3>Order Information</h3>
+              <p><strong>Order ID:</strong> {orderData.order?.order_id || 'N/A'}</p>
+              <p><strong>Order Date:</strong> {new Date(orderData.order?.created_at).toLocaleString()}</p>
+            </div>
+            
+            <div className="shipping-info">
+              <h3>Shipping Address</h3>
+              <div className="address-block">
+                {orderData.address ? (
+                  <>
+                    <p><strong>{orderData.address.name}</strong></p>
+                    <p>{orderData.address.address_line}</p>
+                    <p>{orderData.address.locality}</p>
+                    <p>{orderData.address.city}, {orderData.address.state} - {orderData.address.pincode}</p>
+                    <p>Mobile: {orderData.address.mobile}</p>
+                    {orderData.address.landmark && <p>Landmark: {orderData.address.landmark}</p>}
+                  </>
+                ) : (
+                  <p>No shipping address available</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+        
         <p className="countdown-text">
           Redirecting to home in {countdown} seconds...
         </p>
-        {orderData && (
-          <div className="order-details">
-            <p><strong>Order ID:</strong> {orderData.order._id}</p>
-            <p><strong>Shipping Address:</strong> {orderData.address?.full_address}</p>
-          </div>
-        )}
+        
         <button className="home-btn" onClick={() => navigate('/')}>
           Back to Home Now
         </button>
