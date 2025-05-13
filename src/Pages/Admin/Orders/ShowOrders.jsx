@@ -39,6 +39,49 @@ const OrderDetails = () => {
   const [uploadStatus, setUploadStatus] = useState('');
   const [showUploadModal, setShowUploadModal] = useState(false);
 
+  const [trackingData, setTrackingData] = useState(null);
+  const [trackingLoading, setTrackingLoading] = useState(false);
+  const [trackingError, setTrackingError] = useState(null);
+
+
+useEffect(() => {
+  if (activeTab === 'tracking' && order?.address?.is_available && order?.fulfillment_status && order?.awb_number) {
+    console.log('Tracking conditions met - is_available:', order.address.is_available,
+      'fulfillment_status:', order.fulfillment_status,
+      'awb_number:', order.awb_number);
+
+    const fetchTrackingData = async () => {
+      setTrackingLoading(true);
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(
+          `${import.meta.env.VITE_SERVER_API}/order/${encodeURIComponent(order.order_id)}/track`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch tracking data');
+        }
+
+        const data = await response.json();
+        console.log('Tracking data:', data);
+        setTrackingData(data);
+      } catch (err) {
+        console.error('Error fetching tracking data:', err);
+        setTrackingError(err.message);
+      } finally {
+        setTrackingLoading(false);
+      }
+    };
+
+    fetchTrackingData();
+  }
+}, [activeTab, order]);
+
   useEffect(() => {
     const fetchOrderDetails = async () => {
       try {
@@ -136,6 +179,13 @@ const OrderDetails = () => {
   };
 
 
+  useEffect(() => {
+    if (order?.address) {
+      console.log('Delhivery is_available:', order.address.is_available);
+    }
+  }, [order]);
+
+
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
     setUploadStatus('');
@@ -226,7 +276,6 @@ const OrderDetails = () => {
   };
 
 
-
   const initiateFulfillment = () => {
     setShowFulfillment(true);
     setActiveTab('srno');
@@ -288,6 +337,54 @@ const OrderDetails = () => {
       setIsFulfillingOrder(false);
     }
   };
+
+  const updateOrderStatus = async (action) => {
+    try {
+      const encodedOrderId = encodeURIComponent(orderId);
+      const token = localStorage.getItem('token');
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER_API}/update-order-status/${encodedOrderId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ action })
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Failed to update status to ${action}`);
+      }
+
+      const data = await response.json();
+
+      // Update local state
+      setOrder(prev => ({
+        ...prev,
+        fulfillment_status: data.fulfillment_status,
+        delivery_status: data.delivery_status,
+        updated_at: data.updated_at
+      }));
+
+      toast.success(`Order status updated to ${action} successfully`);
+
+    } catch (error) {
+      console.error(`Error updating ${action} status:`, error);
+      toast.error(error.message || `Failed to update ${action} status`);
+
+      // Revert UI state if needed
+      if (action === 'fulfill') {
+        setOrder(prev => ({ ...prev, fulfillment_status: false }));
+      } else {
+        setOrder(prev => ({ ...prev, delivery_status: prev.delivery_status }));
+      }
+    }
+  };
+
 
 
   const areAllSrNosAssigned = () => {
@@ -522,6 +619,61 @@ const OrderDetails = () => {
     );
   }
 
+  // Add this new component near your other components
+  const TrackingSection = ({ trackingData, loading, error }) => {
+    if (loading) return <div className="tracking-loading">Loading tracking data...</div>;
+    if (error) return <div className="tracking-error">Error: {error}</div>;
+    if (!trackingData) return <div className="tracking-no-data">No tracking data available</div>;
+
+    return (
+      <div className="tracking-container">
+        <h3>Order Tracking Details</h3>
+        <div className="tracking-summary">
+          <div className="tracking-field">
+            <span className="tracking-label">AWB Number:</span>
+            <span className="tracking-value">{trackingData.ShipmentData?.[0]?.Shipment?.AWB || 'N/A'}</span>
+          </div>
+          <div className="tracking-field">
+            <span className="tracking-label">Status:</span>
+            <span className="tracking-value">{trackingData.ShipmentData?.[0]?.Shipment?.Status?.Status || 'N/A'}</span>
+          </div>
+          <div className="tracking-field">
+            <span className="tracking-label">Origin:</span>
+            <span className="tracking-value">{trackingData.ShipmentData?.[0]?.Shipment?.Origin || 'N/A'}</span>
+          </div>
+          <div className="tracking-field">
+            <span className="tracking-label">Destination:</span>
+            <span className="tracking-value">{trackingData.ShipmentData?.[0]?.Shipment?.Destination || 'N/A'}</span>
+          </div>
+        </div>
+
+        <div className="tracking-timeline">
+          <h4>Tracking History</h4>
+          {trackingData.ShipmentData?.[0]?.Shipment?.Scans?.length > 0 ? (
+            <ul className="timeline-list">
+              {trackingData.ShipmentData[0].Shipment.Scans.map((scan, index) => (
+                <li key={index} className="timeline-item">
+                  <div className="timeline-date">
+                    {new Date(scan.ScanDetail?.ScanDateTime || '').toLocaleString()}
+                  </div>
+                  <div className="timeline-content">
+                    <div className="timeline-status">{scan.ScanDetail?.Status || 'Scan'}</div>
+                    <div className="timeline-location">{scan.ScanDetail?.Location || 'Unknown location'}</div>
+                    <div className="timeline-remarks">{scan.ScanDetail?.Remarks || ''}</div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>No tracking history available</p>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+
+
   const groupedItems = groupDetailsByItem();
 
   return (
@@ -585,6 +737,15 @@ const OrderDetails = () => {
               onClick={() => setActiveTab('srno')}
             >
               SR No Management
+            </button>
+          )}
+          {/* Add this new tab button */}
+          {order?.address?.is_available && order?.fulfillment_status && (
+            <button
+              className={`tab-button ${activeTab === 'tracking' ? 'active' : ''}`}
+              onClick={() => setActiveTab('tracking')}
+            >
+              Track Order
             </button>
           )}
         </div>
@@ -738,14 +899,40 @@ const OrderDetails = () => {
               )}
             </div>
 
+
             {/* Fulfill Order Button - Only shown when all SR numbers are assigned */}
             {areAllSrNosAssigned() && (
               <div className="fulfill-order-section">
                 {order.address?.is_available === false ? (
-                  <div className="delivery-unavailable">
-                    <p>Delhivery service not available for this address</p>
-                    {order.address?.city && <p>Location: {order.address.city}</p>}
-                    {order.address?.pincode && <p>Pincode: {order.address.pincode}</p>}
+                  <div className="delivery-stepper">
+                    <div className="stepper-buttons">
+                      <button
+                        className={`stepper-button ${order.fulfillment_status ? 'completed' : ''}`}
+                        onClick={() => updateOrderStatus('fulfill')}
+                        disabled={order.fulfillment_status}
+                      >
+                        Fulfill
+                        {order.fulfillment_status && <span className="checkmark">✓</span>}
+                      </button>
+
+                      <button
+                        className={`stepper-button ${['shipped', 'delivered'].includes(order.delivery_status) ? 'completed' : ''}`}
+                        onClick={() => updateOrderStatus('shipped')}
+                        disabled={!order.fulfillment_status || ['shipped', 'delivered'].includes(order.delivery_status)}
+                      >
+                        Shipped
+                        {['shipped', 'delivered'].includes(order.delivery_status) && <span className="checkmark">✓</span>}
+                      </button>
+
+                      <button
+                        className={`stepper-button ${order.delivery_status === 'delivered' ? 'completed' : ''}`}
+                        onClick={() => updateOrderStatus('delivered')}
+                        disabled={order.delivery_status !== 'shipped'}
+                      >
+                        Delivered
+                        {order.delivery_status === 'delivered' && <span className="checkmark">✓</span>}
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <>
@@ -766,7 +953,22 @@ const OrderDetails = () => {
                 )}
               </div>
             )}
+
+
+        
           </>
+        )}
+
+        {activeTab === 'tracking' && (
+          <div className="track-order-section">
+            <h2>Track Order</h2>
+            {trackingLoading && <Loader />}
+            <TrackingSection
+              trackingData={trackingData}
+              loading={trackingLoading}
+              error={trackingError}
+            />
+          </div>
         )}
       </div>
 

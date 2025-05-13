@@ -18,18 +18,24 @@ const UserOrderDetails = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [trackingData, setTrackingData] = useState(null);
-
+  const [trackingError, setTrackingError] = useState(null);
 
   useEffect(() => {
+    console.log('UserOrderDetails component mounted with orderId:', orderId);
     const fetchOrderDetails = async () => {
       try {
+        console.log(`Fetching order details for order: ${orderId}`);
         const response = await fetch(
           `${import.meta.env.VITE_SERVER_API}/order/${encodeURIComponent(orderId)}/items`
         );
 
-        if (!response.ok) throw new Error('Order not found');
+        if (!response.ok) {
+          console.error('Order details fetch failed', response.status, response.statusText);
+          throw new Error('Order not found');
+        }
 
         const data = await response.json();
+        console.log('Received order details:', data);
 
         setOrder({
           ...data,
@@ -41,6 +47,7 @@ const UserOrderDetails = () => {
           }))
         });
       } catch (err) {
+        console.error('Error fetching order details:', err);
         setError(err.message);
       } finally {
         setLoading(false);
@@ -50,27 +57,43 @@ const UserOrderDetails = () => {
     fetchOrderDetails();
   }, [orderId]);
 
-
-
   useEffect(() => {
     if (order && order.order_status?.toUpperCase() === 'APPROVED') {
+      console.log('Order is approved, fetching tracking data');
       const fetchTrackingData = async () => {
         try {
+          const token = localStorage.getItem('token');
+          if (!token) {
+            console.warn('No token available for tracking data');
+            return;
+          }
+
           const response = await fetch(
             `${import.meta.env.VITE_SERVER_API}/order/${encodeURIComponent(orderId)}/track`,
             {
               headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${token}`
               }
             }
           );
 
-          if (!response.ok) throw new Error('Tracking data not available');
+          if (!response.ok) {
+            console.error('Tracking data fetch failed', response.status, response.statusText);
+            throw new Error('Tracking data not available');
+          }
 
           const data = await response.json();
-          setTrackingData(data.ShipmentData?.[0]?.Shipment);
+          console.log('Received tracking data:', data);
+          
+          if (data.ShipmentData?.[0]?.Shipment) {
+            setTrackingData(data.ShipmentData[0].Shipment);
+          } else {
+            console.warn('No shipment data in response');
+            setTrackingError('No tracking information available');
+          }
         } catch (err) {
           console.error('Failed to fetch tracking data:', err);
+          setTrackingError(err.message);
         }
       };
 
@@ -78,84 +101,18 @@ const UserOrderDetails = () => {
     }
   }, [order, orderId]);
 
-  // Update the OrderStepper component to use tracking data
-  // const OrderStepper = ({ orderStatus, deliveryStatus, trackingData }) => {
-  //   const status = orderStatus?.toUpperCase();
-  //   const delivery = deliveryStatus?.toLowerCase();
-
-  //   // Check tracking data for shipped/delivered status
-  //   const isShipped = trackingData?.Scans?.some(scan => 
-  //     scan.ScanDetail.Scan === 'In Transit' || 
-  //     scan.ScanDetail.Scan === 'Dispatched'
-  //   );
-
-  //   const isDelivered = trackingData?.Scans?.some(scan => 
-  //     scan.ScanDetail.Scan === 'Delivered'
-  //   );
-
-  //   const steps = [
-  //     {
-  //       id: 1,
-  //       name: 'Order Placed',
-  //       icon: <FaCreditCard />,
-  //       active: true,
-  //       completed: true
-  //     },
-  //     {
-  //       id: 2,
-  //       name: status === 'PENDING' ? 'Waiting Approval' : 'Approved',
-  //       icon: status === 'PENDING' ? <FaThumbsUp /> : <FaCheck />,
-  //       active: status === 'PENDING',
-  //       completed: status === 'APPROVED'
-  //     },
-  //     {
-  //       id: 3,
-  //       name: 'Processing',
-  //       icon: <FaBoxOpen />,
-  //       active: status === 'APPROVED' && ['processing', 'shipped', 'delivered'].includes(delivery),
-  //       completed: ['shipped', 'delivered'].includes(delivery)
-  //     },
-  //     {
-  //       id: 4,
-  //       name: 'Shipped',
-  //       icon: <FaTruck />,
-  //       active: isShipped || delivery === 'shipped',
-  //       completed: isDelivered || delivery === 'delivered'
-  //     },
-  //     {
-  //       id: 5,
-  //       name: 'Delivered',
-  //       icon: <FaCheck />,
-  //       active: isDelivered || delivery === 'delivered',
-  //       completed: isDelivered || delivery === 'delivered'
-  //     }
-  //   ];
-
-  //   return (
-  //     <div className="order-stepper">
-  //       {steps.map((step, index) => (
-  //         <React.Fragment key={step.id}>
-  //           <div className={`step ${step.active ? 'active' : ''} ${step.completed ? 'completed' : ''}`}>
-  //             <div className="step-icon">{step.icon}</div>
-  //             <div className="step-name">{step.name}</div>
-  //           </div>
-  //           {index < steps.length - 1 && (
-  //             <div className={`connector ${steps[index + 1].completed ? 'completed' : ''}`}></div>
-  //           )}
-  //         </React.Fragment>
-  //       ))}
-  //     </div>
-  //   );
-  // };
-
-  // Status functions
   const getStatusBadge = (orderStatus, deliveryStatus) => {
-    if (orderStatus?.toUpperCase() === 'PENDING') {
+    const status = orderStatus?.toUpperCase();
+    const delivery = deliveryStatus?.toLowerCase();
+
+    console.log(`getStatusBadge called with orderStatus: ${status}, deliveryStatus: ${delivery}`);
+
+    if (status === 'PENDING') {
       return <span className="status-badge pending-approval">Waiting Approval</span>;
     }
 
-    if (orderStatus?.toUpperCase() === 'APPROVED') {
-      switch (deliveryStatus?.toLowerCase()) {
+    if (status === 'APPROVED') {
+      switch (delivery) {
         case 'delivered': return <span className="status-badge delivered">Delivered</span>;
         case 'shipped': return <span className="status-badge shipped">Shipped</span>;
         case 'processing': return <span className="status-badge processing">Processing</span>;
@@ -172,8 +129,8 @@ const UserOrderDetails = () => {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
-  // Review functions
   const handleReviewClick = (product) => {
+    console.log('Opening review modal for product:', product.product_id);
     setSelectedProduct(product);
     setShowReviewModal(true);
     setRating(0);
@@ -189,6 +146,7 @@ const UserOrderDetails = () => {
 
     setIsSubmitting(true);
     try {
+      console.log('Submitting review for product:', selectedProduct.product_id);
       const response = await fetch(`${import.meta.env.VITE_SERVER_API}/review`, {
         method: 'POST',
         headers: {
@@ -202,19 +160,42 @@ const UserOrderDetails = () => {
         })
       });
 
-      if (!response.ok) throw new Error('Failed to submit review');
+      if (!response.ok) {
+        console.error('Review submission failed', response.status, response.statusText);
+        throw new Error('Failed to submit review');
+      }
+
+      console.log('Review submitted successfully');
       setShowReviewModal(false);
     } catch (err) {
+      console.error('Error submitting review:', err);
       setSubmitError(err.message);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Stepper component
-  const OrderStepper = ({ orderStatus, deliveryStatus }) => {
+  const OrderStepper = ({ orderStatus, deliveryStatus, trackingData }) => {
     const status = orderStatus?.toUpperCase();
     const delivery = deliveryStatus?.toLowerCase();
+
+    console.log('OrderStepper rendering with:', {
+      orderStatus: status,
+      deliveryStatus: delivery,
+      trackingData: trackingData
+    });
+
+    // Check tracking data for shipped/delivered status
+    const isShipped = trackingData?.Scans?.some(scan => 
+      scan.ScanDetail?.Scan === 'In Transit' || 
+      scan.ScanDetail?.Scan === 'Dispatched'
+    );
+
+    const isDelivered = trackingData?.Scans?.some(scan => 
+      scan.ScanDetail?.Scan === 'Delivered'
+    );
+
+    console.log('Tracking states:', { isShipped, isDelivered });
 
     const steps = [
       {
@@ -236,23 +217,25 @@ const UserOrderDetails = () => {
         name: 'Processing',
         icon: <FaBoxOpen />,
         active: status === 'APPROVED' && ['processing', 'shipped', 'delivered'].includes(delivery),
-        completed: ['shipped', 'delivered'].includes(delivery)
+        completed: isShipped || ['shipped', 'delivered'].includes(delivery)
       },
       {
         id: 4,
         name: 'Shipped',
         icon: <FaTruck />,
-        active: delivery === 'shipped',
-        completed: delivery === 'delivered'
+        active: isShipped || delivery === 'shipped',
+        completed: isDelivered || delivery === 'delivered'
       },
       {
         id: 5,
         name: 'Delivered',
         icon: <FaCheck />,
-        active: delivery === 'delivered',
-        completed: delivery === 'delivered'
+        active: isDelivered || delivery === 'delivered',
+        completed: isDelivered || delivery === 'delivered'
       }
     ];
+
+    console.log('Stepper steps:', steps);
 
     return (
       <div className="order-stepper">
@@ -302,14 +285,12 @@ const UserOrderDetails = () => {
           &larr; Back to Orders
         </button>
 
-        <h1 className="user-order-title">Order Details {order.order_id}</h1>
-
-
+        <h1 className="user-order-title">Order Details #{order.order_id}</h1>
 
         <div className="user-order-main-card">
           <div className="user-order-card-header">
             <div className="user-order-meta">
-              <span className="user-order-id">Order {order.order_id}</span>
+              <span className="user-order-id">Order #{order.order_id}</span>
               <span className="user-order-date">Placed on {formatDate(order.created_at)}</span>
             </div>
             <div className="user-order-status">
@@ -360,7 +341,6 @@ const UserOrderDetails = () => {
             </div>
           </div>
 
-          {/* Mind-blowing stepper */}
           <div className="order-stepper-container">
             <OrderStepper
               orderStatus={order.order_status}
@@ -368,9 +348,14 @@ const UserOrderDetails = () => {
               trackingData={trackingData}
             />
           </div>
+
+          {/* {trackingError && (
+            <div className="tracking-error-notice">
+              <p>Note: {trackingError}</p>
+            </div>
+          )} */}
         </div>
 
-        {/* Review Modal */}
         {showReviewModal && selectedProduct && (
           <div className="user-order-review-modal-overlay">
             <div className="user-order-review-modal">

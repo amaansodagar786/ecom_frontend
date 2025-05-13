@@ -608,3 +608,75 @@
     }
   }
 }
+
+
+.delivery-stepper {
+  width: 100%;
+  margin-top: 1rem;
+
+  .stepper-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+
+    .stepper-button {
+      padding: 0.7rem 1.5rem;
+      border: none;
+      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s;
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      &.active {
+        background: #0d6efd;
+        color: white;
+
+        &:hover {
+          background: #0b5ed7;
+        }
+      }
+
+      &.completed {
+        background: #28a745;
+        color: white;
+        cursor: default;
+      }
+
+      &:disabled:not(.completed) {
+        background: #e9ecef;
+        color: #6c757d;
+        cursor: not-allowed;
+      }
+
+      .checkmark {
+        font-size: 1rem;
+      }
+    }
+  }
+
+  .stepper-status {
+    text-align: center;
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .delivery-stepper {
+    .stepper-buttons {
+      flex-direction: column;
+      gap: 0.5rem;
+
+      .stepper-button {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  }
+}

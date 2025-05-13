@@ -341,3 +341,161 @@
     }
   }
 }
+
+
+.track-order-section {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+
+  h2 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    color: #333;
+    font-size: 1.4rem;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 0.5rem;
+  }
+}
+
+.tracking-container {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+
+  h3, h4 {
+    color: #444;
+    margin-top: 0;
+  }
+
+  .tracking-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #eee;
+
+    .tracking-field {
+      display: flex;
+      flex-direction: column;
+
+      .tracking-label {
+        font-weight: 600;
+        color: #666;
+        font-size: 0.9rem;
+      }
+
+      .tracking-value {
+        font-size: 1rem;
+        color: #333;
+      }
+    }
+  }
+
+  .tracking-timeline {
+    .timeline-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+
+      .timeline-item {
+        display: flex;
+        padding: 1rem 0;
+        border-bottom: 1px solid #f0f0f0;
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        .timeline-date {
+          width: 180px;
+          font-size: 0.85rem;
+          color: #666;
+        }
+
+        .timeline-content {
+          flex: 1;
+
+          .timeline-status {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.25rem;
+          }
+
+          .timeline-location {
+            font-size: 0.9rem;
+            color: #555;
+          }
+
+          .timeline-remarks {
+            font-size: 0.85rem;
+            color: #777;
+            margin-top: 0.25rem;
+            font-style: italic;
+          }
+        }
+      }
+    }
+  }
+}
+
+.tracking-loading,
+.tracking-error,
+.tracking-no-data {
+  padding: 1rem;
+  text-align: center;
+  border-radius: 4px;
+}
+
+.tracking-loading {
+  background: #f8f9fa;
+  color: #666;
+}
+
+.tracking-error {
+  background: #fff5f5;
+  color: #dc3545;
+  border: 1px solid #f1aeb5;
+}
+
+.tracking-no-data {
+  background: #f8f9fa;
+  color: #666;
+  border: 1px dashed #ddd;
+}
+
+@media (max-width: 768px) {
+  .tracking-summary {
+    grid-template-columns: 1fr !important;
+  }
+
+  .timeline-item {
+    flex-direction: column !important;
+
+    .timeline-date {
+      width: 100% !important;
+      margin-bottom: 0.5rem;
+    }
+  }
+}
+
+.track-order-section {
+  margin-top: 1rem;
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+
+  h2 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    color: #333;
+    font-size: 1.4rem;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 0.5rem;
+  }
+}

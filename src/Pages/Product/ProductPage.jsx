@@ -7,6 +7,7 @@ import { useAuth } from '../../Components/Context/AuthContext';
 import useMetaTags from '../../Components/Hooks/useMetaTags';
 import Cart from '../../Pages/Cart/Cart';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'; // or use your own WhatsApp icon
+import Loader from '../../Components/Loader/Loader';
 
 
 // Move this outside the component
@@ -446,15 +447,15 @@ const ProductPage = () => {
         return null;
     };
 
-    // Inside ProductPage component
-    useMetaTags({
-        title: product?.name || "Product",
-        description: product?.description?.substring(0, 160) || "",
-        imageUrl: product?.images?.[0]
-            ? `${import.meta.env.VITE_SERVER_API}/static/${product.images[0].image_url}`
-            : 'https://yourdomain.com/default-product.jpg',
-        url: window.location.href
-    });
+    // // Inside ProductPage component
+    // useMetaTags({
+    //     title: product?.name || "Product",
+    //     description: product?.description?.substring(0, 160) || "",
+    //     imageUrl: product?.images?.[0]
+    //         ? `${import.meta.env.VITE_SERVER_API}/static/${product.images[0].image_url}`
+    //         : 'https://yourdomain.com/default-product.jpg',
+    //     url: window.location.href
+    // });
 
     const handleAddToCart = async () => {
         if (!product) {
@@ -601,7 +602,7 @@ const ProductPage = () => {
 
 
     if (loading || selectionsLoading) {
-        return <div className="loading-state">Loading...</div>;
+        return <Loader />;
     }
     if (error) {
         return <div className="error-state">Error: {error}</div>;

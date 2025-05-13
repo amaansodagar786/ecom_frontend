@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import AdminLayout from '../AdminPanel/AdminLayout';
-import { toast , ToastContainer } from 'react-toastify';
+import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './AcceptReject.scss';
 import Loader from '../../../Components/Loader/Loader';
@@ -15,6 +15,8 @@ const AcceptReject = () => {
   const [rejectingOrder, setRejectingOrder] = useState(null); // Separate state for reject
   const [activeTab, setActiveTab] = useState('pending');
   const [rejectionReasons, setRejectionReasons] = useState({});
+  const [pendingOrderCount, setPendingOrderCount] = useState(0);
+
 
   // Make sure you have ToastContainer somewhere in your app (typically in App.js)
   // If not, add: <ToastContainer position="top-right" autoClose={5000} />
@@ -36,10 +38,11 @@ const AcceptReject = () => {
           Authorization: `Bearer ${token}`
         }
       });
-      const pendingOrders = response.data.filter(order => 
+      const pendingOrders = response.data.filter(order =>
         order?.order_status === 'PENDING'
       );
       setOrders(pendingOrders || []);
+      setPendingOrderCount(pendingOrders.length); // Add this line
       setLoading(false);
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -67,7 +70,7 @@ const AcceptReject = () => {
         }
       });
       setRejectionReasons(reasons);
-      
+
       setLoading(false);
     } catch (error) {
       console.error('Error fetching rejected orders:', error);
@@ -201,11 +204,14 @@ const AcceptReject = () => {
             onClick={() => setSelectedOrder(selectedOrder === order?.order_id ? null : order?.order_id)}
           >
             <div className="order-header">
-              <div className="order-id">Order #{order?.order_id || 'N/A'}</div>
+              <div className="order-id">Order {order?.order_id || 'N/A'}</div>
               <div className="order-date">{formatDate(order?.created_at)}</div>
               <div className="order-amount">{formatCurrency(order?.total_amount)}</div>
               <div className={`order-status ${getOrderStatusClass(order?.order_status)}`}>
                 {order?.order_status || 'UNKNOWN'}
+              </div>
+              <div className={`payment-type ${order?.payment_type || 'unknown'}`}>
+                {order?.payment_type ? order.payment_type.toUpperCase() : 'N/A'}
               </div>
             </div>
 
@@ -260,6 +266,17 @@ const AcceptReject = () => {
               <div className="summary-section">
                 <h3>Order Summary</h3>
                 <div className="summary-grid">
+                  <div className="summary-row">
+                    <span>Payment Method:</span>
+                    <span className={`payment-method ${order?.payment_type || 'unknown'}`}>
+                      {order?.payment_type ?
+                        order.payment_type === 'cod' ? 'Cash on Delivery' :
+                          order.payment_type === 'upi' ? 'UPI Payment' :
+                            order.payment_type === 'bank_transfer' ? 'Bank Transfer' :
+                              order.payment_type.toUpperCase()
+                        : 'N/A'}
+                    </span>
+                  </div>
                   <div className="summary-row">
                     <span>Subtotal:</span>
                     <span>{formatCurrency(order?.subtotal)}</span>
@@ -332,16 +349,16 @@ const AcceptReject = () => {
     <AdminLayout>
       <div className="order-approval-container">
         <h1 className="page-title">Order Management</h1>
-        
+
         <div className="tabs-container">
-          <div 
+          <div
             className={`tab ${activeTab === 'pending' ? 'active' : ''}`}
             onClick={() => setActiveTab('pending')}
           >
             <i className="fas fa-clock"></i> Pending Orders
             {orders.length > 0 && <span className="badge">{orders.length}</span>}
           </div>
-          <div 
+          <div
             className={`tab ${activeTab === 'rejected' ? 'active' : ''}`}
             onClick={() => setActiveTab('rejected')}
           >

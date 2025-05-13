@@ -139,6 +139,61 @@ $transition: all 0.3s ease;
           color: darken(#ffbe0b, 20%);
         }
       }
+
+      /* Payment Type Badge Styles */
+      .payment-type {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-top: 0.5rem;
+        
+        &.cod {
+          background: rgba(#ff9800, 0.2);
+          color: darken(#ff9800, 20%);
+        }
+        
+        &.upi {
+          background: rgba(#4caf50, 0.2);
+          color: darken(#4caf50, 20%);
+        }
+        
+        &.bank_transfer {
+          background: rgba(#2196f3, 0.2);
+          color: darken(#2196f3, 20%);
+        }
+        
+        &.unknown {
+          background: rgba($gray-color, 0.2);
+          color: $dark-color;
+        }
+      }
+
+      /* Payment Status Badge Styles */
+      .payment-status {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-top: 0.5rem;
+        
+        &.paid {
+          background: rgba(#4caf50, 0.2);
+          color: darken(#4caf50, 20%);
+        }
+        
+        &.pending {
+          background: rgba(#ff9800, 0.2);
+          color: darken(#ff9800, 20%);
+        }
+        
+        &.failed {
+          background: rgba($danger-color, 0.2);
+          color: darken($danger-color, 20%);
+        }
+      }
     }
 
     .order-details {
@@ -222,6 +277,35 @@ $transition: all 0.3s ease;
           border-radius: $border-radius;
           margin-top: 0.5rem;
           border: 1px solid rgba($gray-color, 0.1);
+
+          /* Payment Method Row Styles */
+          .payment-method-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            font-size: 0.9rem;
+            border-bottom: 1px dashed rgba($gray-color, 0.2);
+            
+            .payment-method {
+              font-weight: 600;
+              
+              &.cod {
+                color: #ff9800;
+              }
+              
+              &.upi {
+                color: #4caf50;
+              }
+              
+              &.bank_transfer {
+                color: #2196f3;
+              }
+              
+              &.unknown {
+                color: $gray-color;
+              }
+            }
+          }
 
           .summary-row {
             display: flex;
@@ -331,9 +415,6 @@ $transition: all 0.3s ease;
     }
   }
 }
-
-
-// Add these styles to your existing AcceptReject.scss
 
 .tabs-container {
   display: flex;

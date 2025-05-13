@@ -11,8 +11,11 @@ const UserOrders = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log('UserOrders component mounted');
     const userData = JSON.parse(localStorage.getItem('user'));
+    
     if (!userData || !userData.customer_id) {
+      console.error('User not authenticated - missing customer_id');
       setError('User not authenticated');
       setLoading(false);
       return;
@@ -20,37 +23,50 @@ const UserOrders = () => {
 
     const fetchOrders = async () => {
       try {
+        console.log(`Fetching orders for customer: ${userData.customer_id}`);
         const ordersResponse = await fetch(
           `${import.meta.env.VITE_SERVER_API}/customer/${userData.customer_id}/orders`
         );
         
-        if (!ordersResponse.ok) throw new Error('Failed to fetch orders');
+        if (!ordersResponse.ok) {
+          console.error('Failed to fetch orders', ordersResponse.status, ordersResponse.statusText);
+          throw new Error('Failed to fetch orders');
+        }
         
         const ordersData = await ordersResponse.json();
+        console.log('Received orders data:', ordersData);
         
         const ordersWithItems = await Promise.all(
           ordersData.map(async (order) => {
             try {
               const encodedOrderId = encodeURIComponent(order.order_id);
+              console.log(`Fetching items for order: ${order.order_id}`);
               const itemsResponse = await fetch(
                 `${import.meta.env.VITE_SERVER_API}/order/${encodedOrderId}/items`
               );
               
-              if (!itemsResponse.ok) return {...order, items: []};
+              if (!itemsResponse.ok) {
+                console.warn(`Failed to fetch items for order ${order.order_id}`, itemsResponse.status);
+                return {...order, items: []};
+              }
               
               const itemsData = await itemsResponse.json();
+              console.log(`Items for order ${order.order_id}:`, itemsData);
               return {
                 ...order,
                 items: itemsData.items || []
               };
             } catch (err) {
+              console.error(`Error fetching items for order ${order.order_id}:`, err);
               return {...order, items: []};
             }
           })
         );
         
+        console.log('Final orders with items:', ordersWithItems);
         setOrders(ordersWithItems);
       } catch (err) {
+        console.error('Error in fetchOrders:', err);
         setError(err.message);
       } finally {
         setLoading(false);
@@ -84,6 +100,7 @@ const UserOrders = () => {
   };
 
   const handleViewDetails = (orderId) => {
+    console.log('Navigating to order details:', orderId);
     navigate(`/user/orders/${encodeURIComponent(orderId)}`);
   };
 
@@ -154,7 +171,6 @@ const UserOrders = () => {
                   <span className="total-amount">₹{order.total_amount?.toFixed(2)}</span>
                 </div>
                 <div className="order-actions">
-                  {/* <button className="action-btn track-btn">Track Order</button> */}
                   <button 
                     className="action-btn details-btn"
                     onClick={() => handleViewDetails(order.order_id)}
