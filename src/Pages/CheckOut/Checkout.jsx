@@ -36,10 +36,7 @@ const Checkout = () => {
 
 
 
-    // Calculate order totals
-    const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const originalSubtotal = cartItems.reduce((sum, item) => sum + ((item.original_price || item.price) * item.quantity), 0);
-    const totalDiscount = originalSubtotal - subtotal;
+
 
     const calculateDeliveryCharge = (amount) => {
         if (amount <= 999) return 0;
@@ -49,10 +46,23 @@ const Checkout = () => {
         if (amount <= 30000) return 560;
         return 850;
     };
+    // Calculate order totals
+    // const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    // const originalSubtotal = cartItems.reduce((sum, item) => sum + ((item.original_price || item.price) * item.quantity), 0);
+    // const totalDiscount = originalSubtotal - subtotal;
+    // const deliveryCharge = calculateDeliveryCharge(subtotal);
+    // const taxes = subtotal * 0.18; // 18% GST
+    // const total = subtotal + deliveryCharge + taxes;
 
-    const deliveryCharge = calculateDeliveryCharge(subtotal);
-    const taxes = subtotal * 0.18; // 18% GST
-    const total = subtotal + deliveryCharge + taxes;
+    // Calculate order totals
+    // In your calculations section (replace the existing code):
+    const originalSubtotal = cartItems.reduce((sum, item) => sum + ((item.original_price || item.price) * item.quantity), 0);
+    const totalDiscount = originalSubtotal - cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const subtotalAfterDiscount = originalSubtotal - totalDiscount;
+    const gstAmount = parseFloat((subtotalAfterDiscount * 0.18).toFixed(2));
+    const subtotalExcludingGst = parseFloat((subtotalAfterDiscount - gstAmount).toFixed(2));
+    const deliveryCharge = calculateDeliveryCharge(subtotalExcludingGst);
+    const total = subtotalExcludingGst + parseFloat(gstAmount) + deliveryCharge;
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -406,18 +416,18 @@ const Checkout = () => {
                                 </div>
                             )}
                             <div className="price-row">
-                                <span>Subtotal</span>
-                                <span>₹{subtotal.toFixed(2)}</span>
+                                <span>Subtotal (Excluding GST)</span>
+                                <span>₹{subtotalExcludingGst.toFixed(2)}</span>
                             </div>
                             <div className="price-row">
                                 <span>GST (18%)</span>
-                                <span>₹{taxes.toFixed(2)}</span>
+                                <span>₹{gstAmount}</span>
                             </div>
                             <div className="price-row">
                                 <span>Delivery Charge</span>
                                 <span>{deliveryCharge === 0 ? 'FREE' : `₹${deliveryCharge.toFixed(2)}`}</span>
                             </div>
-                            
+
                             <div className="price-row total">
                                 <span>Total</span>
                                 <span>₹{total.toFixed(2)}</span>

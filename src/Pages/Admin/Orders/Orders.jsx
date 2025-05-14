@@ -47,43 +47,46 @@ const Orders = () => {
     }));
   };
 
-  const applyFilters = () => {
-    let result = [...orders];
-    
-    if (filters.orderId) {
-      result = result.filter(order => 
-        order.order_id.toLowerCase().includes(filters.orderId.toLowerCase())
-      );
+ const applyFilters = () => {
+  let result = [...orders];
+  
+  if (filters.orderId) {
+    result = result.filter(order => 
+      order.order_id.toLowerCase().includes(filters.orderId.toLowerCase())
+    );
+  }
+  
+  if (filters.deliveryStatus) {
+    result = result.filter(order => 
+      order.delivery_status.toLowerCase() === filters.deliveryStatus.toLowerCase()
+    );
+  }
+  
+  if (filters.fulfillment) {
+    const fulfilled = filters.fulfillment === 'fulfilled';
+    result = result.filter(order => 
+      (fulfilled && order.fulfillment_status) || 
+      (!fulfilled && !order.fulfillment_status)
+    );
+  }
+  
+  if (filters.channel) {
+    result = result.filter(order => 
+      order.channel === filters.channel
+    );
+  }
+  
+ 
+  if (filters.fulfillment) {
+    if (filters.fulfillment === 'fulfilled') {
+      result = result.filter(order => order.fulfillment_status === 1 || order.fulfillment_status === true);
+    } else if (filters.fulfillment === 'pending') {
+      result = result.filter(order => order.fulfillment_status === 0 || order.fulfillment_status === false);
     }
-    
-    if (filters.deliveryStatus) {
-      result = result.filter(order => 
-        order.order_status === filters.deliveryStatus
-      );
-    }
-    
-    if (filters.fulfillment) {
-      const fulfilled = filters.fulfillment === 'fulfilled';
-      result = result.filter(order => 
-        (fulfilled && order.fulfillment_status) || 
-        (!fulfilled && !order.fulfillment_status)
-      );
-    }
-    
-    if (filters.channel) {
-      result = result.filter(order => 
-        order.channel === filters.channel
-      );
-    }
-    
-    if (filters.paymentStatus) {
-      result = result.filter(order => 
-        order.payment_status === filters.paymentStatus
-      );
-    }
-    
-    setFilteredOrders(result);
-  };
+  }
+  
+  setFilteredOrders(result);
+};
 
   const clearFilters = () => {
     setFilters({
@@ -149,11 +152,11 @@ const Orders = () => {
               onChange={handleFilterChange}
             >
               <option value="">All Status</option>
-              <option value="PENDING">Pending</option>
-              <option value="PROCESSING">Processing</option>
-              <option value="INTRANSIT">In Transit</option>
-              <option value="DELIVERED">Delivered</option>
-              <option value="CANCELLED">Cancelled</option>
+              <option value="pending">Pending</option>
+              <option value="Processing">Processing</option>
+              <option value="intransit">In Transit</option>
+              <option value="delivered">Delivered</option>
+              <option value="cancelled">Cancelled</option>
             </select>
           </div>
           
@@ -194,8 +197,8 @@ const Orders = () => {
               onChange={handleFilterChange}
             >
               <option value="">All Payments</option>
-              <option value="PAID">Paid</option>
-              <option value="PENDING">Pending</option>
+  <option value="paid">Paid</option>
+  <option value="pending">Pending</option>
             </select>
           </div>
           
