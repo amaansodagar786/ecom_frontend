@@ -4,83 +4,60 @@ import AdminLayout from '../AdminPanel/AdminLayout';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import './OrderDetails.scss';
+// import './OrderDetails.scss';
 import './ShowOrders.scss';
 import Loader from '../../../Components/Loader/Loader';
 
 const OrderDetails = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('orders');
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [orderItems, setOrderItems] = useState([]);
-  const [expandedItems, setExpandedItems] = useState([]);
   const [error, setError] = useState(null);
   const [paymentStatus, setPaymentStatus] = useState('pending');
-  const [srNoInput, setSrNoInput] = useState('');
-  const [validatedSrNos, setValidatedSrNos] = useState([]);
-  const [savedSrNos, setSavedSrNos] = useState({});
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newDeviceData, setNewDeviceData] = useState({
-    device_srno: '',
-    device_name: '',
-    sku_id: '',
-    price: '',
-    remarks: '',
-    order_id: orderId,
-    in_out: 1
-  });
-  const [creatingDevice, setCreatingDevice] = useState(false);
   const [isFulfillingOrder, setIsFulfillingOrder] = useState(false);
-  const [showFulfillment, setShowFulfillment] = useState(false);
-
-  const [file, setFile] = useState(null);
-  const [uploadStatus, setUploadStatus] = useState('');
-  const [showUploadModal, setShowUploadModal] = useState(false);
-
   const [trackingData, setTrackingData] = useState(null);
   const [trackingLoading, setTrackingLoading] = useState(false);
   const [trackingError, setTrackingError] = useState(null);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [currentProduct, setCurrentProduct] = useState(null);
+  const [srNoInputs, setSrNoInputs] = useState({});
+  const [isSubmittingSrNos, setIsSubmittingSrNos] = useState(false);
+  // const [activeTab, setActiveTab] = useState('order');
 
-
-useEffect(() => {
-  if (activeTab === 'tracking' && order?.address?.is_available && order?.fulfillment_status && order?.awb_number) {
-    console.log('Tracking conditions met - is_available:', order.address.is_available,
-      'fulfillment_status:', order.fulfillment_status,
-      'awb_number:', order.awb_number);
-
-    const fetchTrackingData = async () => {
-      setTrackingLoading(true);
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(
-          `${import.meta.env.VITE_SERVER_API}/order/${encodeURIComponent(order.order_id)}/track`,
-          {
-            headers: {
-              'Authorization': `Bearer ${token}`
+  useEffect(() => {
+    if (order?.address?.is_available && order?.fulfillment_status && order?.awb_number) {
+      const fetchTrackingData = async () => {
+        setTrackingLoading(true);
+        try {
+          const token = localStorage.getItem('token');
+          const response = await fetch(
+            `${import.meta.env.VITE_SERVER_API}/order/${encodeURIComponent(order.order_id)}/track`,
+            {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
             }
+          );
+
+          if (!response.ok) {
+            throw new Error('Failed to fetch tracking data');
           }
-        );
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch tracking data');
+          const data = await response.json();
+          setTrackingData(data);
+        } catch (err) {
+          console.error('Error fetching tracking data:', err);
+          setTrackingError(err.message);
+        } finally {
+          setTrackingLoading(false);
         }
+      };
 
-        const data = await response.json();
-        console.log('Tracking data:', data);
-        setTrackingData(data);
-      } catch (err) {
-        console.error('Error fetching tracking data:', err);
-        setTrackingError(err.message);
-      } finally {
-        setTrackingLoading(false);
-      }
-    };
-
-    fetchTrackingData();
-  }
-}, [activeTab, order]);
+      fetchTrackingData();
+    }
+  }, [order]);
 
   useEffect(() => {
     const fetchOrderDetails = async () => {
@@ -105,7 +82,6 @@ useEffect(() => {
           throw new Error('Invalid order data structure');
         }
 
-        // Set order data
         setOrder({
           order_id: data.order_id,
           customer_id: data.customer_id,
@@ -124,35 +100,23 @@ useEffect(() => {
         });
         setPaymentStatus(data.payment_status || 'pending');
 
+        // Group items by product_id and count quantities
+        const groupedItems = data.details.reduce((acc, detail) => {
+          const existingItem = acc.find(item => item.product_id === detail.product_id);
+          if (existingItem) {
+            existingItem.quantity += 1;
+            existingItem.details.push(detail);
+          } else {
+            acc.push({
+              ...detail,
+              quantity: 1,
+              details: [detail]
+            });
+          }
+          return acc;
+        }, []);
 
-        console.log('Fetched order:', {
-          order_id: data.order_id,
-          customer_id: data.customer_id,
-          offline_customer_id: data.offline_customer_id,
-          customer_type: data.customer_type,
-          customer_display: data.customer_id || data.offline_customer_id || 'N/A',
-          total_amount: data.total_amount || 0,
-          subtotal: data.subtotal || 0,
-          payment_status: data.payment_status,
-          fulfillment_status: data.fulfillment_status,
-          delivery_status: data.delivery_status,
-          created_at: data.created_at,
-          awb_number: data.awb_number || null,
-          upload_wbn: data.upload_wbn || null,
-          address: data.address || null
-        });
-
-        // Set items for both views
-        setOrderItems(data.details || []);
-        setExpandedItems(data.details || []);
-
-        // Initialize savedSrNos
-        const initialSavedSrNos = {};
-        data.details.forEach((detail) => {
-          const itemKey = `${detail.product_id}-${detail.item_id}-${detail.detail_id}`;
-          initialSavedSrNos[itemKey] = [detail.sr_no || null];
-        });
-        setSavedSrNos(initialSavedSrNos);
+        setOrderItems(groupedItems);
 
       } catch (error) {
         console.error('Error fetching order details:', error);
@@ -178,63 +142,6 @@ useEffect(() => {
     });
   };
 
-
-  useEffect(() => {
-    if (order?.address) {
-      console.log('Delhivery is_available:', order.address.is_available);
-    }
-  }, [order]);
-
-
-  const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
-    setUploadStatus('');
-  };
-
-  const handleUpload = async () => {
-    if (!file) {
-      setUploadStatus('Please select a file first.');
-      toast.error('Please select a file first.');
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.post(
-        `${import.meta.env.VITE_SERVER_API}/upload-device-transaction`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            'Authorization': `Bearer ${token}`,
-          },
-        }
-      );
-
-      const successMessage = response.data.message || 'Upload successful!';
-      setUploadStatus(successMessage);
-      setFile(null);
-      setShowUploadModal(false);
-      toast.success(successMessage);
-
-    } catch (error) {
-      console.error('Upload Error:', error);
-      let errorMessage = 'Upload failed.';
-
-      if (error.response) {
-        errorMessage = error.response.data.message || errorMessage;
-      } else if (error.request) {
-        errorMessage = 'No response from server. Check your connection.';
-      }
-
-      setUploadStatus(errorMessage);
-      toast.error(errorMessage);
-    }
-  };
-
   const updatePaymentStatus = async (newStatus) => {
     try {
       const encodedOrderId = encodeURIComponent(orderId);
@@ -257,39 +164,27 @@ useEffect(() => {
         throw new Error(errorData.error || 'Failed to update payment status');
       }
 
-      // Update local state
       setOrder(prev => ({ ...prev, payment_status: newStatus }));
       setPaymentStatus(newStatus);
       toast.success('Payment status updated successfully');
     } catch (error) {
       console.error('Error updating payment status:', error);
       toast.error(error.message || 'Failed to update payment status');
-      // Revert the dropdown to previous value
       setPaymentStatus(order.payment_status || 'pending');
     }
   };
 
   const handlePaymentStatusChange = (e) => {
     const newStatus = e.target.value;
-    setPaymentStatus(newStatus); // Optimistic UI update
+    setPaymentStatus(newStatus);
     updatePaymentStatus(newStatus);
   };
 
-
-  const initiateFulfillment = () => {
-    setShowFulfillment(true);
-    setActiveTab('srno');
-  };
-
   const fulfillOrder = async () => {
-
     if (order.fulfillment_status) {
       toast.info('Order has already been fulfilled');
       return;
     }
-
-
-    console.log('Address Availability:', order.address?.is_available ?? 'N/A');
 
     if (!order.address?.is_available) {
       toast.error('Delhivery service not available for this address');
@@ -299,9 +194,8 @@ useEffect(() => {
     setIsFulfillingOrder(true);
 
     try {
-      // Create pickup request - PROPERLY ENCODE THE ORDER ID
       const encodedOrderId = encodeURIComponent(orderId);
-      const token = localStorage.getItem('token'); // or sessionStorage, depending on your app
+      const token = localStorage.getItem('token');
 
       const pickupResponse = await fetch(
         `${import.meta.env.VITE_SERVER_API}/order/${encodedOrderId}/add-pickup-req`,
@@ -320,7 +214,6 @@ useEffect(() => {
 
       const pickupData = await pickupResponse.json();
 
-      // Update local state with new delivery info
       setOrder(prev => ({
         ...prev,
         awb_number: pickupData.waybill || prev.awb_number,
@@ -362,7 +255,6 @@ useEffect(() => {
 
       const data = await response.json();
 
-      // Update local state
       setOrder(prev => ({
         ...prev,
         fulfillment_status: data.fulfillment_status,
@@ -375,251 +267,96 @@ useEffect(() => {
     } catch (error) {
       console.error(`Error updating ${action} status:`, error);
       toast.error(error.message || `Failed to update ${action} status`);
-
-      // Revert UI state if needed
-      if (action === 'fulfill') {
-        setOrder(prev => ({ ...prev, fulfillment_status: false }));
-      } else {
-        setOrder(prev => ({ ...prev, delivery_status: prev.delivery_status }));
-      }
     }
   };
 
+  const openAssignModal = (product) => {
+    setCurrentProduct(product);
 
-
-  const areAllSrNosAssigned = () => {
-    return expandedItems.every(detail => {
-      const itemKey = `${detail.product_id}-${detail.item_id}-${detail.detail_id}`;
-      return detail.sr_no || (savedSrNos[itemKey] && savedSrNos[itemKey][0]);
+    // Initialize srNoInputs with existing SR numbers if available
+    const initialInputs = {};
+    product.details.forEach(detail => {
+      initialInputs[detail.detail_id] = detail.sr_no || '';
     });
+    setSrNoInputs(initialInputs);
+
+    setShowAssignModal(true);
   };
 
-  const validateSrNo = async () => {
-    const srNo = srNoInput.trim();
-    if (!srNo) {
-      toast.error('Please enter a serial number');
-      return;
-    }
-
-    const isAlreadyAssigned = Object.values(savedSrNos).some(
-      srNos => srNos.some(s => s === srNo)
-    );
-    if (isAlreadyAssigned) {
-      toast.error('This SR No is already assigned to another quantity');
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem('token');
-      const searchResponse = await fetch(`${import.meta.env.VITE_SERVER_API}/search-device`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ search_term: srNo })
-      });
-
-      if (!searchResponse.ok) {
-        const errorData = await searchResponse.json();
-        throw new Error(errorData.message || `HTTP error! status: ${searchResponse.status}`);
-      }
-
-      const searchData = await searchResponse.json();
-
-      if (!searchData.success) {
-        throw new Error(searchData.message || 'Failed to validate SR No');
-      }
-
-      if (searchData.data.status === 'SOLD' || searchData.data.status === 'SOLD_WITHOUT_IN') {
-        toast.error('This device has already been sold (OUT transaction exists)');
-        return;
-      }
-
-      const response = await fetch(`${import.meta.env.VITE_SERVER_API}/get-all-device-transactions?device_srno=${srNo}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.message || 'Failed to validate SR No');
-      }
-
-      if (!data.data || data.data.length === 0) {
-        toast.warn('No SR No found in database. You can create a new device.');
-        return;
-      }
-
-      setValidatedSrNos(prev => [...prev, srNo]);
-      toast.success('SR No validated successfully');
-      setSrNoInput('');
-
-    } catch (error) {
-      console.error('Error validating SR No:', error);
-      toast.error(error.message || 'Failed to validate SR No');
-    }
-  };
-
-  const createNewDevice = async () => {
-    if (!newDeviceData.device_srno || !newDeviceData.device_name) {
-      toast.error('Device SR No and Name are required');
-      return;
-    }
-
-    setCreatingDevice(true);
-    try {
-      const response = await fetch(`${import.meta.env.VITE_SERVER_API}/add-device`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...newDeviceData,
-          in_out: parseInt(newDeviceData.in_out) || 1
-        })
-      });
-
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Failed to create device');
-
-      toast.success('Device created successfully');
-      setValidatedSrNos(prev => [...prev, newDeviceData.device_srno]);
-      setShowCreateModal(false);
-      setNewDeviceData({
-        device_srno: '',
-        device_name: '',
-        sku_id: '',
-        price: '',
-        remarks: '',
-        order_id: orderId,
-        in_out: 1
-      });
-    } catch (error) {
-      console.error('Error creating device:', error);
-      toast.error(error.message || 'Failed to create device');
-    } finally {
-      setCreatingDevice(false);
-    }
-  };
-
-  const assignSrNoToQuantity = (itemKey, qtyIndex) => {
-    if (validatedSrNos.length === 0) {
-      toast.error('Please validate an SR No first');
-      return;
-    }
-
-    const srNo = validatedSrNos[validatedSrNos.length - 1];
-
-    setSavedSrNos(prev => ({
+  const handleSrNoInputChange = (detailId, value) => {
+    setSrNoInputs(prev => ({
       ...prev,
-      [itemKey]: [srNo]
+      [detailId]: value
+    }));
+  };
+
+  const submitSrNumbers = async () => {
+    // Check if all inputs are filled
+    const allFilled = currentProduct.details.every(detail => srNoInputs[detail.detail_id]?.trim());
+
+    if (!allFilled) {
+      toast.error('Please enter SR numbers for all quantities');
+      return;
+    }
+
+    // Prepare data to send to backend
+    const dataToSend = currentProduct.details.map(detail => ({
+      detail_id: detail.detail_id,
+      item_id: detail.item_id,
+      product_id: detail.product_id,
+      sr_no: srNoInputs[detail.detail_id]
     }));
 
-    setValidatedSrNos(prev => prev.filter(s => s !== srNo));
-  };
-
-  const saveProductSrNos = async (itemId) => {
     try {
-      const numericItemId = Number(itemId);
-      const itemDetails = expandedItems.filter(d => d.item_id === numericItemId);
+      setIsSubmittingSrNos(true);
+      const token = localStorage.getItem('token');
 
-      if (itemDetails.length === 0) {
-        toast.error('No order details found for this item');
-        return;
-      }
-
-      const dataToSave = itemDetails.map(detail => {
-        const itemKey = `${detail.product_id}-${detail.item_id}-${detail.detail_id}`;
-        return {
-          detail_id: detail.detail_id,
-          item_id: detail.item_id,
-          product_id: detail.product_id,
-          sr_no: savedSrNos[itemKey] ? savedSrNos[itemKey][0] : null
-        };
-      });
-
-      const allAssigned = dataToSave.every(item => item.sr_no);
-      if (!allAssigned) {
-        toast.error('Please assign SR Nos to all quantities first');
-        return;
-      }
-
-      const response = await fetch(`${import.meta.env.VITE_SERVER_API}/orders/save-sr-numbers`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(dataToSave)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to save SR numbers');
-      }
-
-      const updatedItems = expandedItems.map(item => {
-        if (item.item_id === numericItemId) {
-          return { ...item, sr_no: savedSrNos[`${item.product_id}-${item.item_id}-${item.detail_id}`][0] };
+      const response = await axios.post(
+        `${import.meta.env.VITE_SERVER_API}/save-sr-number`,
+        dataToSend,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
         }
-        return item;
-      });
+      );
 
-      setExpandedItems(updatedItems);
-      toast.success(`SR Numbers for item ${itemId} saved successfully`);
+      if (response.data.success) {
+        // Update local state to reflect the assigned SR numbers
+        const updatedItems = orderItems.map(item => {
+          if (item.product_id === currentProduct.product_id) {
+            return {
+              ...item,
+              details: item.details.map(detail => ({
+                ...detail,
+                sr_no: srNoInputs[detail.detail_id] || detail.sr_no
+              }))
+            };
+          }
+          return item;
+        });
 
+        setOrderItems(updatedItems);
+        setShowAssignModal(false);
+        toast.success('SR numbers saved successfully');
+      } else {
+        throw new Error(response.data.error || 'Failed to save SR numbers');
+      }
     } catch (error) {
       console.error('Error saving SR numbers:', error);
-      toast.error(error.message || 'Failed to save SR numbers');
+      toast.error(error.response?.data?.error || error.message || 'Failed to save SR numbers');
+    } finally {
+      setIsSubmittingSrNos(false);
     }
   };
 
-  const groupDetailsByItem = () => {
-    const itemsMap = {};
-    expandedItems.forEach(detail => {
-      if (!itemsMap[detail.item_id]) {
-        itemsMap[detail.item_id] = {
-          product_id: detail.product_id,
-          product_name: detail.product_name,
-          details: []
-        };
-      }
-      itemsMap[detail.item_id].details.push(detail);
-    });
-    return itemsMap;
+  const areAllSrNosAssigned = () => {
+    return orderItems.every(product =>
+      product.details.every(detail => detail.sr_no)
+    );
   };
 
-  if (loading) {
-    return (
-      <AdminLayout>
-        <Loader />
-      </AdminLayout>
-    );
-  }
-
-  if (error) {
-    return (
-      <AdminLayout>
-        <div className="error">Error: {error}</div>
-      </AdminLayout>
-    );
-  }
-
-  if (!order) {
-    return (
-      <AdminLayout>
-        <div className="error">Order not found</div>
-      </AdminLayout>
-    );
-  }
-
-  // Add this new component near your other components
   const TrackingSection = ({ trackingData, loading, error }) => {
     if (loading) return <div className="tracking-loading">Loading tracking data...</div>;
     if (error) return <div className="tracking-error">Error: {error}</div>;
@@ -657,9 +394,9 @@ useEffect(() => {
                     {new Date(scan.ScanDetail?.ScanDateTime || '').toLocaleString()}
                   </div>
                   <div className="timeline-content">
-                    <div className="timeline-status">{scan.ScanDetail?.Status || 'Scan'}</div>
-                    <div className="timeline-location">{scan.ScanDetail?.Location || 'Unknown location'}</div>
-                    <div className="timeline-remarks">{scan.ScanDetail?.Remarks || ''}</div>
+                    <div className="timeline-status">{scan.ScanDetail?.Scan || 'Scan'}</div>
+                    <div className="timeline-location">{scan.ScanDetail?.ScannedLocation || 'Unknown location'}</div>
+                    <div className="timeline-remarks">{scan.ScanDetail?.Instructions || ''}</div>
                   </div>
                 </li>
               ))}
@@ -672,9 +409,29 @@ useEffect(() => {
     );
   };
 
+  if (loading) {
+    return (
+      <AdminLayout>
+        <Loader />
+      </AdminLayout>
+    );
+  }
 
+  if (error) {
+    return (
+      <AdminLayout>
+        <div className="error">Error: {error}</div>
+      </AdminLayout>
+    );
+  }
 
-  const groupedItems = groupDetailsByItem();
+  if (!order) {
+    return (
+      <AdminLayout>
+        <div className="error">Order not found</div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
@@ -688,278 +445,156 @@ useEffect(() => {
           <h1>Order {order.order_id || 'N/A'}</h1>
           <div className="order-meta">
             <span>Date: {formatIST(order.created_at)}</span>
-            {activeTab === 'orders' && (
-              <>
-                <span>Customer ID: {order.customer_display}</span>
-                {/* <span>Customer Type: {order.customer_type}</span> */}
-                <span>Items: {orderItems.length}</span>
-                <span>Total: ₹{(order.total_amount || 0).toFixed(2)}</span>
-                <span className="payment-status-dropdown">
-                  Payment:
-                  <select
-                    value={paymentStatus}
-                    onChange={handlePaymentStatusChange}
-                    className={`status-select ${paymentStatus}`}
-                  >
-                    <option value="paid">Paid</option>
-                    <option value="unpaid">Unpaid</option>
-                    <option value="pending">Pending</option>
-                  </select>
-                </span>
-                {!order.fulfillment_status && !showFulfillment && (
-                  <button
-                    className="initiate-fulfillment-button"
-                    onClick={initiateFulfillment}
-                  >
-                    Prepare for Fulfillment
-                  </button>
-                )}
-                <span className={`status-badge ${order.delivery_status}`}>
-                  Delivery: {order.delivery_status || 'N/A'}
-                  {order.awb_number && <div>AWB: {order.awb_number}</div>}
-                </span>
-              </>
-            )}
+            <span>Customer ID: {order.customer_display}</span>
+            <span>Items: {orderItems.length}</span>
+            <span>Total: ₹{(order.total_amount || 0).toFixed(2)}</span>
+            <span className="payment-status-dropdown">
+              Payment:
+              <select
+                value={paymentStatus}
+                onChange={handlePaymentStatusChange}
+                className={`status-select ${paymentStatus}`}
+              >
+                <option value="paid">Paid</option>
+                <option value="unpaid">Unpaid</option>
+                <option value="pending">Pending</option>
+              </select>
+            </span>
+            <span className={`status-badge ${order.delivery_status}`}>
+              Delivery: {order.delivery_status || 'N/A'}
+              {order.awb_number && <div>AWB: {order.awb_number}</div>}
+            </span>
           </div>
         </div>
 
         {/* Tab Navigation */}
         <div className="order-details-tabs">
-          <button
-            className={`tab-button ${activeTab === 'orders' ? 'active' : ''}`}
-            onClick={() => setActiveTab('orders')}
-          >
+          <button className="tab-button active">
             Show Orders
           </button>
-          {(showFulfillment || order.fulfillment_status) && (
+          {/* {order?.address?.is_available && order?.fulfillment_status && (
             <button
-              className={`tab-button ${activeTab === 'srno' ? 'active' : ''}`}
-              onClick={() => setActiveTab('srno')}
-            >
-              SR No Management
-            </button>
-          )}
-          {/* Add this new tab button */}
-          {order?.address?.is_available && order?.fulfillment_status && (
-            <button
-              className={`tab-button ${activeTab === 'tracking' ? 'active' : ''}`}
-              onClick={() => setActiveTab('tracking')}
+              className="tab-button"
+              onClick={() => {
+                setTrackingLoading(true);
+                setTrackingData(null);
+                setTrackingError(null);
+              }}
             >
               Track Order
             </button>
-          )}
+          )} */}
         </div>
 
         {/* Orders Tab Content */}
-        {activeTab === 'orders' && (
-          <div className="items-container">
-            <h2>Order Items</h2>
-            {orderItems.length > 0 ? (
-              <table className="items-table">
-                <thead>
-                  <tr>
-                    <th>SR No</th>
-                    <th>Product</th>
-                    <th>Variant</th>
-                    <th>Price</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orderItems.map((item) => (
-                    <tr key={`${item.detail_id}-${item.sr_no}`}>
-                      <td>{item.sr_no || 'Not assigned'}</td>
-                      <td>
-                        <div className="product-info">
-                          <span className="product-name">{item.product_name || `Product ${item.product_id}`}</span>
-                          <span className="product-id">ID: {item.product_id}</span>
-                        </div>
-                      </td>
-                      <td>
-                        {item.model_name && <div>Model: {item.model_name}</div>}
-                      </td>
-                      <td>₹{(item.unit_price || 0).toFixed(2)}</td>
-                      <td>
-                        <span className={`status-badge ${order.fulfillment_status ? 'fulfilled' : 'pending'}`}>
-                          {order.fulfillment_status ? 'Done' : 'Pending'}
+        <div className="items-container">
+          <h2>Order Items</h2>
+          {orderItems.length > 0 ? (
+            <table className="items-table">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Quantity</th>
+                  <th>Price</th>
+                  <th>Status</th>
+                  <th>Add SR No</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orderItems.map((item) => (
+                  <tr key={item.product_id}>
+                    <td>
+                      <div className="product-info">
+                        <span className="product-name">{item.product_name || `Product ${item.product_id}`}</span>
+                        <span className="product-id">ID: {item.product_id}</span>
+                      </div>
+                    </td>
+                    <td>{item.quantity}</td>
+                    <td>₹{(item.unit_price || 0).toFixed(2)}</td>
+                    <td>
+                      <span className={`status-badge ${order.fulfillment_status ? 'fulfilled' : 'pending'}`}>
+                        {order.fulfillment_status ? 'Done' : 'Pending'}
+                      </span>
+                    </td>
+                    <td>
+                      {item.details.some(d => d.sr_no) ? (
+                        <span className="assigned-srno">
+                          Assigned
                         </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      ) : (
+                        <button
+                          className="assign-button"
+                          onClick={() => openAssignModal(item)}
+                        >
+                          Add SR No
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div className="no-items">No items found in this order</div>
+          )}
+        </div>
+
+        {/* Fulfillment Section */}
+        {areAllSrNosAssigned() && (
+          <div className="fulfill-order-section">
+            {order.address?.is_available === false ? (
+              <div className="delivery-stepper">
+                <div className="stepper-buttons">
+                  <button
+                    className={`stepper-button ${order.fulfillment_status ? 'completed' : ''}`}
+                    onClick={() => updateOrderStatus('fulfill')}
+                    disabled={order.fulfillment_status}
+                  >
+                    Fulfill
+                    {order.fulfillment_status && <span className="checkmark">✓</span>}
+                  </button>
+
+                  <button
+                    className={`stepper-button ${['shipped', 'delivered'].includes(order.delivery_status) ? 'completed' : ''}`}
+                    onClick={() => updateOrderStatus('shipped')}
+                    disabled={!order.fulfillment_status || ['shipped', 'delivered'].includes(order.delivery_status)}
+                  >
+                    Shipped
+                    {['shipped', 'delivered'].includes(order.delivery_status) && <span className="checkmark">✓</span>}
+                  </button>
+
+                  <button
+                    className={`stepper-button ${order.delivery_status === 'delivered' ? 'completed' : ''}`}
+                    onClick={() => updateOrderStatus('delivered')}
+                    disabled={order.delivery_status !== 'shipped'}
+                  >
+                    Delivered
+                    {order.delivery_status === 'delivered' && <span className="checkmark">✓</span>}
+                  </button>
+                </div>
+              </div>
             ) : (
-              <div className="no-items">No items found in this order</div>
+              <>
+                <button
+                  className="fulfill-order-button"
+                  onClick={fulfillOrder}
+                  disabled={isFulfillingOrder || order.fulfillment_status}
+                >
+                  {isFulfillingOrder ? 'Processing...' : 'Fulfill Order for Delivery'}
+                </button>
+                {order.fulfillment_status && (
+                  <div className="fulfillment-info">
+                    <p>Order has been fulfilled</p>
+                    {order.awb_number && <p>AWB Number: {order.awb_number}</p>}
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
 
-        {/* SR No Management Tab Content */}
-        {activeTab === 'srno' && (
-          <>
-            <div className="srno-input-section">
-              <div className="srno-input-group">
-                <input
-                  type="text"
-                  placeholder="Enter SR No"
-                  value={srNoInput}
-                  onChange={(e) => setSrNoInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && validateSrNo()}
-                />
-                <button onClick={validateSrNo}>
-                  Validate SR No
-                </button>
-                <button
-                  className="create-button"
-                  onClick={() => setShowCreateModal(true)}
-                >
-                  Create New Device
-                </button>
-                {/* Add this new button */}
-                <button
-                  className="upload-button"
-                  onClick={() => setShowUploadModal(true)}
-                >
-                  Upload Device
-                </button>
-              </div>
-              {validatedSrNos.length > 0 && (
-                <div className="validated-srnos">
-                  <span>Validated SR Nos: {validatedSrNos.join(', ')}</span>
-                </div>
-              )}
-            </div>
-
-            <div className="items-container">
-              <h2>Order Items</h2>
-              {Object.keys(groupedItems).length > 0 ? (
-                <div className="items-list">
-                  {Object.entries(groupedItems).map(([itemId, itemData]) => {
-                    const allSaved = itemData.details.every(detail => detail.sr_no);
-                    const allAssigned = itemData.details.every(detail => {
-                      const itemKey = `${detail.product_id}-${detail.item_id}-${detail.detail_id}`;
-                      return detail.sr_no || (savedSrNos[itemKey] && savedSrNos[itemKey][0]);
-                    });
-
-                    return (
-                      <div key={itemId} className="product-group">
-                        <div className="product-header">
-                          <h3>{itemData.product_name || `Product ${itemData.product_id}`}</h3>
-                          <span className="item-id">Item ID: {itemId}</span>
-                        </div>
-
-                        <div className="product-details">
-                          {itemData.details.map((detail, index) => {
-                            const itemKey = `${detail.product_id}-${detail.item_id}-${detail.detail_id}`;
-                            const srNo = detail.sr_no || (savedSrNos[itemKey] ? savedSrNos[itemKey][0] : null);
-                            const isLast = index === itemData.details.length - 1;
-
-                            return (
-                              <div key={detail.detail_id} className={`detail-row ${isLast ? 'last-detail' : ''}`}>
-                                <div className="detail-info">
-                                  <span>Detail ID: {detail.detail_id}</span>
-                                  <span>Quantity #{index + 1}</span>
-                                </div>
-                                <div className="srno-assignment">
-                                  {srNo ? (
-                                    <span className="assigned-srno">
-                                      {srNo}
-                                      {detail.sr_no && <span className="saved-badge">Saved</span>}
-                                    </span>
-                                  ) : (
-                                    <button
-                                      onClick={() => assignSrNoToQuantity(itemKey, 0)}
-                                      disabled={validatedSrNos.length === 0}
-                                    >
-                                      Assign SR No
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-
-                        {allAssigned && !allSaved && (
-                          <div className="product-save-section">
-                            <button
-                              className="save-button"
-                              onClick={() => saveProductSrNos(itemId)}
-                            >
-                              Save All SR Numbers for {itemData.product_name}
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="no-items">No items found in this order</div>
-              )}
-            </div>
-
-
-            {/* Fulfill Order Button - Only shown when all SR numbers are assigned */}
-            {areAllSrNosAssigned() && (
-              <div className="fulfill-order-section">
-                {order.address?.is_available === false ? (
-                  <div className="delivery-stepper">
-                    <div className="stepper-buttons">
-                      <button
-                        className={`stepper-button ${order.fulfillment_status ? 'completed' : ''}`}
-                        onClick={() => updateOrderStatus('fulfill')}
-                        disabled={order.fulfillment_status}
-                      >
-                        Fulfill
-                        {order.fulfillment_status && <span className="checkmark">✓</span>}
-                      </button>
-
-                      <button
-                        className={`stepper-button ${['shipped', 'delivered'].includes(order.delivery_status) ? 'completed' : ''}`}
-                        onClick={() => updateOrderStatus('shipped')}
-                        disabled={!order.fulfillment_status || ['shipped', 'delivered'].includes(order.delivery_status)}
-                      >
-                        Shipped
-                        {['shipped', 'delivered'].includes(order.delivery_status) && <span className="checkmark">✓</span>}
-                      </button>
-
-                      <button
-                        className={`stepper-button ${order.delivery_status === 'delivered' ? 'completed' : ''}`}
-                        onClick={() => updateOrderStatus('delivered')}
-                        disabled={order.delivery_status !== 'shipped'}
-                      >
-                        Delivered
-                        {order.delivery_status === 'delivered' && <span className="checkmark">✓</span>}
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <button
-                      className="fulfill-order-button"
-                      onClick={fulfillOrder}
-                      disabled={isFulfillingOrder}
-                    >
-                      {isFulfillingOrder ? 'Processing...' : 'Fulfill Order for Delivery'}
-                    </button>
-                    {order.fulfillment_status && (
-                      <div className="fulfillment-info">
-                        <p>Order has been fulfilled</p>
-                        {order.awb_number && <p>AWB Number: {order.awb_number}</p>}
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            )}
-
-
-        
-          </>
-        )}
-
-        {activeTab === 'tracking' && (
+        {/* Tracking Section */}
+        {order?.address?.is_available && order?.fulfillment_status && (
           <div className="track-order-section">
             <h2>Track Order</h2>
             {trackingLoading && <Loader />}
@@ -972,158 +607,67 @@ useEffect(() => {
         )}
       </div>
 
-      {/* Create New Device Modal */}
-      {showCreateModal && (
-        <div className="device-creation-modal">
-          <div className="device-creation-modal__content">
-            <div className="device-creation-modal__header">
-              <h3>Create New Device</h3>
-              <button onClick={() => setShowCreateModal(false)}>×</button>
+      {/* Assign SR No Modal */}
+      {showAssignModal && currentProduct && (
+        <div className="sr-assign-modal">
+          <div className="sr-assign-modal-content">
+            <div className="sr-assign-modal-header">
+              <h3>
+                <div className="modal-title-info">
+                  <span>OrderID : {order.order_id}</span>
+                  <span>Model: {currentProduct.model_name || 'N/A'}</span>
+                </div>
+
+                Add SR Numbers for {currentProduct.product_name}</h3>
+              <button onClick={() => setShowAssignModal(false)}>×</button>
             </div>
 
-            <div className="device-creation-modal__body">
-              <div className="device-creation-modal__form-group">
-                <label className="required">Device SR No</label>
-                <input
-                  type="text"
-                  value={newDeviceData.device_srno}
-                  onChange={(e) => setNewDeviceData({ ...newDeviceData, device_srno: e.target.value })}
-                  required
-                />
-              </div>
-
-              <div className="device-creation-modal__form-group">
-                <label className="required">Device Name</label>
-                <input
-                  type="text"
-                  value={newDeviceData.device_name}
-                  onChange={(e) => setNewDeviceData({ ...newDeviceData, device_name: e.target.value })}
-                  required
-                />
-              </div>
-
-              <div className="device-creation-modal__form-group">
-                <label>SKU ID</label>
-                <input
-                  type="text"
-                  value={newDeviceData.sku_id}
-                  onChange={(e) => setNewDeviceData({ ...newDeviceData, sku_id: e.target.value })}
-                />
-              </div>
-
-              <div className="device-creation-modal__form-group">
-                <label>Order ID</label>
-                <input
-                  type="text"
-                  value={newDeviceData.order_id}
-                  onChange={(e) => setNewDeviceData({ ...newDeviceData, order_id: e.target.value })}
-                  placeholder={orderId}
-                />
-              </div>
-
-              <div className="device-creation-modal__form-group">
-                <label>Transaction Type</label>
-                <select
-                  value={newDeviceData.in_out}
-                  onChange={(e) => setNewDeviceData({ ...newDeviceData, in_out: e.target.value })}
-                >
-                  <option value="1">IN</option>
-                  <option value="2">OUT</option>
-                  <option value="3">RETURN</option>
-                </select>
-              </div>
-
-              <div className="device-creation-modal__form-group">
-                <label>Price (₹)</label>
-                <input
-                  type="number"
-                  value={newDeviceData.price}
-                  onChange={(e) => setNewDeviceData({ ...newDeviceData, price: e.target.value })}
-                  step="0.01"
-                />
-              </div>
-
-              <div className="device-creation-modal__form-group">
-                <label>Remarks</label>
-                <textarea
-                  value={newDeviceData.remarks}
-                  onChange={(e) => setNewDeviceData({ ...newDeviceData, remarks: e.target.value })}
-                  rows="3"
-                />
-              </div>
+            <div className="sr-assign-modal-body">
+              <table className="assign-table">
+                <thead>
+                  <tr>
+                    <th>Quantity </th>
+                    {/* <th>Detail ID</th> */}
+                    <th>SR Number</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {currentProduct.details.map((detail, index) => (
+                    <tr key={detail.detail_id}>
+                      <td>{index + 1}</td>
+                      {/* <td>{detail.detail_id}</td> */}
+                      <td>
+                        <input
+                          type="text"
+                          value={srNoInputs[detail.detail_id] || ''}
+                          onChange={(e) => handleSrNoInputChange(detail.detail_id, e.target.value)}
+                          placeholder="Enter SR Number"
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
 
-            <div className="device-creation-modal__footer">
+            <div className="sr-assign-modal-footer">
               <button
-                className="device-creation-modal__footer--cancel"
-                onClick={() => setShowCreateModal(false)}
+                className="cancel-button"
+                onClick={() => setShowAssignModal(false)}
               >
                 Cancel
               </button>
               <button
-                className="device-creation-modal__footer--submit"
-                onClick={createNewDevice}
-                disabled={creatingDevice}
+                className="submit-button"
+                onClick={submitSrNumbers}
+                disabled={isSubmittingSrNos}
               >
-                {creatingDevice ? 'Creating...' : 'Create Device'}
+                {isSubmittingSrNos ? 'Saving...' : 'Submit SR Numbers'}
               </button>
             </div>
           </div>
         </div>
       )}
-
-      {/* Upload Transactions Modal */}
-      {showUploadModal && (
-        <div className="device-creation-modal">
-          <div className="device-creation-modal__content">
-            <div className="device-creation-modal__header">
-              <h3>Upload Device Transactions</h3>
-              <button onClick={() => {
-                setShowUploadModal(false);
-                setUploadStatus('');
-                setFile(null);
-              }}>×</button>
-            </div>
-
-            <div className="device-creation-modal__body">
-              <div className="device-creation-modal__form-group">
-                <label>Select File (CSV or Excel)</label>
-                <input
-                  type="file"
-                  accept=".csv, .xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                  onChange={handleFileChange}
-                />
-              </div>
-              {uploadStatus && (
-                <p className={`upload-status ${uploadStatus.includes('success') ? 'success' : 'error'}`}>
-                  {uploadStatus}
-                </p>
-              )}
-            </div>
-
-            <div className="device-creation-modal__footer">
-              <button
-                className="device-creation-modal__footer--cancel"
-                onClick={() => {
-                  setShowUploadModal(false);
-                  setUploadStatus('');
-                  setFile(null);
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                className="device-creation-modal__footer--submit"
-                onClick={handleUpload}
-                disabled={!file}
-              >
-                Upload
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
     </AdminLayout>
   );
 };

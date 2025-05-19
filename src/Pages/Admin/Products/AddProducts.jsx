@@ -100,7 +100,7 @@ const AddProducts = () => {
           colors: yup.array()
             .of(
               yup.object().shape({
-                name: yup.string() ,
+                name: yup.string(),
                 stock_quantity: yup.number().required('Stock is required').min(0),
                 price: yup.number().required('Price is required').min(0),
                 original_price: yup.number()
@@ -340,105 +340,149 @@ const AddProducts = () => {
     }
   };
 
-  const handleSubmit = async (values, { setSubmitting, resetForm }) => {
-    setSubmissionAttempted(true);
-    try {
-      const formData = new FormData();
+ const handleSubmit = async (values, { setSubmitting, resetForm }) => {
+  setSubmissionAttempted(true);
 
-      // Add basic product data
-      formData.append('name', values.name);
-      formData.append('description', values.description);
-      formData.append('category_id', values.main_category_id);
-      formData.append('subcategory_id', values.sub_category_id);
-      formData.append('hsn_id', values.hsn_id || '');
-      formData.append('product_type', values.product_type);
+  try {
+    const formData = new FormData();
 
-      // Handle product images
-      values.product_images.forEach((image) => {
-        formData.append('product_images', image);
+    // Log the basic product data before adding to formData
+    console.log('Basic Product Data:', {
+      name: values.name,
+      description: values.description,
+      category_id: values.main_category_id,
+      subcategory_id: values.sub_category_id,
+      hsn_id: values.hsn_id || '',
+      product_type: values.product_type,
+      product_images: values.product_images
+    });
+
+    // Add basic product data
+    formData.append('name', values.name);
+    formData.append('description', values.description);
+    formData.append('category_id', values.main_category_id);
+    formData.append('subcategory_id', values.sub_category_id);
+    formData.append('hsn_id', values.hsn_id || '');
+    formData.append('product_type', values.product_type);
+
+    // Log and handle product images
+    console.log('Product Images:', values.product_images);
+    values.product_images.forEach((image) => {
+      formData.append('product_images', image);
+    });
+
+    // For single product
+    if (values.product_type === 'single') {
+      const model = values.models[0];
+
+      console.log('Single Product Model:', {
+        name: model.name,
+        description: model.description,
       });
 
-      // For single product, ensure model name matches product name
-      if (values.product_type === 'single') {
-        values.models[0].name = values.name;
+      // ✅ Append model name and description at top level
+      formData.append('model_name', model.name);
+      formData.append('model_description', model.description);
 
-        // Handle specifications for single product
-        values.models[0].specifications.forEach((spec, specIndex) => {
-          formData.append(`spec_key_${specIndex}`, spec.key);
-          formData.append(`spec_value_${specIndex}`, spec.value);
+      console.log('Single Product Model Specs & Colors:', {
+        specs_count: model.specifications.length,
+        colors_count: model.colors.length
+      });
+
+      // Handle specifications
+      model.specifications.forEach((spec, index) => {
+        console.log(`Spec ${index}:`, { key: spec.key, value: spec.value });
+        formData.append(`spec_key_${index}`, spec.key);
+        formData.append(`spec_value_${index}`, spec.value);
+      });
+      formData.append('specs_count', model.specifications.length);
+
+      // Handle colors
+      model.colors.forEach((color, index) => {
+        console.log(`Color ${index}:`, {
+          name: color.name,
+          price: color.price,
+          original_price: color.original_price,
+          stock: color.stock_quantity,
+          threshold: color.threshold
         });
-        formData.append('specs_count', values.models[0].specifications.length);
-
-        // Handle colors for single product
-        values.models[0].colors.forEach((color, colorIndex) => {
-          // formData.append(`color_name_${colorIndex}`, color.name);
-          formData.append(`color_name_${colorIndex}`, 'DEFAULT');
-          formData.append(`color_price_${colorIndex}`, color.price);
-          formData.append(`color_original_price_${colorIndex}`, color.original_price || '');
-          formData.append(`color_stock_${colorIndex}`, color.stock_quantity);
-          formData.append(`threshold_${colorIndex}`, color.threshold || 10);
-
-          // color.images.forEach((image) => {
-          //   formData.append(`color_images_${colorIndex}`, image);
-          // });
-        });
-
-        formData.append('colors_count', values.models[0].colors.length);
-      }
-      // Handle variable products
-      else {
-        values.models.forEach((model, modelIndex) => {
-          formData.append(`model_name_${modelIndex}`, model.name);
-          formData.append(`model_description_${modelIndex}`, model.description);
-
-          // Handle specifications for variable product
-          model.specifications.forEach((spec, specIndex) => {
-            formData.append(`model_${modelIndex}_spec_key_${specIndex}`, spec.key);
-            formData.append(`model_${modelIndex}_spec_value_${specIndex}`, spec.value);
-          });
-
-          // Handle colors for variable product
-          model.colors.forEach((color, colorIndex) => {
-            // formData.append(`model_${modelIndex}_color_name_${colorIndex}`, color.name);
-            formData.append(`model_${modelIndex}_color_name_${colorIndex}`, 'DEFAULT');
-            formData.append(`model_${modelIndex}_color_price_${colorIndex}`, color.price);
-            formData.append(`model_${modelIndex}_color_original_price_${colorIndex}`, color.original_price || '');
-            formData.append(`model_${modelIndex}_color_stock_${colorIndex}`, color.stock_quantity);
-            formData.append(`model_${modelIndex}_threshold_${colorIndex}`, color.threshold || 10);
-
-            // color.images.forEach((image) => {
-            //   formData.append(`model_${modelIndex}_color_images_${colorIndex}`, image);
-            // });
-          });
-
-          formData.append(`model_colors_count_${modelIndex}`, model.colors.length);
-          formData.append(`model_specs_count_${modelIndex}`, model.specifications.length);
-        });
-
-        formData.append('models_count', values.models.length);
-      }
-
-      const response = await axios.post(
-        `${import.meta.env.VITE_SERVER_API}/product/add`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        }
-      );
-
-      toast.success('Product added successfully!');
-      resetForm();
-      setSubmissionAttempted(false);
-    } catch (error) {
-      console.error('Error adding product:', error);
-      toast.error(error.response?.data?.message || 'Failed to add product');
-    } finally {
-      setSubmitting(false);
+        formData.append(`color_name_${index}`, 'DEFAULT');
+        formData.append(`color_price_${index}`, color.price);
+        formData.append(`color_original_price_${index}`, color.original_price || '');
+        formData.append(`color_stock_${index}`, color.stock_quantity);
+        formData.append(`threshold_${index}`, color.threshold || 10);
+      });
+      formData.append('colors_count', model.colors.length);
     }
-  };
+
+    // For variable products
+    else {
+      console.log('Variable Product Models:', {
+        models_count: values.models.length,
+        models: values.models.map(model => ({
+          name: model.name,
+          description: model.description,
+          specs_count: model.specifications.length,
+          colors_count: model.colors.length
+        }))
+      });
+
+      values.models.forEach((model, modelIndex) => {
+        formData.append(`model_name_${modelIndex}`, model.name);
+        formData.append(`model_description_${modelIndex}`, model.description);
+
+        console.log(`Model ${modelIndex} Specifications:`, model.specifications);
+        model.specifications.forEach((spec, specIndex) => {
+          formData.append(`model_${modelIndex}_spec_key_${specIndex}`, spec.key);
+          formData.append(`model_${modelIndex}_spec_value_${specIndex}`, spec.value);
+        });
+
+        console.log(`Model ${modelIndex} Colors:`, model.colors);
+        model.colors.forEach((color, colorIndex) => {
+          formData.append(`model_${modelIndex}_color_name_${colorIndex}`, 'DEFAULT');
+          formData.append(`model_${modelIndex}_color_price_${colorIndex}`, color.price);
+          formData.append(`model_${modelIndex}_color_original_price_${colorIndex}`, color.original_price || '');
+          formData.append(`model_${modelIndex}_color_stock_${colorIndex}`, color.stock_quantity);
+          formData.append(`model_${modelIndex}_threshold_${colorIndex}`, color.threshold || 10);
+        });
+
+        formData.append(`model_colors_count_${modelIndex}`, model.colors.length);
+        formData.append(`model_specs_count_${modelIndex}`, model.specifications.length);
+      });
+
+      formData.append('models_count', values.models.length);
+    }
+
+    // Log the complete FormData before sending
+    console.log('FormData being sent to backend:');
+    for (let [key, value] of formData.entries()) {
+      console.log(key, value);
+    }
+
+    const response = await axios.post(
+      `${import.meta.env.VITE_SERVER_API}/product/add`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      }
+    );
+
+    console.log('Backend Response:', response.data);
+    toast.success('Product added successfully!');
+    resetForm();
+    setSubmissionAttempted(false);
+  } catch (error) {
+    console.error('Error adding product:', error);
+    console.log('Error Response:', error.response?.data);
+    toast.error(error.response?.data?.message || 'Failed to add product');
+  } finally {
+    setSubmitting(false);
+  }
+};
+
 
   const getSubcategories = (mainCategoryId) => {
     if (!mainCategoryId) return [];
@@ -503,12 +547,12 @@ const AddProducts = () => {
                           name="name"
                           className="form-input"
                           placeholder="Enter product name"
-                          onChange={(e) => {
-                            setFieldValue('name', e.target.value);
-                            if (values.product_type === 'single' && values.models[0]) {
-                              setFieldValue('models.0.name', e.target.value);
-                            }
-                          }}
+                        // onChange={(e) => {
+                        //   setFieldValue('name', e.target.value);
+                        //   if (values.product_type === 'single' && values.models[0]) {
+                        //     setFieldValue('models.0.name', e.target.value);
+                        //   }
+                        // }}
                         />
                         <ErrorMessage name="name" component="div" className="error-message" />
                       </div>
@@ -553,7 +597,7 @@ const AddProducts = () => {
                             <option value="">Select main category</option>
                             {loadingCategories ? (
                               // <option disabled>Loading categories...</option>
-                              <Loader/>
+                              <Loader />
                             ) : (
                               categories.map(category => (
                                 <option key={category.category_id} value={category.category_id}>
@@ -612,7 +656,7 @@ const AddProducts = () => {
                             <option value="">Select HSN Code</option>
                             {loadingHsn ? (
                               // <option disabled>Loading HSN codes...</option>  
-                              <Loader/>
+                              <Loader />
                             ) : (
                               hsnCodes.map(hsn => (
                                 <option key={hsn.hsn_id} value={hsn.hsn_id}>
@@ -737,18 +781,14 @@ const AddProducts = () => {
                             <div className="form-grid">
                               <div className="form-group">
                                 <label className="form-label">
-                                  {values.product_type === 'single' ? 'Model/Product Name *' : 'Model Name *'}
+                                  {values.product_type === 'single' ? 'Model Name *' : 'Model Name *'}
                                 </label>
                                 <Field
                                   type="text"
                                   name={`models.${modelIndex}.name`}
                                   className="form-input"
-                                  placeholder={
-                                    values.product_type === 'single'
-                                      ? 'Same as product name'
-                                      : 'Enter model name'
-                                  }
-                                  readOnly={values.product_type === 'single' && modelIndex === 0}
+                                  placeholder="Enter model name"
+                                // Remove the readOnly attribute
                                 />
                                 <ErrorMessage
                                   name={`models.${modelIndex}.name`}
@@ -778,93 +818,93 @@ const AddProducts = () => {
 
                             {/* Model Colors */}
                             <FieldArray name={`models.${modelIndex}.colors`}>
-                        {({ push: pushColor, remove: removeColor }) => (
-                          <div className="form-section">
-                            <h4>Product Variant</h4>
+                              {({ push: pushColor, remove: removeColor }) => (
+                                <div className="form-section">
+                                  <h4>Product Variant</h4>
 
-                            {model.colors.map((color, colorIndex) => (
-                              <div key={colorIndex} className="color-card">
-                                <div className="form-grid">
-                                  <div className="form-group">
-                                    <label className="form-label">Variant Name</label>
-                                    <input
-                                      type="text"
-                                      name={`models.${modelIndex}.colors.${colorIndex}.name`}
-                                      className="form-input"
-                                      value="DEFAULT"
-                                      readOnly
-                                    />
-                                  </div>
+                                  {model.colors.map((color, colorIndex) => (
+                                    <div key={colorIndex} className="color-card">
+                                      <div className="form-grid">
+                                        <div className="form-group">
+                                          <label className="form-label">Variant Name</label>
+                                          <input
+                                            type="text"
+                                            name={`models.${modelIndex}.colors.${colorIndex}.name`}
+                                            className="form-input"
+                                            value="DEFAULT"
+                                            readOnly
+                                          />
+                                        </div>
 
-                                  <div className="form-group">
-                                    <label className="form-label">Stock Quantity *</label>
-                                    <Field
-                                      type="number"
-                                      name={`models.${modelIndex}.colors.${colorIndex}.stock_quantity`}
-                                      className="form-input"
-                                      min="0"
-                                    />
-                                    <ErrorMessage
-                                      name={`models.${modelIndex}.colors.${colorIndex}.stock_quantity`}
-                                      component="div"
-                                      className="error-message"
-                                    />
-                                  </div>
+                                        <div className="form-group">
+                                          <label className="form-label">Stock Quantity *</label>
+                                          <Field
+                                            type="number"
+                                            name={`models.${modelIndex}.colors.${colorIndex}.stock_quantity`}
+                                            className="form-input"
+                                            min="0"
+                                          />
+                                          <ErrorMessage
+                                            name={`models.${modelIndex}.colors.${colorIndex}.stock_quantity`}
+                                            component="div"
+                                            className="error-message"
+                                          />
+                                        </div>
 
-                                  <div className="form-group">
-                                    <label className="form-label">Price *</label>
-                                    <Field
-                                      type="number"
-                                      name={`models.${modelIndex}.colors.${colorIndex}.price`}
-                                      className="form-input"
-                                      min="0"
-                                      step="0.01"
-                                    />
-                                    <ErrorMessage
-                                      name={`models.${modelIndex}.colors.${colorIndex}.price`}
-                                      component="div"
-                                      className="error-message"
-                                    />
-                                  </div>
+                                        <div className="form-group">
+                                          <label className="form-label">Price *</label>
+                                          <Field
+                                            type="number"
+                                            name={`models.${modelIndex}.colors.${colorIndex}.price`}
+                                            className="form-input"
+                                            min="0"
+                                            step="0.01"
+                                          />
+                                          <ErrorMessage
+                                            name={`models.${modelIndex}.colors.${colorIndex}.price`}
+                                            component="div"
+                                            className="error-message"
+                                          />
+                                        </div>
 
-                                  <div className="form-group">
-                                    <label className="form-label">Original Price</label>
-                                    <Field
-                                      type="number"
-                                      name={`models.${modelIndex}.colors.${colorIndex}.original_price`}
-                                      className="form-input"
-                                      min="0"
-                                      step="0.01"
-                                    />
-                                    <ErrorMessage
-                                      name={`models.${modelIndex}.colors.${colorIndex}.original_price`}
-                                      component="div"
-                                      className="error-message"
-                                    />
-                                  </div>
+                                        <div className="form-group">
+                                          <label className="form-label">Original Price</label>
+                                          <Field
+                                            type="number"
+                                            name={`models.${modelIndex}.colors.${colorIndex}.original_price`}
+                                            className="form-input"
+                                            min="0"
+                                            step="0.01"
+                                          />
+                                          <ErrorMessage
+                                            name={`models.${modelIndex}.colors.${colorIndex}.original_price`}
+                                            component="div"
+                                            className="error-message"
+                                          />
+                                        </div>
 
-                                  <div className="form-group">
-                                    <label className="form-label">Low Stock Threshold *</label>
-                                    <Field
-                                      type="number"
-                                      name={`models.${modelIndex}.colors.${colorIndex}.threshold`}
-                                      className="form-input"
-                                      min="1"
-                                    />
-                                    <ErrorMessage
-                                      name={`models.${modelIndex}.colors.${colorIndex}.threshold`}
-                                      component="div"
-                                      className="error-message"
-                                    />
-                                  </div>
+                                        <div className="form-group">
+                                          <label className="form-label">Low Stock Threshold *</label>
+                                          <Field
+                                            type="number"
+                                            name={`models.${modelIndex}.colors.${colorIndex}.threshold`}
+                                            className="form-input"
+                                            min="1"
+                                          />
+                                          <ErrorMessage
+                                            name={`models.${modelIndex}.colors.${colorIndex}.threshold`}
+                                            component="div"
+                                            className="error-message"
+                                          />
+                                        </div>
+                                      </div>
+                                      {/* Removed color images section */}
+                                    </div>
+                                  ))}
+                                  {/* Removed "Add Color" button */}
                                 </div>
-                                {/* Removed color images section */}
-                              </div>
-                            ))}
-                            {/* Removed "Add Color" button */}
-                          </div>
-                        )}
-                      </FieldArray>
+                              )}
+                            </FieldArray>
 
                             {/* Model Specifications */}
                             <FieldArray name={`models.${modelIndex}.specifications`}>

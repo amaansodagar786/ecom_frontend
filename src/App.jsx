@@ -44,10 +44,12 @@ import NewOrders from './Pages/Admin/OfflineOrders/NewOrders';
 import Checkout from './Pages/CheckOut/Checkout';
 import ForgotPassword from './Pages/Authentication/ForogtPass/ForgotPassword';
 import CategoryUpdate from './Pages/Admin/CateHsnUpdate/CategoryUpdate';
-import Device from './Pages/Admin/Device/Device';
+
 import ShowOrders from './Pages/Admin/Orders/ShowOrders';
 import OrderConfirm from './Components/OrderConfirm/OrderConfirm';
-import AcceptReject from './Pages/Admin/OrderAccept/AcceptReject';
+// import AcceptReject from './Pages/Admin/OrderAccept/AcceptReject';
+import Device from './Pages/Admin/DeviceAdd/Device';
+import OrderDetails from './Pages/Admin/CompleteDetails/OrderDetails';
 // import Dummyorders from './Pages/Admin/Orders/Dummyorders';
 
 
@@ -106,9 +108,11 @@ function App() {
         
           <Route path="/updateproducts" element={<AdminRoute> <NewProduct /> </AdminRoute> } />
           <Route path="/categoryupdate" element={<AdminRoute> <CategoryUpdate /> </AdminRoute> } />
-          <Route path="/device" element={<AdminRoute> <Device /> </AdminRoute> } />
+          {/* <Route path="/device" element={<AdminRoute> <Device /> </AdminRoute> } /> */}
           <Route path="/orders/:orderId" element={<AdminRoute> <ShowOrders /> </AdminRoute> } />
-          <Route path="/ordersacceptreject" element={<AdminRoute> <AcceptReject /> </AdminRoute> } />
+          <Route path="/srnumbermanage" element={<AdminRoute> <Device /> </AdminRoute> } />
+          <Route path="/orderdetails" element={<AdminRoute> <OrderDetails /> </AdminRoute> } />
+          {/* <Route path="/ordersacceptreject" element={<AdminRoute> <AcceptReject /> </AdminRoute> } /> */}
           {/* <Route path="/orders/:orderId" element={<AdminRoute> <Dummyorders /> </AdminRoute> } /> */}
 
 

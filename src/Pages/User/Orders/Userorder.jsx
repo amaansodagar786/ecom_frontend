@@ -80,6 +80,10 @@ const UserOrders = () => {
     if (orderStatus?.toUpperCase() === 'PENDING') {
       return <span className="status-badge pending-approval">Waiting Approval</span>;
     }
+
+    if (orderStatus?.toUpperCase() === 'REJECTED') {
+      return <span className="status-badge pending-approval">Rejected</span>;
+    }
     
     if (orderStatus?.toUpperCase() === 'APPROVED') {
       switch (deliveryStatus?.toLowerCase()) {

@@ -400,6 +400,10 @@ const ProductPage = () => {
                     }
                 }
             }
+            // ✅ Update this block:
+            if (product.models?.length > 0) {
+                setSelectedModel(targetModel || product.models?.[0] || null);
+            }
 
             if (product.product_type === 'variable') {
                 setSelectedModel(targetModel || product.models?.[0] || null);

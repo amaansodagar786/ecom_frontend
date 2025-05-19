@@ -1,5 +1,18 @@
-import { FiMenu, FiX, FiHome, FiBox, FiPackage, FiShoppingCart, FiCreditCard, FiSettings } from 'react-icons/fi';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import {
+  FiMenu,
+  FiX,
+  FiHome,
+  FiBox,
+  FiPackage,
+  FiShoppingCart,
+  FiCreditCard,
+  FiSettings,
+  FiClipboard,
+  FiLayers,
+  FiEdit,
+  FiList,
+  FiFileText
+} from 'react-icons/fi'; import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './AdminSidebar.scss';
 
 const AdminSidebar = ({ isOpen, toggleSidebar, isMobile }) => {
@@ -8,14 +21,14 @@ const AdminSidebar = ({ isOpen, toggleSidebar, isMobile }) => {
 
   const navItems = [
     { path: '/admindashboard', name: 'Dashboard', icon: <FiHome /> },
-    { path: '/addproducts', name: 'List Products', icon: <FiBox /> },
-    { path: '/updateproducts', name: 'Update Products', icon: <FiBox /> },
-    { path: '/categoryupdate', name: 'Category & Hsn', icon: <FiSettings /> },
-    { path: '/admininventory', name: 'Inventory', icon: <FiPackage /> },
-    { path: '/createorders', name: 'Offline Order', icon: <FiSettings /> },
-    { path: '/ordersacceptreject', name: 'Accept', icon: <FiShoppingCart /> },
-    { path: '/adminorders', name: 'Orders', icon: <FiShoppingCart /> },
-    // { path: '/admininpayment', name: 'Payments', icon: <FiCreditCard /> },
+    { path: '/addproducts', name: 'List Products', icon: <FiList /> },             // listing icon
+    { path: '/updateproducts', name: 'Update Products', icon: <FiEdit /> },        // edit icon
+    { path: '/categoryupdate', name: 'Category & Hsn', icon: <FiLayers /> },       // layers icon for categories
+    { path: '/admininventory', name: 'Inventory Manage', icon: <FiPackage /> },    // box/package
+    { path: '/createorders', name: 'Offline Order', icon: <FiClipboard /> },       // clipboard for manual entry
+    { path: '/adminorders', name: 'Orders', icon: <FiShoppingCart /> },            // shopping cart
+    { path: '/srnumbermanage', name: 'SR Number Manage', icon: <FiFileText /> },   // document/serial
+    { path: '/orderdetails', name: 'Order Details', icon: <FiCreditCard /> },      // credit card/payment
   ];
 
   const handleNavClick = (path) => {

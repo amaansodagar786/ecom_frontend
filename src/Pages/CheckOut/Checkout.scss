@@ -141,7 +141,8 @@ $transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     }
   }
 
-  .loading, .error {
+  .loading,
+  .error {
     text-align: center;
     padding: 2rem;
     font-size: 1.1rem;
@@ -166,7 +167,7 @@ $transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
       border: 1px solid rgba(0, 0, 0, 0.05);
       position: relative;
       overflow: hidden;
-    //   padding: 20px;
+      //   padding: 20px;
 
       &::before {
         content: '';
@@ -329,7 +330,8 @@ $transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     grid-template-columns: 1fr 350px;
   }
 
-  h2, h3 {
+  h2,
+  h3 {
     font-weight: 700;
     color: $text-color;
     position: relative;
@@ -350,6 +352,7 @@ $transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 
   .order-items {
     grid-column: 1;
+
     .order-item {
       display: flex;
       gap: 1.5rem;
@@ -372,15 +375,15 @@ $transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         position: relative;
 
         .media {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
         }
 
         video.media {
-            background: black; // Optional background for videos
+          background: black; // Optional background for videos
         }
-    }
+      }
 
       img {
         width: 100px;
@@ -405,7 +408,7 @@ $transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
           margin: 0 0 0.5rem 0;
           font-size: 1.1rem;
           padding: 0;
-          
+
           &::after {
             display: none;
           }
@@ -422,7 +425,7 @@ $transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 
   .order-right-section {
     grid-column: 1;
-    
+
     @media (min-width: 992px) {
       grid-column: 2;
       grid-row: 1 / span 2;
@@ -443,7 +446,8 @@ $transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     }
 
     .address-card {
-        padding: 20px;
+      padding: 20px;
+
       h3 {
         margin: 0 0 0.5rem 0;
         font-size: 1rem;
@@ -646,7 +650,34 @@ $transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
           font-size: 0.8rem;
         }
       }
+
+      &.disabled {
+        cursor: not-allowed;
+        opacity: 0.7;
+        background: #f5f5f5;
+
+        &:hover {
+          transform: none;
+          box-shadow: none;
+
+          &::before {
+            background: #e0e0e0;
+          }
+        }
+      }
     }
+
+    .cod-option {
+    position: relative;
+    
+    .cod-notice {
+      display: block;
+      font-size: 0.75rem;
+      color: $error-color;
+      margin-top: 0.5rem;
+      font-weight: 500;
+    }
+  }
 
     @media (max-width: 576px) {
       grid-template-columns: 1fr;
@@ -738,9 +769,11 @@ $transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   0% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
+
   100% {
     background-position: 0% 50%;
   }
@@ -750,7 +783,7 @@ $transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 @media (max-width: 768px) {
   .checkout-stepper {
     margin: 2rem 0;
-    
+
     .step {
       span {
         width: 32px;
@@ -775,59 +808,59 @@ $transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 // Add these styles to your existing SCSS
 
 .price-display {
-    margin-top: 0.5rem;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.5rem;
-  
-    .original-price {
-      text-decoration: line-through;
-      color: $light-text;
-      font-size: 0.9rem;
-    }
-  
-    .discounted-price {
-      font-weight: 600;
-      color: $text-color;
-      font-size: 1rem;
-    }
-  
-    .price {
-      font-weight: 600;
-      color: $text-color;
-      font-size: 1rem;
-    }
-  
-    .discount-badge {
-      background: rgba($success-color, 0.1);
-      color: $success-color;
-      padding: 0.2rem 0.5rem;
-      border-radius: 4px;
-      font-size: 0.8rem;
-      font-weight: 600;
-    }
-  }
-  
-  .discount-row {
-    color: $success-color;
-    font-weight: 600;
-    
-    span:last-child {
-      color: $success-color;
-    }
-  }
-  
-  .savings-message {
-    margin-top: 1rem;
-    padding: 0.8rem;
-    background: rgba($success-color, 0.1);
-    color: $success-color;
-    border-radius: $border-radius;
-    text-align: center;
-    font-weight: 600;
+  margin-top: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+
+  .original-price {
+    text-decoration: line-through;
+    color: $light-text;
     font-size: 0.9rem;
   }
+
+  .discounted-price {
+    font-weight: 600;
+    color: $text-color;
+    font-size: 1rem;
+  }
+
+  .price {
+    font-weight: 600;
+    color: $text-color;
+    font-size: 1rem;
+  }
+
+  .discount-badge {
+    background: rgba($success-color, 0.1);
+    color: $success-color;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+}
+
+.discount-row {
+  color: $success-color;
+  font-weight: 600;
+
+  span:last-child {
+    color: $success-color;
+  }
+}
+
+.savings-message {
+  margin-top: 1rem;
+  padding: 0.8rem;
+  background: rgba($success-color, 0.1);
+  color: $success-color;
+  border-radius: $border-radius;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
 
 // Add these styles to your existing SCSS
 
@@ -835,7 +868,7 @@ $transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   display: flex;
   gap: 1rem;
   margin-bottom: 1.5rem;
-  
+
   button {
     padding: 0.7rem 1.5rem;
     border: none;
@@ -844,37 +877,37 @@ $transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     cursor: pointer;
     transition: $transition;
     font-size: 0.9rem;
-    
+
     &:focus {
       outline: none;
       box-shadow: 0 0 0 3px rgba($primary-color, 0.2);
     }
   }
-  
+
   .back-to-address-btn {
     background: white;
     color: $primary-color;
     border: 1px solid $primary-color;
-    
+
     &:hover {
       background: rgba($primary-color, 0.05);
     }
   }
-  
+
   .back-to-review-btn {
     background: white;
     color: $secondary-color;
     border: 1px solid $secondary-color;
-    
+
     &:hover {
       background: rgba($secondary-color, 0.05);
     }
   }
-  
+
   @media (max-width: 576px) {
     flex-direction: column;
     gap: 0.5rem;
-    
+
     button {
       width: 100%;
     }
@@ -885,7 +918,7 @@ $transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   display: flex;
   gap: 1rem;
   margin-top: 1.5rem;
-  
+
   button {
     flex: 1;
     padding: 0.9rem;
@@ -895,34 +928,34 @@ $transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     cursor: pointer;
     transition: $transition;
     font-size: 0.95rem;
-    
+
     &:focus {
       outline: none;
       box-shadow: 0 0 0 3px rgba($primary-color, 0.2);
     }
   }
-  
+
   .back-to-review-btn {
     background: white;
     color: $primary-color;
     border: 1px solid $primary-color;
-    
+
     &:hover {
       background: rgba($primary-color, 0.05);
     }
   }
-  
+
   .place-order-btn {
     background: linear-gradient(135deg, $primary-color, $secondary-color);
     color: white;
     box-shadow: 0 4px 15px rgba($primary-color, 0.3);
-    
+
     &:hover {
       transform: translateY(-2px);
       box-shadow: 0 6px 20px rgba($primary-color, 0.4);
     }
   }
-  
+
   @media (max-width: 576px) {
     flex-direction: column;
     gap: 0.5rem;
@@ -1042,6 +1075,7 @@ $transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1051,7 +1085,7 @@ $transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 // Update payment methods to show only 2 options
 .payment-methods {
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  
+
   @media (max-width: 576px) {
     grid-template-columns: 1fr;
   }
@@ -1059,42 +1093,42 @@ $transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 
 
 .place-order-btn {
-    position: relative;
-    padding: 0.6rem 1.2rem;
-    font-weight: 600;
-    font-size: 1rem;
-    background-color: #1e90ff;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  position: relative;
+  padding: 0.6rem 1.2rem;
+  font-weight: 600;
+  font-size: 1rem;
+  background-color: #1e90ff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-    &:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-    }
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 }
 
 .button-loader {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .spinner {
-    width: 16px;
-    height: 16px;
-    border: 3px solid rgba(255, 255, 255, 0.4);
-    border-top: 3px solid #ffffff;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
+  width: 16px;
+  height: 16px;
+  border: 3px solid rgba(255, 255, 255, 0.4);
+  border-top: 3px solid #ffffff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
+  to {
+    transform: rotate(360deg);
+  }
 }

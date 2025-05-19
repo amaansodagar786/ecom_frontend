@@ -111,6 +111,10 @@ const UserOrderDetails = () => {
       return <span className="status-badge pending-approval">Waiting Approval</span>;
     }
 
+    if (status === 'REJECTED') {
+      return <span className="status-badge pending-approval">Rejected</span>;
+    }
+
     if (status === 'APPROVED') {
       switch (delivery) {
         case 'delivered': return <span className="status-badge delivered">Delivered</span>;

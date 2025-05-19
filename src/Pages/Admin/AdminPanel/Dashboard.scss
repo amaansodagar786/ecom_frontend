@@ -1,302 +1,272 @@
-// Dashboard Variables
-$primary-color: #4a6bff;
-$success-color: #4ade80;
+// Variables
+$primary-color: #4361ee;
+$success-color: #4cc9f0;
+$warning-color: #f8961e;
 $danger-color: #f72585;
-$warning-color: #f59e0b;
-$text-color: #2d3748;
-$light-gray: #f7fafc;
-$border-color: #e2e8f0;
-$card-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-$transition-speed: 0.3s;
+$info-color: #7209b7;
+$dark-color: #212529;
+$light-color: #f8f9fa;
 $border-radius: 12px;
-$mobile-breakpoint: 768px;
+$box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+$transition: all 0.3s ease;
 
-// Dashboard Container
+// Mixins
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// Base Styles
 .dashboard-container {
   padding: 2rem;
-  max-width: 1400px;
+  color: $dark-color;
+  max-width: 1800px;
   margin: 0 auto;
-  transition: padding $transition-speed ease;
 
-  @media (max-width: $mobile-breakpoint) {
-    padding: 1.5rem;
-  }
-}
-
-// Dashboard Title
-.dashboard-title {
-  font-size: 1.8rem;
-  font-weight: 600;
-  color: $text-color;
-  margin-bottom: 2rem;
-  position: relative;
-  padding-left: 1rem;
-
-  &::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    height: 100%;
-    width: 4px;
-    background: $primary-color;
-    border-radius: 2px;
-  }
-
-  @media (max-width: $mobile-breakpoint) {
-    font-size: 1.5rem;
-    margin-bottom: 1.5rem;
-  }
-}
-
-// Dashboard Grid Layout
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-
-  @media (max-width: $mobile-breakpoint) {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-}
-
-// Stats Cards
-.stats-card {
-  background: white;
-  border-radius: $border-radius;
-  padding: 1.75rem;
-  box-shadow: $card-shadow;
-  transition: all $transition-speed ease;
-  border: 1px solid $border-color;
-  position: relative;
-  overflow: hidden;
-
-  &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-  }
-
-  h3 {
-    font-size: 1rem;
-    font-weight: 500;
-    color: lighten($text-color, 20%);
-    margin-bottom: 0.75rem;
-  }
-
-  p {
-    font-size: 2.2rem;
-    font-weight: 700;
-    margin: 0.5rem 0;
-    color: $text-color;
-  }
-
-  .trend {
-    display: flex;
-    align-items: center;
-    font-size: 0.85rem;
-    font-weight: 500;
-
-    &::before {
-      content: '';
-      display: inline-block;
-      width: 0.5rem;
-      height: 0.5rem;
-      border-radius: 50%;
-      margin-right: 0.5rem;
-    }
-
-    &.up {
-      color: $success-color;
-      
-      &::before {
-        background: $success-color;
-      }
-    }
-
-    &.down {
-      color: $danger-color;
-      
-      &::before {
-        background: $danger-color;
-      }
-    }
-  }
-
-  &::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 4px;
-    height: 100%;
-    background: $primary-color;
-  }
-
-  &:nth-child(1)::after { background: $primary-color; }
-  &:nth-child(2)::after { background: $success-color; }
-  &:nth-child(3)::after { background: $warning-color; }
-  &:nth-child(4)::after { background: #9f7aea; }
-}
-
-// Chart Containers
-.chart-container {
-  background: white;
-  border-radius: $border-radius;
-  padding: 1.75rem;
-  box-shadow: $card-shadow;
-  border: 1px solid $border-color;
-  grid-column: span 2;
-
-  h2 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: $text-color;
-    margin-bottom: 1.5rem;
-    display: flex;
-    align-items: center;
-
-    &::before {
-      content: '';
-      display: inline-block;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: $primary-color;
-      margin-right: 0.75rem;
-    }
-  }
-
-  .chart-placeholder {
-    height: 300px;
-    background: $light-gray;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: lighten($text-color, 30%);
-    font-weight: 500;
-    position: relative;
-    overflow: hidden;
-
-    &::before {
-      content: '';
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.8) 25%,
-        transparent 25%,
-        transparent 50%,
-        rgba(255, 255, 255, 0.8) 50%,
-        rgba(255, 255, 255, 0.8) 75%,
-        transparent 75%,
-        transparent
-      );
-      background-size: 40px 40px;
-      animation: shimmer 2s linear infinite;
-    }
-  }
-
-  @media (max-width: 1200px) {
-    grid-column: span 1;
-  }
-}
-
-// Activity List
-.activity-list {
-  .activity-item {
-    padding: 1.25rem 0;
-    border-bottom: 1px solid $border-color;
+  .dashboard-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 2rem;
 
-    &:last-child {
-      border-bottom: none;
-      padding-bottom: 0;
-    }
-
-    span {
-      font-weight: 500;
-      color: $text-color;
-      position: relative;
-      padding-left: 1.5rem;
-
-      &::before {
-        content: '';
-        position: absolute;
-        left: 0;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: $primary-color;
-      }
-    }
-
-    small {
-      color: lighten($text-color, 25%);
-      font-size: 0.85rem;
+    .dashboard-title {
+      font-size: 2rem;
+      font-weight: 700;
+      color: $dark-color;
+      margin: 0;
     }
   }
-}
 
-// Animations
-@keyframes shimmer {
-  0% { background-position: 0 0; }
-  100% { background-position: 40px 40px; }
+  // Stats Grid
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+
+    .stats-card {
+      background: white;
+      border-radius: $border-radius;
+      padding: 1.5rem;
+      box-shadow: $box-shadow;
+      transition: $transition;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+
+      &:hover {
+        transform: translateY(-5px);
+      }
+
+      &.primary {
+        border-left: 4px solid $primary-color;
+      }
+
+      &.success {
+        border-left: 4px solid $success-color;
+      }
+
+      &.warning {
+        border-left: 4px solid $warning-color;
+      }
+
+      &.info {
+        border-left: 4px solid $info-color;
+      }
+
+      .stats-icon {
+        @include flex-center;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        font-size: 1.5rem;
+        color: white;
+
+        .primary & {
+          background: $primary-color;
+        }
+        .success & {
+          background: $success-color;
+        }
+        .warning & {
+          background: $warning-color;
+        }
+        .info & {
+          background: $info-color;
+        }
+      }
+
+      .stats-content {
+        flex: 1;
+
+        h3 {
+          font-size: 1rem;
+          margin: 0 0 0.5rem;
+          color: #666;
+          font-weight: 500;
+        }
+
+        p {
+          font-size: 1.5rem;
+          margin: 0;
+          font-weight: 700;
+        }
+
+        .trend {
+          display: flex;
+          align-items: center;
+          gap: 0.3rem;
+          font-size: 0.8rem;
+          margin-top: 0.5rem;
+
+          &.up {
+            color: $success-color;
+          }
+          &.down {
+            color: $danger-color;
+          }
+          &.neutral {
+            color: $warning-color;
+          }
+        }
+      }
+    }
+  }
+
+  // Charts Row
+  .charts-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+
+    @media (max-width: 992px) {
+      grid-template-columns: 1fr;
+    }
+
+    .chart-container {
+      background: white;
+      border-radius: $border-radius;
+      padding: 1.5rem;
+      box-shadow: $box-shadow;
+
+      h3 {
+        margin: 0 0 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: $dark-color;
+      }
+
+      .chart-wrapper {
+  height: 250px;
+  width: 100%; // Add this
+  position: relative;
+}
+    }
+  }
+
+  // Best Sellers Section
+  .best-sellers-section {
+    .best-sellers {
+      background: white;
+      border-radius: $border-radius;
+      padding: 1.5rem;
+      box-shadow: $box-shadow;
+      width: 100%;
+
+      h3 {
+        margin: 0 0 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: $dark-color;
+      }
+
+      .chart-wrapper {
+        height: 250px;
+        margin-bottom: 1rem;
+      }
+
+      .sellers-list {
+        .seller-item {
+          display: flex;
+          align-items: center;
+          padding: 0.75rem 0;
+          border-bottom: 1px solid #eee;
+
+          &:last-child {
+            border-bottom: none;
+          }
+
+          .rank {
+            width: 30px;
+            height: 30px;
+            @include flex-center;
+            background: #f0f0f0;
+            border-radius: 50%;
+            font-weight: 700;
+            margin-right: 1rem;
+          }
+
+          .product {
+            flex: 1;
+            font-weight: 500;
+          }
+
+          .units, .revenue {
+            width: 100px;
+            text-align: right;
+            font-size: 0.9rem;
+            color: #666;
+          }
+        }
+      }
+    }
+  }
 }
 
 // Responsive Adjustments
-// Add these mobile-specific styles to your Dashboard.scss
-@media (max-width: $mobile-breakpoint) {
+@media (max-width: 576px) {
   .dashboard-container {
     padding: 1rem;
-    padding-top: 0; // Mobile header provides top padding
-  }
 
-  .dashboard-title {
-    font-size: 1.4rem;
-    margin: 1rem 0;
-    padding-left: 0.5rem;
-    
-    &::before {
-      width: 3px;
+    .dashboard-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
     }
-  }
 
-  .stats-card {
-    padding: 1.25rem;
-    
-    h3 {
-      font-size: 0.9rem;
+    .stats-grid {
+      grid-template-columns: 1fr;
     }
-    
-    p {
-      font-size: 1.8rem;
-    }
-  }
 
-  .chart-container {
-    padding: 1rem;
-    
-    h2 {
-      font-size: 1.1rem;
-      margin-bottom: 1rem;
-    }
-    
-    .chart-placeholder {
-      height: 200px;
-    }
-  }
+    .best-sellers-section {
+      .best-sellers {
+        .sellers-list {
+          .seller-item {
+            font-size: 0.9rem;
 
-  // Stack all cards in single column
-  .dashboard-grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
+            .units, .revenue {
+              width: 80px;
+            }
+          }
+        }
+      }
+    }
   }
+}
+
+// Loading and Error States
+.loader-container {
+  @include flex-center;
+  height: 100vh;
+}
+
+.error-message {
+  @include flex-center;
+  color: $danger-color;
+  font-size: 1.2rem;
+  font-weight: 500;
 }

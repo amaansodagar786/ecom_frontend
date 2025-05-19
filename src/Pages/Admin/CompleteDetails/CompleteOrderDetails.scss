@@ -1,0 +1,849 @@
+// Colors
+$primary-color: #3498db;          // Main brand color (blue)
+$primary-dark: darken($primary-color, 10%);
+$secondary-color: #2ecc71;        // Success color (green)
+$danger-color: #e74c3c;           // Error/alert color (red)
+$warning-color: #f39c12;          // Warning color (orange)
+$light-color: #f8f9fa;            // Light background
+$dark-color: #343a40;             // Dark text/background
+$gray-color: #6c757d;             // Secondary text
+$light-gray: #f5f5f5;             // Light backgrounds
+$border-color: #dee2e6;           // Border color
+
+// Status colors
+$status-pending: #f39c12;
+$status-processing: #3498db;
+$status-completed: #2ecc71;
+$status-cancelled: #e74c3c;
+
+// Spacing
+$spacer: 1rem;
+$spacers: (
+  0: 0,
+  1: $spacer * 0.25,
+  2: $spacer * 0.5,
+  3: $spacer,
+  4: $spacer * 1.5,
+  5: $spacer * 3,
+);
+
+// Typography
+$font-family-sans-serif: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+$font-family-base: $font-family-sans-serif;
+$font-size-base: 1rem;
+$line-height-base: 1.5;
+
+// Border radius
+$border-radius: 0.25rem;
+$border-radius-lg: 0.3rem;
+$border-radius-sm: 0.2rem;
+
+// Box shadow
+$box-shadow: 0 0.5rem 1rem rgba($dark-color, 0.15);
+$box-shadow-sm: 0 0.125rem 0.25rem rgba($dark-color, 0.075);
+$box-shadow-lg: 0 1rem 3rem rgba($dark-color, 0.175);
+
+// Transition
+$transition-base: all 0.3s ease-in-out;
+$transition-fade: opacity 0.15s linear;
+$transition-collapse: height 0.35s ease;
+
+// Z-index
+$zindex-dropdown: 1000;
+$zindex-sticky: 1020;
+$zindex-fixed: 1030;
+$zindex-modal-backdrop: 1040;
+$zindex-modal: 1050;
+$zindex-popover: 1060;
+$zindex-tooltip: 1070;
+
+.order-details-container {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  font-family: $font-family-sans-serif;
+  color: $dark-color;
+
+  .order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+
+    h1 {
+      font-size: 2rem;
+      color: $primary-color;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .new-search-button {
+      background: $secondary-color;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: $border-radius;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: background $transition-base;
+
+      &:hover {
+        background: darken($secondary-color, 10%);
+      }
+    }
+  }
+
+  .search-type-toggle {
+  display: flex;
+  margin-bottom: 1.5rem;
+  border-radius: $border-radius-lg;
+  overflow: hidden;
+  box-shadow: $box-shadow-sm;
+  background: white;
+  border: 1px solid $border-color;
+  position: relative;
+  
+  // Add a subtle gradient background for the container
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, $primary-color 0%, $secondary-color 100%);
+  }
+
+  .toggle-button {
+    flex: 1;
+    padding: 0.85rem 1rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    color: $gray-color;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    
+    // Add an icon for better visual cues
+    &::before {
+      content: '';
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      background-size: contain;
+      background-repeat: no-repeat;
+      opacity: 0.7;
+      transition: opacity 0.3s;
+    }
+
+    &:first-child::before {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%236c757d' viewBox='0 0 24 24'%3E%3Cpath d='M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V8l8 5 8-5v10zm-8-7L4 6h16l-8 5z'/%3E%3C/svg%3E");
+    }
+
+    &:last-child::before {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%236c757d' viewBox='0 0 24 24'%3E%3Cpath d='M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z'/%3E%3C/svg%3E");
+    }
+
+    &.active {
+      color: white;
+      background: $primary-color;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      
+      // Change icon color when active
+      &::before {
+        filter: brightness(0) invert(1);
+        opacity: 0.9;
+      }
+      
+      // Add a subtle glow effect
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60%;
+        height: 3px;
+        background: white;
+        border-radius: 3px;
+        opacity: 0.8;
+      }
+    }
+
+    &:not(.active):hover {
+      color: $primary-color;
+      background: rgba($primary-color, 0.05);
+      
+      &::before {
+        opacity: 1;
+      }
+    }
+
+    &:first-child {
+      border-right: 1px solid rgba($border-color, 0.5);
+    }
+  }
+}
+
+// Add a nice transition when switching between search types
+.search-box {
+  transition: all 0.4s ease;
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Add a subtle pulse animation to the active search type label
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba($primary-color, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba($primary-color, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba($primary-color, 0);
+  }
+}
+
+.search-type-toggle .toggle-button.active {
+  animation: pulse 1.5s infinite;
+}
+
+// Add a nice transition for the search input
+.search-input {
+  transition: all 0.3s ease;
+  
+  &:focus {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba($primary-color, 0.1);
+  }
+}
+
+  .order-search {
+    background: white;
+    padding: 1.5rem;
+    border-radius: $border-radius-lg;
+    box-shadow: $box-shadow-sm;
+    margin-bottom: 2rem;
+
+    .search-box {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+
+      .search-input {
+        flex: 1;
+        padding: 0.75rem 1rem;
+        border: 1px solid $border-color;
+        border-radius: $border-radius;
+        font-size: $font-size-base;
+        transition: border $transition-base;
+
+        &:focus {
+          outline: none;
+          border-color: $primary-color;
+          box-shadow: 0 0 0 2px rgba($primary-color, 0.2);
+        }
+
+        &:disabled {
+          background: $light-gray;
+        }
+      }
+
+      .search-button {
+        background: $primary-color;
+        color: white;
+        border: none;
+        padding: 0 2rem;
+        border-radius: $border-radius;
+        cursor: pointer;
+        font-size: $font-size-base;
+        transition: background $transition-base;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 100px;
+
+        &:hover {
+          background: $primary-dark;
+        }
+
+        &:disabled {
+          background: $gray-color;
+          cursor: not-allowed;
+        }
+
+        .spinner {
+          display: inline-block;
+          width: 16px;
+          height: 16px;
+          border: 2px solid rgba(255, 255, 255, 0.3);
+          border-radius: 50%;
+          border-top-color: white;
+          animation: spin 1s ease-in-out infinite;
+          margin-right: 8px;
+        }
+      }
+    }
+
+    .error-message {
+      color: $danger-color;
+      background: lighten($danger-color, 40%);
+      padding: 0.75rem;
+      border-radius: $border-radius-sm;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+    }
+  }
+
+  .order-content {
+    background: white;
+    border-radius: $border-radius-lg;
+    box-shadow: $box-shadow-sm;
+    overflow: hidden;
+  }
+
+  .order-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    padding: 1.5rem;
+    border-bottom: 1px solid $border-color;
+
+    .summary-card, .customer-card, .address-card {
+      background: $light-gray;
+      border-radius: $border-radius;
+      padding: 1.5rem;
+      box-shadow: $box-shadow-sm;
+
+      h3 {
+        margin-top: 0;
+        margin-bottom: 1rem;
+        color: $primary-color;
+        font-size: 1.2rem;
+        border-bottom: 1px solid $border-color;
+        padding-bottom: 0.5rem;
+      }
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+
+      div {
+        display: flex;
+        flex-direction: column;
+
+        span {
+          font-size: 0.85rem;
+          color: $gray-color;
+        }
+
+        strong {
+          font-size: 1rem;
+          margin-top: 0.25rem;
+        }
+      }
+    }
+
+    .status {
+      &-pending {
+        color: $status-pending;
+      }
+      &-processing {
+        color: $status-processing;
+      }
+      &-completed {
+        color: $status-completed;
+      }
+      &-cancelled {
+        color: $status-cancelled;
+      }
+    }
+
+    .customer-info, .address-info {
+      p {
+        margin: 0.5rem 0;
+        line-height: 1.4;
+        font-size: 0.9rem;
+
+        strong {
+          display: inline-block;
+          min-width: 100px;
+          color: $dark-color;
+        }
+      }
+    }
+  }
+
+  .order-items {
+    padding: 1.5rem;
+
+    h2 {
+      margin-top: 0;
+      margin-bottom: 1rem;
+      color: $primary-color;
+      font-size: 1.5rem;
+      border-bottom: 1px solid $border-color;
+      padding-bottom: 0.5rem;
+    }
+
+    .searched-sr-notice {
+      background: lighten($secondary-color, 45%);
+      color: darken($secondary-color, 20%);
+      padding: 0.75rem;
+      border-radius: $border-radius;
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+
+      strong {
+        font-weight: 600;
+      }
+    }
+
+    .items-table-container {
+      overflow-x: auto;
+      margin-bottom: 1rem;
+    }
+
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+
+      th, td {
+        padding: 1rem;
+        text-align: left;
+        border-bottom: 1px solid $border-color;
+        vertical-align: top;
+      }
+
+      th {
+        background: $light-gray;
+        font-weight: 600;
+        color: $dark-color;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 0.5px;
+      }
+
+      .item-row:hover {
+        background: rgba($primary-color, 0.05);
+      }
+
+      .product-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+
+        .product-name {
+          font-weight: 500;
+        }
+
+        .product-sku, .product-type {
+          font-size: 0.8rem;
+          color: $gray-color;
+        }
+      }
+
+      .specs {
+        margin-top: 0.5rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+
+        .spec-item {
+          font-size: 0.75rem;
+          background: $light-gray;
+          padding: 0.25rem 0.5rem;
+          border-radius: $border-radius-sm;
+          color: $dark-color;
+        }
+      }
+
+      .serial-numbers {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+
+        .sr-number {
+          background: lighten($primary-color, 35%);
+          color: $primary-dark;
+          padding: 0.25rem 0.5rem;
+          border-radius: $border-radius-sm;
+          font-size: 0.8rem;
+          cursor: pointer;
+          transition: all 0.2s;
+          font-family: monospace;
+
+          &:hover {
+            background: lighten($primary-color, 30%);
+          }
+
+          &.active {
+            background: $primary-color;
+            color: white;
+          }
+        }
+      }
+
+      .no-serial {
+        font-size: 0.8rem;
+        color: $gray-color;
+        font-style: italic;
+      }
+
+      .sr-details-row {
+        background: rgba($primary-color, 0.03);
+
+        .sr-details {
+          padding: 1rem;
+          background: white;
+          border-radius: $border-radius;
+          box-shadow: $box-shadow-sm;
+          margin: 0.5rem 0;
+
+          h4 {
+            margin-top: 0;
+            margin-bottom: 1rem;
+            color: $primary-color;
+            font-size: 1.1rem;
+          }
+
+          .details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+
+            h5 {
+              margin-top: 0;
+              margin-bottom: 0.75rem;
+              color: $dark-color;
+              font-size: 0.9rem;
+              border-bottom: 1px solid $border-color;
+              padding-bottom: 0.25rem;
+            }
+
+            p {
+              margin: 0.5rem 0;
+              font-size: 0.9rem;
+
+              strong {
+                display: inline-block;
+                min-width: 100px;
+                color: $dark-color;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .order-history {
+    padding: 1.5rem;
+    border-top: 1px solid $border-color;
+
+    h2 {
+      margin-top: 0;
+      margin-bottom: 1.5rem;
+      color: $primary-color;
+      font-size: 1.5rem;
+      border-bottom: 1px solid $border-color;
+      padding-bottom: 0.5rem;
+    }
+
+    .timeline {
+      position: relative;
+      padding-left: 2rem;
+
+      &::before {
+        content: '';
+        position: absolute;
+        left: 7px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: $border-color;
+      }
+
+      .timeline-item {
+        position: relative;
+        padding-bottom: 1.5rem;
+
+        &:last-child {
+          padding-bottom: 0;
+        }
+
+        .timeline-marker {
+          position: absolute;
+          left: -2rem;
+          top: 0;
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          background: $primary-color;
+          border: 3px solid white;
+          box-shadow: 0 0 0 2px $primary-color;
+        }
+
+        .timeline-content {
+          background: white;
+          border-radius: $border-radius;
+          padding: 1rem;
+          box-shadow: $box-shadow-sm;
+
+          .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+
+            .status-change {
+              font-weight: 500;
+              color: $primary-color;
+            }
+
+            .timeline-date {
+              font-size: 0.8rem;
+              color: $gray-color;
+            }
+          }
+
+          .timeline-body {
+            p {
+              margin: 0.25rem 0;
+              font-size: 0.9rem;
+
+              strong {
+                color: $dark-color;
+              }
+            }
+          }
+        }
+      }
+
+      .no-history {
+        font-size: 0.9rem;
+        color: $gray-color;
+        font-style: italic;
+        padding: 1rem;
+        text-align: center;
+      }
+    }
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .order-details-container {
+    padding: 1rem;
+
+    .order-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+
+      .new-search-button {
+        width: 100%;
+      }
+    }
+
+    .search-type-toggle {
+      flex-direction: column;
+      margin-bottom: 1rem;
+
+      .toggle-button {
+        padding: 0.75rem;
+        border-radius: 0;
+
+        &:first-child {
+          border-right: none;
+          border-bottom: 1px solid $border-color;
+        }
+      }
+    }
+
+    .order-search {
+      padding: 1rem;
+
+      .search-box {
+        flex-direction: column;
+        gap: 0.5rem;
+
+        .search-button {
+          width: 100%;
+          padding: 0.75rem;
+        }
+      }
+    }
+
+    .order-summary {
+      grid-template-columns: 1fr;
+    }
+
+    .items-table {
+      th, td {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.8rem;
+      }
+    }
+  }
+}
+
+
+// ... (keep all existing SCSS code above .order-history)
+
+.order-history {
+    padding: 1.5rem;
+    border-top: 1px solid $border-color;
+
+    h2 {
+        margin-top: 0;
+        margin-bottom: 1.5rem;
+        color: $primary-color;
+        font-size: 1.5rem;
+        border-bottom: 1px solid $border-color;
+        padding-bottom: 0.5rem;
+    }
+
+    .delivery-stepper {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        position: relative;
+        padding: 0 2rem;
+
+        .stepper-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+            flex: 1;
+
+            .step-icon {
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                background: $light-gray;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-bottom: 0.5rem;
+                border: 2px solid $border-color;
+                transition: all 0.3s ease;
+
+                .step-number {
+                    font-weight: 600;
+                    color: $gray-color;
+                }
+
+                .completed-icon {
+                    color: $secondary-color;
+                    font-weight: bold;
+                    font-size: 1.1rem;
+                }
+            }
+
+            .step-label {
+                font-size: 0.85rem;
+                color: $gray-color;
+                text-align: center;
+                max-width: 100px;
+            }
+
+            .step-connector {
+                position: absolute;
+                top: 15px;
+                left: calc(50% + 16px);
+                right: calc(-50% + 16px);
+                height: 2px;
+                background: $border-color;
+                z-index: -1;
+                transition: background 0.3s ease;
+
+                &.completed {
+                    background: $secondary-color;
+                }
+            }
+
+            &.completed {
+                .step-icon {
+                    background: lighten($secondary-color, 40%);
+                    border-color: $secondary-color;
+                }
+
+                .step-label {
+                    color: $dark-color;
+                    font-weight: 500;
+                }
+            }
+
+            &.active {
+                .step-icon {
+                    background: $primary-color;
+                    border-color: $primary-dark;
+
+                    .step-number {
+                        color: white;
+                    }
+                }
+
+                .step-label {
+                    color: $primary-color;
+                    font-weight: 600;
+                }
+            }
+        }
+    }
+
+    .current-status {
+        text-align: center;
+        font-size: 1rem;
+        margin-top: 1rem;
+        padding: 0.75rem;
+        background: $light-gray;
+        border-radius: $border-radius;
+
+        strong {
+            &.status-pending {
+                color: $status-pending;
+            }
+            &.status-processing {
+                color: $status-processing;
+            }
+            &.status-intransit {
+                color: $primary-color;
+            }
+            &.status-delivered {
+                color: $secondary-color;
+            }
+        }
+    }
+}
+
+

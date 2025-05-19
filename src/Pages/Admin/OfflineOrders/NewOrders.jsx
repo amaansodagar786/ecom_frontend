@@ -41,6 +41,7 @@ const NewOrders = () => {
     const [selectedModels, setSelectedModels] = useState([]); // Changed to array for multiple selection
     const [selectedSingleProducts, setSelectedSingleProducts] = useState([]); // For multiple single product selection
     const [singleProductSearchTerm, setSingleProductSearchTerm] = useState('');
+    const [paymentType, setPaymentType] = useState('cod'); // Default to 'cod'
 
     // Fetch products from API
     useEffect(() => {
@@ -169,106 +170,149 @@ const NewOrders = () => {
         });
     };
 
-    const handlePlaceOrder = async () => {
-        if (selectedProducts.length === 0) {
-            showErrorToast('Please select at least one product');
-            return;
-        }
+   const handlePlaceOrder = async () => {
+    if (selectedProducts.length === 0) {
+        showErrorToast('Please select at least one product');
+        return;
+    }
 
-        if (!selectedCustomer) {
-            showErrorToast('Please select a customer');
-            return;
-        }
+    if (!selectedCustomer) {
+        showErrorToast('Please select a customer');
+        return;
+    }
 
-        try {
-            const token = localStorage.getItem('token');
+    try {
+        const token = localStorage.getItem('token');
 
-            const orderItems = selectedProducts.map(product => {
-                if (!product.finalPrice || isNaN(product.finalPrice)) {
-                    throw new Error(`Invalid price for product ${product.product_id}`);
-                }
+        // Calculate all order summary values
+        const originalSubtotal = calculateOriginalSubtotal();
+        const productDiscount = calculateProductDiscount();
+        const extraDiscount = calculateExtraDiscount();
+        const subtotalExcludingGST = calculateSubtotalExcludingGST();
+        const gst = calculateGST();
+        const subtotal = calculateSubtotal();
+        const deliveryCharge = calculateDeliveryCharge(subtotal);
+        const total = subtotal + deliveryCharge;
 
-                const item = {
-                    product_id: product.product_id,
-                    quantity: product.quantity,
-                    unit_price: product.finalPrice
-                };
+        const orderItems = selectedProducts.map(product => {
+            if (!product.finalPrice || isNaN(product.finalPrice)) {
+                throw new Error(`Invalid price for product ${product.product_id}`);
+            }
 
-                if (product.model_id) {
-                    item.model_id = product.model_id;
-                }
-
-                if (product.color_id) {
-                    item.color_id = product.color_id;
-                }
-
-                return item;
-            });
-
-            const orderData = {
-                customer_id: selectedCustomer.id,
-                items: orderItems,
-                discount_percent: 0,
-                delivery_charge: calculateDeliveryCharge(calculateSubtotal()),
-                tax_percent: 0,
-                channel: 'offline',
-                payment_status: 'paid',
-                delivery_method: 'shipping',
-                delivery_status: 'intransit',
-                fulfillment_status: false
+            const item = {
+                product_id: product.product_id,
+                quantity: product.quantity,
+                unit_price: product.finalPrice,
+                original_price: product.original_price,
+                product_discount: product.original_price - product.price,
+                extra_discount_percent: parseFloat(product.extraDiscountPercentage) || 0,
+                extra_discount_amount: (product.price - product.finalPrice) * product.quantity,
+                total_price: product.finalPrice * product.quantity
             };
 
-            console.log('📦 Full Order Data:', JSON.stringify(orderData, null, 2));
-            console.log('🌐 Sending to:', `${import.meta.env.VITE_SERVER_API}/orders`);
+            if (product.model_id) {
+                item.model_id = product.model_id;
+            }
 
-            const response = await axios.post(
-                `${import.meta.env.VITE_SERVER_API}/orders`,
-                orderData,
-                {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    timeout: 10000
-                }
-            ).catch(error => {
-                if (error.response) {
-                    console.error('❌ Server responded with error:', error.response.status, error.response.data);
-                } else if (error.request) {
-                    console.error('❌ No response received:', error.request);
-                } else {
-                    console.error('❌ Request setup error:', error.message);
-                }
-                throw error;
-            });
+            if (product.color_id) {
+                item.color_id = product.color_id;
+            }
 
-            console.log('✅ Order created:', response.data);
+            return item;
+        });
 
-            if (response.data?.order_id) {
-                showSuccessToast(`Order #${response.data.order_id} created successfully!`);
-                setSelectedProducts([]);
-                setSelectedCustomer(null);
-                setSelectedAddress(null);
+        const paymentStatus = paymentType === 'cod' ? 'pending' : 'paid';
+
+        const orderData = {
+            customer_id: selectedCustomer.id,
+            items: orderItems,
+            // Pricing breakdown
+            original_subtotal: originalSubtotal,
+            product_discount: productDiscount,
+            extra_discount: extraDiscount,
+            subtotal_excluding_gst: subtotalExcludingGST,
+            gst_amount: gst,
+            subtotal: subtotal,
+            delivery_charge: deliveryCharge,
+            total_amount: total,
+            // Discount and tax rates
+            discount_percent: 0, // This can be calculated if needed
+            tax_percent: 18, // Assuming 18% GST
+            // Order details
+            channel: 'offline',
+            payment_status: paymentStatus,
+            payment_type: paymentType,
+            delivery_method: 'shipping',
+            delivery_status: 'intransit',
+            fulfillment_status: false,
+            // Customer and address info
+            customer_details: {
+                name: selectedCustomer.name,
+                phone: selectedCustomer.phone,
+                email: selectedCustomer.email || null
+            },
+            shipping_address: selectedAddress ? {
+                address_line1: selectedAddress.address_line1,
+                address_line2: selectedAddress.address_line2 || '',
+                city: selectedAddress.city,
+                state: selectedAddress.state_id ? getStateName(selectedAddress.state_id) : selectedAddress.state,
+                state_id: selectedAddress.state_id || null,
+                pincode: selectedAddress.pincode,
+                country: selectedAddress.country || 'India'
+            } : null
+        };
+
+        console.log('Full Order Data:', JSON.stringify(orderData, null, 2));
+
+        const response = await axios.post(
+            `${import.meta.env.VITE_SERVER_API}/orders`,
+            orderData,
+            {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                timeout: 10000
+            }
+        ).catch(error => {
+            if (error.response) {
+                console.error('Server responded with error:', error.response.status, error.response.data);
+            } else if (error.request) {
+                console.error('No response received:', error.request);
             } else {
-                showErrorToast('Order created but no order ID returned');
+                console.error('Request setup error:', error.message);
             }
-        } catch (error) {
-            console.error('❌ Order creation failed:', error);
-            let errorMessage = 'Failed to create order';
+            throw error;
+        });
 
-            if (error.code === 'ERR_NETWORK') {
-                errorMessage = 'Network error - please check your connection and server status';
-            } else if (error.response?.data) {
-                errorMessage = error.response.data.error ||
-                    error.response.data.message ||
-                    JSON.stringify(error.response.data);
-            } else if (error.message) {
-                errorMessage = error.message;
-            }
+        console.log('Order created:', response.data);
 
-            showErrorToast(errorMessage);
+        if (response.data?.order_id) {
+            showSuccessToast(`Order #${response.data.order_id} created successfully!`);
+            setSelectedProducts([]);
+            setSelectedCustomer(null);
+            setSelectedAddress(null);
+            setPaymentType('cod'); // Reset to default
+        } else {
+            showErrorToast('Order created but no order ID returned');
         }
-    };
+    } catch (error) {
+        console.error('Order creation failed:', error);
+        let errorMessage = 'Failed to create order';
+
+        if (error.code === 'ERR_NETWORK') {
+            errorMessage = 'Network error - please check your connection and server status';
+        } else if (error.response?.data) {
+            errorMessage = error.response.data.error ||
+                error.response.data.message ||
+                JSON.stringify(error.response.data);
+        } else if (error.message) {
+            errorMessage = error.message;
+        }
+
+        showErrorToast(errorMessage);
+    }
+};
 
     const getImageUrl = (imagePath) => {
         if (!imagePath) return null;
@@ -277,16 +321,26 @@ const NewOrders = () => {
         return `${import.meta.env.VITE_SERVER_API}/static/${imagePath}`;
     };
 
-    const handleProductSelect = (product) => {
-        setSelectedProduct(product);
-        if (product.product_type === 'single') {
-            setSelectionStep('single-products');
-            setSelectedSingleProducts([product]); // Start with the selected product
-        } else {
-            setSelectionStep('models');
-            setSelectedModels([]);
+   const handleProductSelect = (product) => {
+    // For single products, check stock before selecting
+    if (product.product_type === 'single') {
+        const defaultColor = product.colors?.[0];
+        if (!defaultColor || defaultColor.stock_quantity <= 0) {
+            showErrorToast('This product is out of stock');
+            return;
         }
-    };
+    }
+    
+    setSelectedProduct(product);
+    if (product.product_type === 'single') {
+        setSelectionStep('single-products');
+        setSelectedSingleProducts([product]); // Start with the selected product
+    } else {
+        setSelectionStep('models');
+        setSelectedModels([]);
+    }
+};
+
 
     const handleSingleProductToggle = (product) => {
         const defaultColor = product.colors?.[0];
@@ -346,6 +400,7 @@ const NewOrders = () => {
                             ? `${import.meta.env.VITE_SERVER_API}/${product.images[0].image_url}`
                             : '/placeholder-product.png',
                     stock: defaultColor.stock_quantity,
+                    // original_price: defaultColor.original_price || defaultColor.price,
                     price: defaultColor.price,
                     original_price: defaultColor.original_price || defaultColor.price,
                     category: product.category,
@@ -375,7 +430,8 @@ const NewOrders = () => {
                     type: 'variable',
                     name: `${selectedProduct.name} - ${model.name}`,
                     color_name: defaultColor.name,
-                    full_name: `${selectedProduct.name} - ${model.name} - ${defaultColor.name}`,
+                    // full_name: `${selectedProduct.name} - ${model.name} - ${defaultColor.name}`,
+                    full_name: `${selectedProduct.name} - ${model.name} `,
                     image: defaultColor.images?.[0]?.image_url
                         ? `${import.meta.env.VITE_SERVER_API}/${defaultColor.images[0].image_url}`
                         : model.images?.[0]?.image_url
@@ -430,18 +486,69 @@ const NewOrders = () => {
         );
     };
 
-    const handlePriceChange = (id, newPrice) => {
+
+    const handleExtraDiscountPercentageChange = (id, percentage) => {
+        const perc = Math.min(100, Math.max(0, parseFloat(percentage) || 0));
         setSelectedProducts(prev =>
             prev.map(product =>
                 product.id === id
                     ? {
                         ...product,
-                        finalPrice: parseFloat(newPrice) || 0,
-                        discountPercentage: calculateDiscountPercentage(product.price, newPrice)
+                        extraDiscountPercentage: perc,
+                        finalPrice: product.price * (1 - perc / 100)
                     }
                     : product
             )
         );
+    };
+
+
+    const handlePriceChange = (id, newPrice) => {
+        const finalPrice = parseFloat(newPrice) || 0;
+        setSelectedProducts(prev =>
+            prev.map(product =>
+                product.id === id
+                    ? {
+                        ...product,
+                        finalPrice,
+                        extraDiscountPercentage: ((product.price - finalPrice) / product.price * 100).toFixed(2)
+                    }
+                    : product
+            )
+        );
+    };
+
+    const calculateOriginalSubtotal = () => {
+        return selectedProducts.reduce(
+            (sum, product) => sum + (product.original_price * product.quantity),
+            0
+        );
+    };
+
+    const calculateProductDiscount = () => {
+        return selectedProducts.reduce(
+            (sum, product) => sum + (
+                (product.original_price - product.price) * product.quantity
+            ),
+            0
+        );
+    };
+
+    const calculateExtraDiscount = () => {
+        return selectedProducts.reduce(
+            (sum, product) => sum + (
+                (product.price - product.finalPrice) * product.quantity
+            ),
+            0
+        );
+    };
+
+    const calculateSubtotalExcludingGST = () => {
+        return calculateSubtotal() / 1.18; // Assuming 18% GST
+    };
+
+    const calculateGST = () => {
+        return calculateSubtotal() - calculateSubtotalExcludingGST();
     };
 
     const handleDiscountPercentageChange = (id, percentage) => {
@@ -940,17 +1047,17 @@ const NewOrders = () => {
                                         </div>
                                     </div>
                                     <div className="price-editor">
-                                        <div className="original-price">₹{product.price.toFixed(2)}</div>
+                                        <div className="original-price">₹{product.original_price.toFixed(2)}</div>
                                         <div className="price-edit-options">
                                             <div className="discount-option">
-                                                <label>Discount %</label>
+                                                <label>Extra Discount %</label>
                                                 <input
                                                     type="number"
                                                     min="0"
                                                     max="100"
                                                     className="discount-percentage-input"
-                                                    value={product.discountPercentage || 0}
-                                                    onChange={(e) => handleDiscountPercentageChange(product.id, e.target.value)}
+                                                    value={product.extraDiscountPercentage || 0}
+                                                    onChange={(e) => handleExtraDiscountPercentageChange(product.id, e.target.value)}
                                                 />
                                             </div>
                                             <div className="manual-price-option">
@@ -1016,38 +1123,98 @@ const NewOrders = () => {
                     </div>
                 )}
 
+                {selectedCustomer && (
+                    <div className="payment-type-section">
+                        <h3 className="section-title">Payment Method</h3>
+                        <div className="payment-options">
+                            <div className="payment-option">
+                                <input
+                                    type="radio"
+                                    id="cod"
+                                    name="paymentType"
+                                    value="cod"
+                                    checked={paymentType === 'cod'}
+                                    onChange={() => setPaymentType('cod')}
+                                />
+                                <label htmlFor="cod">Cash on Delivery (COD)</label>
+                            </div>
+                            <div className="payment-option">
+                                <input
+                                    type="radio"
+                                    id="upi"
+                                    name="paymentType"
+                                    value="upi"
+                                    checked={paymentType === 'upi'}
+                                    onChange={() => setPaymentType('upi')}
+                                />
+                                <label htmlFor="upi">UPI Payment</label>
+                            </div>
+                            <div className="payment-option">
+                                <input
+                                    type="radio"
+                                    id="bank_transfer"
+                                    name="paymentType"
+                                    value="bank_transfer"
+                                    checked={paymentType === 'bank_transfer'}
+                                    onChange={() => setPaymentType('bank_transfer')}
+                                />
+                                <label htmlFor="bank_transfer">Bank Transfer</label>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {selectedProducts.length > 0 && (
                     <div className="payment-summary">
                         <h3 className="summary-title">Payment Summary</h3>
+
                         <div className="summary-row">
-                            <span>Subtotal ({selectedProducts.reduce((sum, p) => sum + p.quantity, 0)} items):</span>
-                            <span>₹{calculateSubtotal().toFixed(2)}</span>
+                            <span>Original Subtotal ({selectedProducts.reduce((sum, p) => sum + p.quantity, 0)} items):</span>
+                            <span>₹{calculateOriginalSubtotal().toFixed(2)}</span>
                         </div>
+
                         <div className="summary-row discount-row">
-                            <span>Discount:</span>
-                            <span>-₹{calculateTotalDiscount().toFixed(2)}</span>
+                            <span>Product Discount:</span>
+                            <span>-₹{calculateProductDiscount().toFixed(2)}</span>
                         </div>
+
+                        <div className="summary-row discount-row">
+                            <span>Extra Discount:</span>
+                            <span>-₹{calculateExtraDiscount().toFixed(2)}</span>
+                        </div>
+
                         <div className="summary-row">
-                            <span>Tax (Included):</span>
-                            <span>₹0.00</span>
+                            <span>Subtotal (Excluding GST):</span>
+                            <span>₹{calculateSubtotalExcludingGST().toFixed(2)}</span>
                         </div>
+
+                        <div className="summary-row">
+                            <span>GST (18%):</span>
+                            <span>₹{calculateGST().toFixed(2)}</span>
+                        </div>
+
                         <div className="summary-row">
                             <span>Delivery Charge:</span>
-                            <span>₹{calculateDeliveryCharge(calculateSubtotal()).toFixed(2)}</span>
+                            <span>{calculateDeliveryCharge(calculateSubtotal()) === 0 ? 'FREE' : `₹${calculateDeliveryCharge(calculateSubtotal()).toFixed(2)}`}</span>
                         </div>
+
                         <div className="summary-row total-row">
                             <span>Total:</span>
                             <span>₹{(calculateSubtotal() + calculateDeliveryCharge(calculateSubtotal())).toFixed(2)}</span>
                         </div>
+
                         <button
                             className="place-order-btn"
                             onClick={handlePlaceOrder}
-                            disabled={!selectedCustomer || !selectedAddress}
+                            disabled={!selectedCustomer || !selectedAddress || !paymentType}
                         >
                             Place Order
                         </button>
                     </div>
                 )}
+
+                
+
 
                 {isModalOpen && (
                     <div className="product-selection-modal" onClick={handleModalClose}>

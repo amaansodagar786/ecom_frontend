@@ -58,9 +58,12 @@ const Checkout = () => {
     // In your calculations section (replace the existing code):
     const originalSubtotal = cartItems.reduce((sum, item) => sum + ((item.original_price || item.price) * item.quantity), 0);
     const totalDiscount = originalSubtotal - cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const subtotalAfterDiscount = originalSubtotal - totalDiscount;
-    const gstAmount = parseFloat((subtotalAfterDiscount * 0.18).toFixed(2));
-    const subtotalExcludingGst = parseFloat((subtotalAfterDiscount - gstAmount).toFixed(2));
+    const subtotalAfterDiscount = originalSubtotal - totalDiscount; // ₹1000 (if Original=2000, Discount=1000)
+
+    // Remove 18% GST from subtotalAfterDiscount (reverse calculation)
+    const gstAmount = parseFloat((subtotalAfterDiscount * (18 / 118)).toFixed(2)); // ₹152.54
+    const subtotalExcludingGst = parseFloat((subtotalAfterDiscount - gstAmount).toFixed(2)); // ₹847.46
+
     const deliveryCharge = calculateDeliveryCharge(subtotalExcludingGst);
     const total = subtotalExcludingGst + parseFloat(gstAmount) + deliveryCharge;
 
@@ -481,10 +484,15 @@ const Checkout = () => {
                             Bank Transfer
                         </button>
                         <button
-                            className={`payment-option ${paymentMethod === 'Cash on Delivery' ? 'selected' : ''}`}
-                            onClick={() => handlePaymentMethodSelect('Cash on Delivery')}
+                            className="payment-option cod-option disabled"
+                            disabled
+                            onClick={(e) => {
+                                e.preventDefault();
+                                toast.info('COD not available for this product. Coming soon!');
+                            }}
                         >
                             Cash on Delivery
+                            <span className="cod-notice">Not available for this product</span>
                         </button>
                     </div>
 
