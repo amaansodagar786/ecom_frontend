@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import './AllProducts.scss';
 import { useAuth } from '../../Components/Context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Loader from '../../Components/Loader/Loader';
 
 const AllProducts = () => {
@@ -10,6 +10,7 @@ const AllProducts = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { wishlistItems, toggleWishlistItem, isAuthenticated } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [isWishlisting, setIsWishlisting] = useState(false);
@@ -18,7 +19,8 @@ const AllProducts = () => {
     priceRange: [0, 200000],
     // colors: [],
     categories: [],
-    sortBy: 'featured',
+    // sortBy: 'featured',
+    sortBy: location.state?.sortBy || 'featured',
     searchQuery: '',
   });
 
@@ -513,7 +515,7 @@ const AllProducts = () => {
                               muted
                               loop
                               playsInline
-                              controls
+                              controls ={false}
                             />
                           ) : (
                             <img

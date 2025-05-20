@@ -35,7 +35,7 @@ const Navbar = () => {
   const handleLogoutClick = () => { logout(); navigate('/'); };
   const handleCartClick = () => setIsCartOpen(true);
   const handleWishlistClick = () => navigate('/wishlist');
-  const handleAllProductsClick = () => navigate('/allproducts');
+  const handleAllProductsClick = () => navigate('/products');
 
   return (
     <>

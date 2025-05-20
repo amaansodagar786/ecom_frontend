@@ -3,6 +3,7 @@ import UserLayout from '../../User/UserPanel/UserLayout';
 import { useNavigate } from 'react-router-dom';
 import './UserOrders.scss';
 import Loader from "../../../Components/Loader/Loader";
+import fallbackimage from '../../../assets/Logo/logo.jpg';
 
 const UserOrders = () => {
   const [orders, setOrders] = useState([]);
@@ -155,7 +156,7 @@ const UserOrders = () => {
                           ? item.product_image 
                           : `${import.meta.env.VITE_SERVER_API}${item.product_image}`} 
                         alt={item.product_name}
-                        onError={(e) => e.target.src = '/images/placeholder-product.jpg'}
+                        onError={(e) => e.target.src = {fallbackimage}}
                       />
                     </div>
                     <div className="preview-details">

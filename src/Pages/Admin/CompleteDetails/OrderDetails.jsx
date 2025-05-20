@@ -33,21 +33,32 @@ const OrderDetails = () => {
                 apiUrl = `${import.meta.env.VITE_SERVER_API}/order/by-serial-number/${encodedSrNumber}`;
             }
 
+            console.log('Making API request to:', apiUrl);
+
             const response = await fetch(apiUrl);
             const data = await response.json();
+
+            console.log('API Response:', data);
 
             if (data.success) {
                 setOrderData(data.data);
                 if (searchType === 'srNumber') {
                     setSelectedSrNumber(srNumber);
                 }
+                
+                console.group('Order Details Data');
+                console.log('Order Info:', data.data?.order);
+                console.log('Customer Info:', data.data?.customer);
+                console.log('Address Info:', data.data?.address);
+                console.log('Items:', data.data?.items);
+                console.groupEnd();
             } else {
                 setError(data.message || 'No data found');
                 setOrderData(null);
             }
         } catch (err) {
+            console.error('API Error:', err);
             setError('Failed to fetch details');
-            console.error(err);
             setOrderData(null);
         } finally {
             setLoading(false);
@@ -96,6 +107,8 @@ const OrderDetails = () => {
 
     const currentDeliveryStatus = orderData?.order?.delivery_status || 'pending';
     const currentStepIndex = deliverySteps.findIndex(step => step.id === currentDeliveryStatus);
+
+    const isOfflineOrder = orderData?.order?.channel === "offline";
 
     return (
         <AdminLayout>
@@ -229,9 +242,15 @@ const OrderDetails = () => {
                                         <tr>
                                             <th>Product</th>
                                             <th>Model</th>
+                                            {isOfflineOrder && (
+                                                <>
+                                                    <th>Actual Price</th>
+                                                    <th>Extra Discount</th>
+                                                </>
+                                            )}
+                                            <th>Price per product</th>
                                             {searchType === 'orderId' ? (
                                                 <>
-                                                    <th>Price per product</th>
                                                     <th>Qty</th>
                                                     <th>Total</th>
                                                 </>
@@ -240,115 +259,138 @@ const OrderDetails = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {filteredItems.map((item) => (
-                                            <React.Fragment key={item.item_id || item.product?.product_id}>
-                                                <tr className="item-row">
-                                                    <td>
-                                                        <div className="product-info">
-                                                            <span className="product-name">{item.product?.name}</span>
-                                                            {item.product?.sku_id && (
-                                                                <span className="product-sku">SKU: {item.product.sku_id}</span>
-                                                            )}
-                                                            {item.product?.product_type && (
-                                                                <span className="product-type">Type: {item.product.product_type}</span>
-                                                            )}
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        {item.model?.name || '-'}
-                                                        {item.model?.specifications && (
-                                                            <div className="specs">
-                                                                {Object.entries(item.model.specifications).map(([key, value]) => (
-                                                                    <span key={key} className="spec-item">{key}: {value}</span>
-                                                                ))}
+                                        {filteredItems.map((item) => {
+                                            const actualPrice = item.color?.price || item.price || 0;
+                                            const discountPercent = item.extra_item_discount_percent || 0;
+                                            const discountAmount = (actualPrice * discountPercent / 100).toFixed(2);
+                                            
+                                            return (
+                                                <React.Fragment key={item.item_id || item.product?.product_id}>
+                                                    <tr className="item-row">
+                                                        <td>
+                                                            <div className="product-info">
+                                                                <span className="product-name">{item.product?.name}</span>
+                                                                {item.product?.sku_id && (
+                                                                    <span className="product-sku">SKU: {item.product.sku_id}</span>
+                                                                )}
+                                                                {item.product?.product_type && (
+                                                                    <span className="product-type">Type: {item.product.product_type}</span>
+                                                                )}
                                                             </div>
+                                                        </td>
+                                                        <td>
+                                                            {item.model?.name || '-'}
+                                                            {item.model?.specifications && (
+                                                                <div className="specs">
+                                                                    {Object.entries(item.model.specifications).map(([key, value]) => (
+                                                                        <span key={key} className="spec-item">{key}: {value}</span>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </td>
+                                                        
+                                                        {isOfflineOrder && (
+                                                            <>
+                                                                <td>₹{actualPrice.toFixed(2)}</td>
+                                                                <td>
+                                                                    {discountPercent}%<br />
+                                                                    (₹{discountAmount})
+                                                                </td>
+                                                            </>
                                                         )}
-                                                    </td>
-                                                    {searchType === 'orderId' && (
-                                                        <>
-                                                            <td>₹{(item.unit_price || 0).toFixed(2)}</td>
-                                                            <td>{item.quantity}</td>
-                                                            <td>₹{(item.total_price || 0).toFixed(2)}</td>
-                                                        </>
-                                                    )}
-                                                    <td>
-                                                        {searchType === 'srNumber' ? (
-                                                            <div className="serial-numbers">
+                                                        
+                                                        <td>₹{(item.unit_price || 0).toFixed(2)}</td>
+                                                        
+                                                        {searchType === 'orderId' && (
+                                                            <>
+                                                                <td>{item.quantity}</td>
+                                                                <td>₹{(item.total_price || 0).toFixed(2)}</td>
+                                                            </>
+                                                        )}
+                                                        
+                                                        <td>
+                                                            {searchType === 'srNumber' ? (
                                                                 <span className="sr-number active">
                                                                     {srNumber}
                                                                 </span>
-                                                            </div>
-                                                        ) : (
-                                                            <>
-                                                                {item.serial_numbers?.length > 0 ? (
-                                                                    <div className="serial-numbers">
-                                                                        {item.serial_numbers.map((sn) => (
-                                                                            <span
-                                                                                key={sn.id}
-                                                                                className={`sr-number ${selectedSrNumber === sn.sr_number ? 'active' : ''}`}
-                                                                                onClick={() => handleSrNumberClick(sn.sr_number)}
-                                                                            >
-                                                                                {sn.sr_number}
-                                                                            </span>
-                                                                        ))}
-                                                                    </div>
-                                                                ) : (
-                                                                    <span className="no-serial"></span>
-                                                                )}
-                                                                {item.details?.length > 0 && (
-                                                                    <div className="serial-numbers">
-                                                                        {item.details.map((detail) => (
-                                                                            <span
-                                                                                key={detail.id}
-                                                                                className={`sr-number ${selectedSrNumber === detail.sr_no ? 'active' : ''}`}
-                                                                                onClick={() => handleSrNumberClick(detail.sr_no)}
-                                                                            >
-                                                                                {detail.sr_no}
-                                                                            </span>
-                                                                        ))}
-                                                                    </div>
-                                                                )}
-                                                            </>
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                                {selectedSrNumber && (
-                                                    (item.serial_numbers?.some(sn => sn.sr_number === selectedSrNumber) ||
-                                                        item.details?.some(d => d.sr_no === selectedSrNumber)
-                                                ) ? (
-                                                    <tr className="sr-details-row">
-                                                        <td colSpan={searchType === 'orderId' ? "6" : "4"}>
-                                                            <div className="sr-details">
-                                                                <h4>Serial Number Details: {selectedSrNumber}</h4>
-                                                                <div className="details-grid">
-                                                                    <div>
-                                                                        <h5>Product Information</h5>
-                                                                        <p><strong>Name:</strong> {item.product?.name || 'N/A'}</p>
-                                                                        <p><strong>SKU:</strong> {item.product?.sku_id || 'N/A'}</p>
-                                                                        <p><strong>Type:</strong> {item.product?.product_type || 'N/A'}</p>
-                                                                        {item.product?.category_id && (
-                                                                            <p><strong>Category ID:</strong> {item.product.category_id}</p>
-                                                                        )}
-                                                                    </div>
-                                                                    <div>
-                                                                        <h5>Customer Information</h5>
-                                                                        <p><strong>Name:</strong> {orderData.customer.name}</p>
-                                                                        <p><strong>Contact:</strong> {orderData.customer.mobile || orderData.customer.phone}</p>
-                                                                        <p><strong>Email:</strong> {orderData.customer.email}</p>
-                                                                    </div>
-                                                                    <div>
-                                                                        <h5>Order Information</h5>
-                                                                        <p><strong>Order ID:</strong> {orderData.order.order_id}</p>
-                                                                        <p><strong>Order Date:</strong> {new Date(orderData.order.created_at).toLocaleDateString()}</p>
-                                                                        <p><strong>Status:</strong> {orderData.order.order_status}</p>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
+                                                            ) : (
+                                                                <>
+                                                                    {item.serial_numbers?.length > 0 ? (
+                                                                        <div className="serial-numbers">
+                                                                            {item.serial_numbers.map((sn) => (
+                                                                                <span
+                                                                                    key={sn.id}
+                                                                                    className={`sr-number ${selectedSrNumber === sn.sr_number ? 'active' : ''}`}
+                                                                                    onClick={() => handleSrNumberClick(sn.sr_number)}
+                                                                                >
+                                                                                    {sn.sr_number}
+                                                                                </span>
+                                                                            ))}
+                                                                        </div>
+                                                                    ) : (
+                                                                        <span className="no-serial"></span>
+                                                                    )}
+                                                                    {item.details?.length > 0 && (
+                                                                        <div className="serial-numbers">
+                                                                            {item.details.map((detail) => (
+                                                                                <span
+                                                                                    key={detail.id}
+                                                                                    className={`sr-number ${selectedSrNumber === detail.sr_no ? 'active' : ''}`}
+                                                                                    onClick={() => handleSrNumberClick(detail.sr_no)}
+                                                                                >
+                                                                                    {detail.sr_no}
+                                                                                </span>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </>
+                                                            )}
                                                         </td>
                                                     </tr>
-                                                ) : null)}
-                                            </React.Fragment>
-                                        ))}
+                                                    {selectedSrNumber && (
+                                                        (item.serial_numbers?.some(sn => sn.sr_number === selectedSrNumber) ||
+                                                            item.details?.some(d => d.sr_no === selectedSrNumber)
+                                                    ) ? (
+                                                        <tr className="sr-details-row">
+                                                            <td colSpan={searchType === 'orderId' ? (isOfflineOrder ? "8" : "6") : (isOfflineOrder ? "6" : "4")}>
+                                                                <div className="sr-details">
+                                                                    <h4>Serial Number Details: {selectedSrNumber}</h4>
+                                                                    <div className="details-grid">
+                                                                        <div>
+                                                                            <h5>Product Information</h5>
+                                                                            <p><strong>Name:</strong> {item.product?.name || 'N/A'}</p>
+                                                                            <p><strong>SKU:</strong> {item.product?.sku_id || 'N/A'}</p>
+                                                                            <p><strong>Type:</strong> {item.product?.product_type || 'N/A'}</p>
+                                                                            {item.product?.category_id && (
+                                                                                <p><strong>Category ID:</strong> {item.product.category_id}</p>
+                                                                            )}
+                                                                            {isOfflineOrder && (
+                                                                                <>
+                                                                                    <p><strong>Actual Price:</strong> ₹{actualPrice.toFixed(2)}</p>
+                                                                                    <p><strong>Extra Discount:</strong> {discountPercent}% (₹{discountAmount})</p>
+                                                                                </>
+                                                                            )}
+                                                                        </div>
+                                                                        <div>
+                                                                            <h5>Customer Information</h5>
+                                                                            <p><strong>Name:</strong> {orderData.customer.name}</p>
+                                                                            <p><strong>Contact:</strong> {orderData.customer.mobile || orderData.customer.phone}</p>
+                                                                            <p><strong>Email:</strong> {orderData.customer.email}</p>
+                                                                        </div>
+                                                                        <div>
+                                                                            <h5>Order Information</h5>
+                                                                            <p><strong>Order ID:</strong> {orderData.order.order_id}</p>
+                                                                            <p><strong>Order Date:</strong> {new Date(orderData.order.created_at).toLocaleDateString()}</p>
+                                                                            <p><strong>Status:</strong> {orderData.order.order_status}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    ) : null)}
+                                                </React.Fragment>
+                                            );
+                                        })}
                                     </tbody>
                                 </table>
                             </div>

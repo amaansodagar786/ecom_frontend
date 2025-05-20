@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import AdminLayout from '../AdminPanel/AdminLayout';
-import { toast , ToastContainer} from 'react-toastify';
+import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './Device.scss';
 
@@ -11,7 +11,7 @@ const Device = () => {
   const [uploadStatus, setUploadStatus] = useState('');
   const [newDeviceData, setNewDeviceData] = useState({
     device_srno: '',
-    device_name: '',
+    model_name: '',
     sku_id: '',
     price: '',
     remarks: '',
@@ -72,52 +72,68 @@ const Device = () => {
     }
   };
 
-  const createNewDevice = async () => {
-    if (!newDeviceData.device_srno || !newDeviceData.device_name) {
-      toast.error('Device SR No and Name are required');
-      return;
+ const createNewDevice = async () => {
+  console.log('Attempting to create device with data:', newDeviceData);
+  
+  // Changed from device_name to model_name
+  if (!newDeviceData.device_srno || !newDeviceData.model_name) {
+    const errorMsg = `Validation failed: ${!newDeviceData.device_srno ? 'Device SR No required' : ''} ${!newDeviceData.model_name ? 'Model Name required' : ''}`;
+    console.error(errorMsg);
+    toast.error('Device SR No and Model Name are required');
+    return;
+  }
+
+  setCreatingDevice(true);
+  try {
+    console.log('Sending request to server...');
+    const response = await fetch(`${import.meta.env.VITE_SERVER_API}/add-device`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...newDeviceData,
+        in_out: parseInt(newDeviceData.in_out) || 1
+      })
+    });
+
+    console.log('Response received, status:', response.status);
+    const data = await response.json();
+    console.log('Response data:', data);
+
+    if (!response.ok) {
+      throw new Error(data.message || `Server responded with status ${response.status}`);
     }
 
-    setCreatingDevice(true);
-    try {
-      const response = await fetch(`${import.meta.env.VITE_SERVER_API}/add-device`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...newDeviceData,
-          in_out: parseInt(newDeviceData.in_out) || 1
-        })
-      });
-
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Failed to create device');
-
-      toast.success('Device created successfully');
-      setShowCreateModal(false);
-      setNewDeviceData({
-        device_srno: '',
-        device_name: '',
-        sku_id: '',
-        price: '',
-        remarks: '',
-        order_id: '',
-        in_out: 1
-      });
-    } catch (error) {
-      console.error('Error creating device:', error);
-      toast.error(error.message || 'Failed to create device');
-    } finally {
-      setCreatingDevice(false);
-    }
-  };
-
+    toast.success('Device created successfully');
+    console.log('Device created successfully:', data);
+    setShowCreateModal(false);
+    setNewDeviceData({
+      device_srno: '',
+      model_name: '',
+      sku_id: '',
+      price: '',
+      remarks: '',
+      order_id: '',
+      in_out: 1
+    });
+  } catch (error) {
+    console.error('Error creating device:', {
+      error: error,
+      message: error.message,
+      stack: error.stack
+    });
+    toast.error(error.message || 'Failed to create device');
+  } finally {
+    console.log('Request completed');
+    setCreatingDevice(false);
+  }
+};
   return (
     <AdminLayout>
       <div className="device-management-container">
         <h1>SR Number Management</h1>
-        
+
         <div className="device-input-section">
           <div className="device-input-group">
             {/* <input
@@ -127,16 +143,16 @@ const Device = () => {
               onChange={(e) => setNewDeviceData({...newDeviceData, order_id: e.target.value})}
               className="order-id-input"
             /> */}
-            
+
             <div className="device-action-buttons">
-              <button 
+              <button
                 className="create-device-button"
                 onClick={() => setShowCreateModal(true)}
               >
                 Create New Device
               </button>
-              
-              <button 
+
+              <button
                 className="import-device-button"
                 onClick={() => setShowUploadModal(true)}
               >
@@ -167,11 +183,11 @@ const Device = () => {
                 </div>
 
                 <div className="form-group">
-                  <label className="required">Device Name</label>
+                  <label className="required">Model Name</label>
                   <input
                     type="text"
-                    value={newDeviceData.device_name}
-                    onChange={(e) => setNewDeviceData({ ...newDeviceData, device_name: e.target.value })}
+                    value={newDeviceData.model_name}  // Changed from device_name
+                    onChange={(e) => setNewDeviceData({ ...newDeviceData, model_name: e.target.value })}
                     required
                   />
                 </div>
@@ -297,7 +313,7 @@ const Device = () => {
           </div>
         )}
       </div>
-       <ToastContainer
+      <ToastContainer
         position="top-center"
         autoClose={2500}
         hideProgressBar={false}

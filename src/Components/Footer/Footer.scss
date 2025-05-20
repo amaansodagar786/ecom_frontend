@@ -181,7 +181,7 @@ $highlight-color: #6e8efb;
       font-size: 15px;
 
       &:hover {
-        color: white;
+        color: black;
         padding-left: 5px;
       }
     }
@@ -227,7 +227,7 @@ $highlight-color: #6e8efb;
       transition: all 0.3s;
 
       &:hover {
-        background: $highlight-color;
+        background: white;
         transform: translateY(-3px);
       }
     }

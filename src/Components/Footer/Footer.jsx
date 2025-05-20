@@ -1,13 +1,46 @@
 import React, { useEffect } from 'react';
 import {
-    
+
     FaFacebookF, FaInstagram, FaTwitter, FaWhatsapp,
     FaMapMarkerAlt, FaPhoneAlt, FaEnvelope,
 } from 'react-icons/fa';
 import { FaShoppingCart, FaMobileAlt, FaLaptop, FaHeadphones, FaTv, FaCameraRetro } from 'react-icons/fa';
 import './Footer.scss';
+import { useNavigate } from 'react-router-dom';
 
 const Footer = () => {
+
+    const navigate = useNavigate();
+
+    const handleNewArrivalsClick = () => {
+        navigate('/products', { state: { sortBy: 'newest' } });
+    };
+
+    const handleFeaturedProductsClick = () => {
+        navigate('/products');
+    };
+
+    const handleHomeClick = () => {
+        navigate('/');
+    };
+
+
+    const handleFaqsClick = (e) => {
+        e.preventDefault();
+        navigate('/support', { state: { activeTab: 'faq' } });
+    };
+
+    const handleContactUsClick = (e) => {
+        e.preventDefault();
+        navigate('/support', { state: { activeTab: 'contact' } });
+    };
+
+    const handleShippingPolicyClick = (e) => {
+        e.preventDefault();
+        navigate('/support', { state: { activeTab: 'topics' } });
+    };
+
+
     useEffect(() => {
         const socialBubbles = document.querySelectorAll('.social-bubble');
         socialBubbles.forEach(bubble => {
@@ -25,15 +58,15 @@ const Footer = () => {
 
     return (
         <footer className="footer">
-        
-             <div className="floating-social-icons">
-            <div className="social-bubble"><FaShoppingCart /></div>
-            <div className="social-bubble"><FaMobileAlt /></div>
-            <div className="social-bubble"><FaLaptop /></div>
-            <div className="social-bubble"><FaHeadphones /></div>
-            <div className="social-bubble"><FaTv /></div>
-            <div className="social-bubble"><FaCameraRetro /></div>
-        </div>
+
+            <div className="floating-social-icons">
+                <div className="social-bubble"><FaShoppingCart /></div>
+                <div className="social-bubble"><FaMobileAlt /></div>
+                <div className="social-bubble"><FaLaptop /></div>
+                <div className="social-bubble"><FaHeadphones /></div>
+                <div className="social-bubble"><FaTv /></div>
+                <div className="social-bubble"><FaCameraRetro /></div>
+            </div>
 
             <div className="footer-content">
                 <div className="footer-about">
@@ -51,10 +84,11 @@ const Footer = () => {
                 <div className="footer-links hide-on-mobile">
                     <h4>Shop</h4>
                     <ul>
-                        <li><a href="#">New Arrivals</a></li>
-                        <li><a href="#">Featured Products</a></li>
-                        <li><a href="#">Best Sellers</a></li>
-                        <li><a href="#">Special Offers</a></li>
+
+                        <li><a href="" onClick={handleHomeClick}>Home</a></li>
+                        <li><a href="" onClick={handleNewArrivalsClick}>New Arrivals</a></li>
+                        <li><a href="" onClick={handleFeaturedProductsClick}>Featured Products</a></li>
+
                         {/* <li><a href="#">Gift Cards</a></li> */}
                     </ul>
                 </div>
@@ -62,11 +96,10 @@ const Footer = () => {
                 <div className="footer-links hide-on-mobile">
                     <h4>Customer Service</h4>
                     <ul>
-                        <li><a href="#">Contact Us</a></li>
-                        <li><a href="#">FAQs</a></li>
-                        <li><a href="#">Shipping Policy</a></li>
-                        <li><a href="#">Returns & Exchanges</a></li>
-                        {/* <li><a href="#">Size Guide</a></li> */}
+                        <li><a href="/support" onClick={handleContactUsClick}>Contact Us</a></li>
+                        <li><a href="/support" onClick={handleFaqsClick}>FAQs</a></li>
+                        <li><a href="/support" onClick={handleShippingPolicyClick}>Shipping Policy</a></li>
+                        <li><a href="/support" onClick={handleShippingPolicyClick}>Returns & Exchanges</a></li>
                     </ul>
                 </div>
 
@@ -94,7 +127,7 @@ const Footer = () => {
             </div>
 
             <div className="footer-bottom">
-                
+
                 <p>&copy; {new Date().getFullYear()} by Maseehum Task Manager Pvt. Ltd. All Rights Reserved. | Designed with ❤ by Aesa Solutions</p>
             </div>
         </footer>

@@ -68,8 +68,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
           <Route path="/profile" element={<Profile />} />
-          <Route path="/allproducts" element={<AllProducts />} />
-          {/* <Route path="/products/:id" element={<ProductPage />} /> */}
+          <Route path="/products" element={<AllProducts />} />
           <Route path="/products/:id" element={<ProductPage />} />
 
           <Route path="/products/by-category/:categoryId" element={<MainProducts />} />
@@ -96,24 +95,19 @@ function App() {
 
 
           {/* ADMIN PAGES  */}
-          <Route path="/adminreg" element={<Adminsignup />} />
-         
-          {/* <Route path="/sidebar" element={<AdminSidebar />} /> */}
+          {/* <Route path="/adminreg" element={<Adminsignup />} /> */}
           <Route  path="/addproducts" element={ <AdminRoute> <AddProducts /> </AdminRoute>} />
           <Route path="/admindashboard" element={<AdminRoute> <Dashboard /> </AdminRoute> } />
           <Route path="/createorders" element={<AdminRoute> <NewOrders /> </AdminRoute> } />
           <Route path="/adminorders" element={<AdminRoute> <Orders /> </AdminRoute> } />
           <Route path="/admininventory" element={<AdminRoute> <Inventory /> </AdminRoute> } />
           <Route path="/admininpayment" element={<AdminRoute> <Payment /> </AdminRoute> } />
-        
           <Route path="/updateproducts" element={<AdminRoute> <NewProduct /> </AdminRoute> } />
           <Route path="/categoryupdate" element={<AdminRoute> <CategoryUpdate /> </AdminRoute> } />
-          {/* <Route path="/device" element={<AdminRoute> <Device /> </AdminRoute> } /> */}
           <Route path="/orders/:orderId" element={<AdminRoute> <ShowOrders /> </AdminRoute> } />
           <Route path="/srnumbermanage" element={<AdminRoute> <Device /> </AdminRoute> } />
           <Route path="/orderdetails" element={<AdminRoute> <OrderDetails /> </AdminRoute> } />
-          {/* <Route path="/ordersacceptreject" element={<AdminRoute> <AcceptReject /> </AdminRoute> } /> */}
-          {/* <Route path="/orders/:orderId" element={<AdminRoute> <Dummyorders /> </AdminRoute> } /> */}
+          
 
 
 

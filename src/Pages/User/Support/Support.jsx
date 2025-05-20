@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   FiHeadphones, 
   FiMail, 
@@ -17,10 +17,21 @@ import {
 import UserLayout from '../../User/UserPanel/UserLayout';
 import './Support.scss';
 import Loader from '../../../Components/Loader/Loader';
+import { useLocation } from 'react-router-dom';
+
 
 const Support = () => {
+
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState('faq');
   const [expandedFaq, setExpandedFaq] = useState(null);
+
+  useEffect(() => {
+        // Check if there's a tab specified in the navigation state
+        if (location.state?.activeTab) {
+            setActiveTab(location.state.activeTab);
+        }
+    }, [location.state]);
 
   const toggleFaq = (index) => {
     setExpandedFaq(expandedFaq === index ? null : index);

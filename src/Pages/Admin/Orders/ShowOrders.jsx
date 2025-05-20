@@ -4,7 +4,6 @@ import AdminLayout from '../AdminPanel/AdminLayout';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-// import './OrderDetails.scss';
 import './ShowOrders.scss';
 import Loader from '../../../Components/Loader/Loader';
 
@@ -24,7 +23,6 @@ const OrderDetails = () => {
   const [currentProduct, setCurrentProduct] = useState(null);
   const [srNoInputs, setSrNoInputs] = useState({});
   const [isSubmittingSrNos, setIsSubmittingSrNos] = useState(false);
-  // const [activeTab, setActiveTab] = useState('order');
 
   useEffect(() => {
     if (order?.address?.is_available && order?.fulfillment_status && order?.awb_number) {
@@ -100,9 +98,14 @@ const OrderDetails = () => {
         });
         setPaymentStatus(data.payment_status || 'pending');
 
-        // Group items by product_id and count quantities
+        // Group items by both product_id and model_id to keep different models separate
         const groupedItems = data.details.reduce((acc, detail) => {
-          const existingItem = acc.find(item => item.product_id === detail.product_id);
+          // Find if we already have this product+model combination
+          const existingItem = acc.find(item => 
+            item.product_id === detail.product_id && 
+            item.model_id === detail.model_id
+          );
+
           if (existingItem) {
             existingItem.quantity += 1;
             existingItem.details.push(detail);
@@ -110,7 +113,10 @@ const OrderDetails = () => {
             acc.push({
               ...detail,
               quantity: 1,
-              details: [detail]
+              details: [detail],
+              // Explicitly include model information
+              model_id: detail.model_id,
+              model_name: detail.model_name
             });
           }
           return acc;
@@ -325,7 +331,7 @@ const OrderDetails = () => {
       if (response.data.success) {
         // Update local state to reflect the assigned SR numbers
         const updatedItems = orderItems.map(item => {
-          if (item.product_id === currentProduct.product_id) {
+          if (item.product_id === currentProduct.product_id && item.model_id === currentProduct.model_id) {
             return {
               ...item,
               details: item.details.map(detail => ({
@@ -467,26 +473,6 @@ const OrderDetails = () => {
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="order-details-tabs">
-          <button className="tab-button active">
-            Show Orders
-          </button>
-          {/* {order?.address?.is_available && order?.fulfillment_status && (
-            <button
-              className="tab-button"
-              onClick={() => {
-                setTrackingLoading(true);
-                setTrackingData(null);
-                setTrackingError(null);
-              }}
-            >
-              Track Order
-            </button>
-          )} */}
-        </div>
-
-        {/* Orders Tab Content */}
         <div className="items-container">
           <h2>Order Items</h2>
           {orderItems.length > 0 ? (
@@ -494,6 +480,7 @@ const OrderDetails = () => {
               <thead>
                 <tr>
                   <th>Product</th>
+                  <th>Model</th>
                   <th>Quantity</th>
                   <th>Price</th>
                   <th>Status</th>
@@ -502,12 +489,16 @@ const OrderDetails = () => {
               </thead>
               <tbody>
                 {orderItems.map((item) => (
-                  <tr key={item.product_id}>
+                  <tr key={`${item.product_id}-${item.model_id}`}>
                     <td>
                       <div className="product-info">
                         <span className="product-name">{item.product_name || `Product ${item.product_id}`}</span>
                         <span className="product-id">ID: {item.product_id}</span>
                       </div>
+                    </td>
+                    <td>
+                      {item.model_name || 'Default Model'}
+                      {item.model_id && <div>(ID: {item.model_id})</div>}
                     </td>
                     <td>{item.quantity}</td>
                     <td>₹{(item.unit_price || 0).toFixed(2)}</td>
@@ -617,8 +608,8 @@ const OrderDetails = () => {
                   <span>OrderID : {order.order_id}</span>
                   <span>Model: {currentProduct.model_name || 'N/A'}</span>
                 </div>
-
-                Add SR Numbers for {currentProduct.product_name}</h3>
+                Add SR Numbers for {currentProduct.product_name}
+              </h3>
               <button onClick={() => setShowAssignModal(false)}>×</button>
             </div>
 
@@ -626,8 +617,7 @@ const OrderDetails = () => {
               <table className="assign-table">
                 <thead>
                   <tr>
-                    <th>Quantity </th>
-                    {/* <th>Detail ID</th> */}
+                    <th>Quantity</th>
                     <th>SR Number</th>
                   </tr>
                 </thead>
@@ -635,7 +625,6 @@ const OrderDetails = () => {
                   {currentProduct.details.map((detail, index) => (
                     <tr key={detail.detail_id}>
                       <td>{index + 1}</td>
-                      {/* <td>{detail.detail_id}</td> */}
                       <td>
                         <input
                           type="text"
