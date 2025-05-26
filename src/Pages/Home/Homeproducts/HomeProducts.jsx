@@ -225,6 +225,13 @@ const HomeProducts = () => {
 
               return (
                 <div className="product-card" key={product.product_id}>
+                  {/* Add the offer badge if there's an offer */}
+                  {product.offers > 0 && (
+                    <div className="product-offer-badge">
+                      {product.offers}% OFF
+                    </div>
+                  )}
+
                   <div className="product-badge">
                     {inStock ? 'In Stock' : 'Pre-Order'}
                   </div>
@@ -245,13 +252,7 @@ const HomeProducts = () => {
                   </div>
 
                   <div className="product-image" onClick={(e) => handleProductClick(product, e)}>
-                    {/* {mainImage && (
-                      <img
-                        src={mainImage}
-                        alt={product.name}
-                        loading="lazy"
-                      />
-                    )} */}
+
                     {mainImage && (
                       mainImage.endsWith('.mp4') ? (
                         <video
@@ -272,6 +273,12 @@ const HomeProducts = () => {
                         />
                       )
                     )}
+
+                    {product.offers > 0 && (
+                      <div className="product-offer-tag">
+                        {product.offers}% OFF
+                      </div>
+                    )}
                     <button className="quick-view" onClick={(e) => handleProductClick(product, e)}>
                       Quick View
                     </button>
@@ -286,6 +293,9 @@ const HomeProducts = () => {
                           <span className="original-price">₹{deleted_price.toFixed(2)}</span>
                         )}
                       </div>
+                      {/* {product.offers > 0 && (
+                        <span className="offer-percentage">{product.offers}% OFF</span>
+                      )} */}
                     </div>
                     <button
                       className="add-to-cart"
@@ -313,7 +323,7 @@ const HomeProducts = () => {
           <div className="view-more-container">
             <button
               className="view-more-btn"
-              onClick={() => navigate('/allproducts')}
+              onClick={() => navigate('/products')}
             >
               View All Products
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">

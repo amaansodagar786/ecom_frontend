@@ -111,7 +111,7 @@ const Footer = () => {
                     </div>
                     <div className="contact-info-item">
                         <FaPhoneAlt />
-                        <p>011-47186444</p>
+                        <p>011-47186444 , +919311886444</p>
                     </div>
                     <div className="contact-info-item">
                         <FaEnvelope />

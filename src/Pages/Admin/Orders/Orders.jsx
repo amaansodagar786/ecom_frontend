@@ -10,6 +10,9 @@ const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+  const [invoiceNumber, setInvoiceNumber] = useState('');
+  const [currentOrderId, setCurrentOrderId] = useState(null);
   const [filters, setFilters] = useState({
     orderId: '',
     deliveryStatus: '',
@@ -20,6 +23,16 @@ const Orders = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [tempFilters, setTempFilters] = useState({
+    orderId: '',
+    deliveryStatus: '',
+    fulfillment: '',
+    channel: '',
+    paymentStatus: ''
+  });
+  const [isAWBModalOpen, setIsAWBModalOpen] = useState(false);
+  const [awbNumber, setAwbNumber] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -29,6 +42,21 @@ const Orders = () => {
   useEffect(() => {
     applyFilters();
   }, [orders, filters]);
+
+  useEffect(() => {
+    const isMobile = window.innerWidth <= 768;
+    const body = document.body;
+    
+    if (isMobile && (isModalOpen || isInvoiceModalOpen || isFilterModalOpen || isAWBModalOpen)) {
+      body.classList.add('modal-open');
+    } else {
+      body.classList.remove('modal-open');
+    }
+
+    return () => {
+      body.classList.remove('modal-open');
+    };
+  }, [isModalOpen, isInvoiceModalOpen, isFilterModalOpen, isAWBModalOpen]);
 
   const fetchOrders = async () => {
     try {
@@ -47,6 +75,14 @@ const Orders = () => {
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleTempFilterChange = (e) => {
+    const { name, value } = e.target;
+    setTempFilters(prev => ({
       ...prev,
       [name]: value
     }));
@@ -90,8 +126,20 @@ const Orders = () => {
     setFilteredOrders(result);
   };
 
+  const applyTempFilters = () => {
+    setFilters(tempFilters);
+    setIsFilterModalOpen(false);
+  };
+
   const clearFilters = () => {
     setFilters({
+      orderId: '',
+      deliveryStatus: '',
+      fulfillment: '',
+      channel: '',
+      paymentStatus: ''
+    });
+    setTempFilters({
       orderId: '',
       deliveryStatus: '',
       fulfillment: '',
@@ -120,18 +168,108 @@ const Orders = () => {
   };
 
   const handleOrderIdClick = (order) => {
-  if (order.order_status === 'PENDING' || order.order_status === 'REJECTED') {
-    setSelectedOrder(order);
-    setIsModalOpen(true);
-    toast.info('Please accept the order first');
-  } else {
-    navigate(`/orders/${encodeURIComponent(order.order_id)}`);
-  }
-};
+    if (order.order_status === 'PENDING' || order.order_status === 'REJECTED') {
+      setSelectedOrder(order);
+      setIsModalOpen(true);
+      toast.info('Please accept the order first');
+    } else {
+      navigate(`/orders/${encodeURIComponent(order.order_id)}`);
+    }
+  };
 
   const handleStatusClick = (order) => {
     setSelectedOrder(order);
     setIsModalOpen(true);
+  };
+
+  const handleInvoiceClick = (order) => {
+    setCurrentOrderId(order.order_id);
+    setInvoiceNumber(order.invoice_number || '');
+    setIsInvoiceModalOpen(true);
+  };
+
+  const handleInvoiceSave = async () => {
+    if (!invoiceNumber.trim()) {
+      toast.error('Please enter a valid invoice number');
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      const token = localStorage.getItem('token');
+
+      const response = await axios.post(
+        `${import.meta.env.VITE_SERVER_API}/update-invoice`,
+        {
+          order_id: currentOrderId,
+          invoice_number: invoiceNumber
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      toast.success('Invoice number updated successfully!');
+      fetchOrders();
+      setIsInvoiceModalOpen(false);
+    } catch (error) {
+      console.error('Error updating invoice:', error);
+      toast.error(error.response?.data?.error || 'Failed to update invoice number');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleAWBClick = (order) => {
+    // Check if order is fulfilled and either Delhivery is not available OR Delhivery is available
+    const isFulfilled = order.fulfillment_status === 1 || order.fulfillment_status === true;
+    const isDelhiveryAvailable = String(order.address?.is_available).toLowerCase() === 'true';
+    
+    if (isFulfilled) {
+      setCurrentOrderId(order.order_id);
+      setAwbNumber(order.awb_number || '');
+      setIsAWBModalOpen(true);
+    } else {
+      toast.info('Order must be fulfilled to update AWB number');
+    }
+  };
+
+  const handleAWBSave = async () => {
+    if (!awbNumber.trim()) {
+      toast.error('Please enter a valid AWB number');
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      const token = localStorage.getItem('token');
+
+      const response = await axios.post(
+        `${import.meta.env.VITE_SERVER_API}/update-awb`,
+        {
+          order_id: currentOrderId,
+          awb_number: awbNumber
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      toast.success('AWB number updated successfully!');
+      fetchOrders();
+      setIsAWBModalOpen(false);
+    } catch (error) {
+      console.error('Error updating AWB:', error);
+      toast.error(error.response?.data?.error || 'Failed to update AWB number');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const closeModal = () => {
@@ -146,10 +284,7 @@ const Orders = () => {
       setIsProcessing(true);
       const token = localStorage.getItem('token');
 
-      // PROPERLY encode the order ID
       const orderId = encodeURIComponent(selectedOrder.order_id);
-
-      console.log('Order ID being sent:', orderId); // Debug log
 
       const response = await axios.post(
         `${import.meta.env.VITE_SERVER_API}/change-order-status/${orderId}`,
@@ -159,10 +294,9 @@ const Orders = () => {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
-          withCredentials: true  // This is crucial for cookies/auth
+          withCredentials: true
         }
       );
-      console.log('Status change response:', response.data);
       toast.success(`Order status changed to ${newStatus} successfully!`);
       fetchOrders();
       closeModal();
@@ -230,8 +364,8 @@ const Orders = () => {
               <span>₹{selectedOrder.subtotal?.toFixed(2) || '0.00'}</span>
             </div>
             <div className="summary-row">
-             <span>GST ({selectedOrder.tax_percent || 0}%):</span>
-        <span>₹{(selectedOrder.gst || 0).toFixed(2)}</span>
+              <span>GST ({selectedOrder.tax_percent || 0}%):</span>
+              <span>₹{(selectedOrder.gst || 0).toFixed(2)}</span>
             </div>
             <div className="summary-row">
               <span>Delivery:</span>
@@ -368,6 +502,11 @@ const Orders = () => {
           </button>
         </div>
 
+        {/* Mobile Filter Button - Only visible on mobile */}
+        <button className="mobile-filter-btn" onClick={() => setIsFilterModalOpen(true)}>
+          Filters
+        </button>
+
         {loading ? (
           <Loader />
         ) : (
@@ -375,64 +514,81 @@ const Orders = () => {
             <div className="results-count">
               Showing {filteredOrders.length} of {orders.length} orders
             </div>
-            <table className="orders-table">
-              <thead>
-                <tr>
-                  <th>Order ID</th>
-                  <th>Date & Time</th>
-                  <th>Customer</th>
-                  <th>City</th>
-                  <th>Items</th>
-                  <th>Amount</th>
-                  <th>Channel</th>
-                  <th>Payment</th>
-                  <th>Fulfilled</th>
-                  <th>Status</th>
-                  <th>Type</th>
-                  <th>Delhivery</th>
-                  <th>AWB</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredOrders.map((order) => (
-                  <tr key={order.order_id}>
-                    <td
-                      className="order-id-link"
-                      onClick={() => handleOrderIdClick(order)}
-                    >
-                      {order.order_id}
-                    </td>
-                    <td>{formatIST(order.created_at)}</td>
-                    <td>{getCustomerName(order)}</td>
-                    <td>{order.address?.city || 'N/A'}</td>
-                    <td>{order.total_items}</td>
-                    <td>₹{order.total_amount.toFixed(2)}</td>
-                    <td className={`channel ${order.channel}`}>
-                      {order.channel}
-                    </td>
-                    <td className={`payment ${order.payment_status}`}>
-                      {order.payment_status}
-                    </td>
-                    <td className={order.fulfillment_status ? 'fulfilled' : 'pending'}>
-                      {order.fulfillment_status ? 'Yes' : 'No'}
-                    </td>
-                    <td
-                      className={`status ${order.order_status}`}
-                      onClick={() => handleStatusClick(order)}
-                    >
-                      {order.order_status}
-                    </td>
-                    <td className={`type ${order.payment_type}`}>
-                      {order.payment_type}
-                    </td>
-                    <td className={String(order.address?.is_available).toLowerCase() === 'true' ? 'available' : 'unavailable'}>
-                      {String(order.address?.is_available).toLowerCase() === 'true' ? 'Yes' : 'No'}
-                    </td>
-                    <td>{order.awb_number || 'N/A'}</td>
+            <div className="table-wrapper">
+              <table className="orders-table">
+                <thead>
+                  <tr>
+                    <th>Order ID</th>
+                    <th>Date & Time</th>
+                    <th>Customer</th>
+                    <th>City</th>
+                    <th>Items</th>
+                    <th>Amount</th>
+                    <th>Channel</th>
+                    <th>Payment</th>
+                    <th>Fulfilled</th>
+                    <th>Status</th>
+                    <th>Type</th>
+                    <th>Delhivery</th>
+                    <th>AWB</th>
+                    <th>Invoice</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filteredOrders.map((order) => (
+                    <tr key={order.order_id}>
+                      <td
+                        className="order-id-link"
+                        onClick={() => handleOrderIdClick(order)}
+                      >
+                        {order.order_id}
+                      </td>
+                      <td>{formatIST(order.created_at)}</td>
+                      <td>{getCustomerName(order)}</td>
+                      <td>{order.address?.city || 'N/A'}</td>
+                      <td>{order.total_items}</td>
+                      <td>₹{order.total_amount.toFixed(2)}</td>
+                      <td className={`channel ${order.channel}`}>
+                        {order.channel}
+                      </td>
+                      <td className={`payment ${order.payment_status}`}>
+                        {order.payment_status}
+                      </td>
+                      <td className={order.fulfillment_status ? 'fulfilled' : 'pending'}>
+                        {order.fulfillment_status ? 'Yes' : 'No'}
+                      </td>
+                      <td
+                        className={`status ${order.order_status}`}
+                        onClick={() => handleStatusClick(order)}
+                      >
+                        {order.order_status}
+                      </td>
+                      <td className={`type ${order.payment_type}`}>
+                        {order.payment_type === 'upi' ? 'UPI' :
+                          order.payment_type === 'bank_transfer' ? 'Bank' :
+                            order.payment_type === 'cod' ? 'COD' :
+                              order.payment_type}
+                      </td>
+                      <td className={String(order.address?.is_available).toLowerCase() === 'true' ? 'available' : 'unavailable'}>
+                        {String(order.address?.is_available).toLowerCase() === 'true' ? 'Yes' : 'No'}
+                      </td>
+                      <td
+                        className={order.awb_number ? 'awb-link' : 'pending-awb'}
+                        onClick={() => handleAWBClick(order)}
+                      >
+                        {order.awb_number || 'N/A'}
+                      </td>
+                      <td
+                        className={order.invoice_number ? 'invoice-link' : 'pending-invoice'}
+                        onClick={() => handleInvoiceClick(order)}
+                      >
+                        {order.invoice_number || 'Pending'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
@@ -440,6 +596,182 @@ const Orders = () => {
       {isModalOpen && (
         <div className="modal-overlay">
           {renderModalContent()}
+        </div>
+      )}
+
+      {isInvoiceModalOpen && (
+        <div className="modal-overlay">
+          <div className="invoice-modal">
+            <div className="modal-header">
+              <h3>{invoiceNumber ? 'Edit Invoice Number' : 'Add Invoice Number'}</h3>
+              <button onClick={() => setIsInvoiceModalOpen(false)} className="close-modal">
+                &times;
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Invoice Number</label>
+                <input
+                  type="text"
+                  value={invoiceNumber}
+                  onChange={(e) => setInvoiceNumber(e.target.value)}
+                  placeholder="Enter invoice number"
+                />
+              </div>
+              <div className="action-buttons">
+                <button
+                  className="cancel-btn"
+                  onClick={() => setIsInvoiceModalOpen(false)}
+                  disabled={isProcessing}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="save-btn"
+                  onClick={handleInvoiceSave}
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? 'Saving...' : 'Save Invoice'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+      {isAWBModalOpen && (
+        <div className="modal-overlay">
+          <div className="awb-modal">
+            <div className="modal-header">
+              <h3>{awbNumber ? 'Edit AWB Number' : 'Add AWB Number'}</h3>
+              <button onClick={() => setIsAWBModalOpen(false)} className="close-modal">
+                &times;
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>AWB Number</label>
+                <input
+                  type="text"
+                  value={awbNumber}
+                  onChange={(e) => setAwbNumber(e.target.value)}
+                  placeholder="Enter AWB number"
+                />
+              </div>
+              <div className="action-buttons">
+                <button
+                  className="cancel-btn"
+                  onClick={() => setIsAWBModalOpen(false)}
+                  disabled={isProcessing}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="save-btn"
+                  onClick={handleAWBSave}
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? 'Saving...' : 'Save AWB'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Filter Modal for Mobile */}
+      {isFilterModalOpen && (
+        <div className="modal-overlay">
+          <div className="filter-modal">
+            <div className="modal-header">
+              <h3>Filter Orders</h3>
+              <button onClick={() => setIsFilterModalOpen(false)} className="close-modal">
+                &times;
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="filter-group">
+                <label htmlFor="mobile-orderId">Order ID</label>
+                <input
+                  type="text"
+                  id="mobile-orderId"
+                  name="orderId"
+                  value={tempFilters.orderId}
+                  onChange={handleTempFilterChange}
+                  placeholder="Search by order ID"
+                />
+              </div>
+
+              <div className="filter-group">
+                <label htmlFor="mobile-deliveryStatus">Delivery Status</label>
+                <select
+                  id="mobile-deliveryStatus"
+                  name="deliveryStatus"
+                  value={tempFilters.deliveryStatus}
+                  onChange={handleTempFilterChange}
+                >
+                  <option value="">All Status</option>
+                  <option value="pending">Pending</option>
+                  <option value="Processing">Processing</option>
+                  <option value="intransit">In Transit</option>
+                  <option value="delivered">Delivered</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+
+              <div className="filter-group">
+                <label htmlFor="mobile-fulfillment">Fulfillment</label>
+                <select
+                  id="mobile-fulfillment"
+                  name="fulfillment"
+                  value={tempFilters.fulfillment}
+                  onChange={handleTempFilterChange}
+                >
+                  <option value="">All</option>
+                  <option value="fulfilled">Fulfilled</option>
+                  <option value="pending">Pending</option>
+                </select>
+              </div>
+
+              <div className="filter-group">
+                <label htmlFor="mobile-channel">Channel</label>
+                <select
+                  id="mobile-channel"
+                  name="channel"
+                  value={tempFilters.channel}
+                  onChange={handleTempFilterChange}
+                >
+                  <option value="">All Channels</option>
+                  <option value="online">Online</option>
+                  <option value="offline">Offline</option>
+                </select>
+              </div>
+
+              <div className="filter-group">
+                <label htmlFor="mobile-paymentStatus">Payment</label>
+                <select
+                  id="mobile-paymentStatus"
+                  name="paymentStatus"
+                  value={tempFilters.paymentStatus}
+                  onChange={handleTempFilterChange}
+                >
+                  <option value="">All Payments</option>
+                  <option value="paid">Paid</option>
+                  <option value="pending">Pending</option>
+                </select>
+              </div>
+
+              <div className="filter-modal-actions">
+                <button className="clear-btn" onClick={clearFilters}>
+                  Clear All
+                </button>
+                <button className="apply-btn" onClick={applyTempFilters}>
+                  Apply Filters
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

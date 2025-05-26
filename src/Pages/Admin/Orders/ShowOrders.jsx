@@ -23,6 +23,9 @@ const OrderDetails = () => {
   const [currentProduct, setCurrentProduct] = useState(null);
   const [srNoInputs, setSrNoInputs] = useState({});
   const [isSubmittingSrNos, setIsSubmittingSrNos] = useState(false);
+  const [showRemarksInput, setShowRemarksInput] = useState(false);
+  const [remarks, setRemarks] = useState('');
+  const [isSavingRemarks, setIsSavingRemarks] = useState(false);
 
   useEffect(() => {
     if (order?.address?.is_available && order?.fulfillment_status && order?.awb_number) {
@@ -101,8 +104,8 @@ const OrderDetails = () => {
         // Group items by both product_id and model_id to keep different models separate
         const groupedItems = data.details.reduce((acc, detail) => {
           // Find if we already have this product+model combination
-          const existingItem = acc.find(item => 
-            item.product_id === detail.product_id && 
+          const existingItem = acc.find(item =>
+            item.product_id === detail.product_id &&
             item.model_id === detail.model_id
           );
 
@@ -185,6 +188,41 @@ const OrderDetails = () => {
     setPaymentStatus(newStatus);
     updatePaymentStatus(newStatus);
   };
+
+  const saveRemarks = async () => {
+  try {
+    setIsSavingRemarks(true);
+    const token = localStorage.getItem('token');
+
+    // Properly encode the order ID (handles the # character)
+    const encodedOrderId = encodeURIComponent(orderId);
+
+    const response = await axios.put(
+      `${import.meta.env.VITE_SERVER_API}/orders/${encodedOrderId}/remarks`,
+      { remarks },
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    if (response.data.success) {
+      setOrder(prev => ({ ...prev, remarks }));
+      toast.success('Remarks saved successfully');
+      setShowRemarksInput(false);
+    } else {
+      throw new Error(response.data.error || 'Failed to save remarks');
+    }
+  } catch (error) {
+    console.error('Error saving remarks:', error);
+    toast.error(error.response?.data?.error || error.message || 'Failed to save remarks');
+  } finally {
+    setIsSavingRemarks(false);
+  }
+};
+
 
   const fulfillOrder = async () => {
     if (order.fulfillment_status) {
@@ -533,6 +571,57 @@ const OrderDetails = () => {
         {/* Fulfillment Section */}
         {areAllSrNosAssigned() && (
           <div className="fulfill-order-section">
+
+            {showRemarksInput ? (
+              <div className="remarks-input-container">
+                <textarea
+                  value={remarks}
+                  onChange={(e) => setRemarks(e.target.value)}
+                  placeholder="Enter any remarks for this order (optional)"
+                  rows={3}
+                />
+                <div className="remarks-buttons">
+                  <button
+                    className="cancel-button"
+                    onClick={() => setShowRemarksInput(false)}
+                    disabled={isSavingRemarks}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="submit-button"
+                    onClick={saveRemarks}
+                    disabled={isSavingRemarks}
+                  >
+                    {isSavingRemarks ? 'Saving...' : 'Save Remarks'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              !order.remarks ? (
+                <button
+                  className="add-remarks-button"
+                  onClick={() => setShowRemarksInput(true)}
+                >
+                  + Add Remarks (Optional)
+                </button>
+              ) : (
+                <div className="remarks-display">
+                  <h4>Remarks:</h4>
+                  <p>{order.remarks}</p>
+                  <button
+                    className="edit-remarks-button"
+                    onClick={() => {
+                      setRemarks(order.remarks);
+                      setShowRemarksInput(true);
+                    }}
+                  >
+                    Edit Remarks
+                  </button>
+                </div>
+              )
+            )}
+
             {order.address?.is_available === false ? (
               <div className="delivery-stepper">
                 <div className="stepper-buttons">

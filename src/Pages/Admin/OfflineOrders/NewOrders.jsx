@@ -24,6 +24,7 @@ const NewOrders = () => {
         name: '',
         phone: '',
         email: '',
+        csp_code: '',
         addresses: [{
             address_line1: '',
             address_line2: '',
@@ -170,149 +171,149 @@ const NewOrders = () => {
         });
     };
 
-   const handlePlaceOrder = async () => {
-    if (selectedProducts.length === 0) {
-        showErrorToast('Please select at least one product');
-        return;
-    }
+    const handlePlaceOrder = async () => {
+        if (selectedProducts.length === 0) {
+            showErrorToast('Please select at least one product');
+            return;
+        }
 
-    if (!selectedCustomer) {
-        showErrorToast('Please select a customer');
-        return;
-    }
+        if (!selectedCustomer) {
+            showErrorToast('Please select a customer');
+            return;
+        }
 
-    try {
-        const token = localStorage.getItem('token');
+        try {
+            const token = localStorage.getItem('token');
 
-        // Calculate all order summary values
-        const originalSubtotal = calculateOriginalSubtotal();
-        const productDiscount = calculateProductDiscount();
-        const extraDiscount = calculateExtraDiscount();
-        const subtotalExcludingGST = calculateSubtotalExcludingGST();
-        const gst = calculateGST();
-        const subtotal = calculateSubtotal();
-        const deliveryCharge = calculateDeliveryCharge(subtotal);
-        const total = subtotal + deliveryCharge;
+            // Calculate all order summary values
+            const originalSubtotal = calculateOriginalSubtotal();
+            const productDiscount = calculateProductDiscount();
+            const extraDiscount = calculateExtraDiscount();
+            const subtotalExcludingGST = calculateSubtotalExcludingGST();
+            const gst = calculateGST();
+            const subtotal = calculateSubtotal();
+            const deliveryCharge = calculateDeliveryCharge(subtotal);
+            const total = subtotal + deliveryCharge;
 
-        const orderItems = selectedProducts.map(product => {
-            if (!product.finalPrice || isNaN(product.finalPrice)) {
-                throw new Error(`Invalid price for product ${product.product_id}`);
-            }
+            const orderItems = selectedProducts.map(product => {
+                if (!product.finalPrice || isNaN(product.finalPrice)) {
+                    throw new Error(`Invalid price for product ${product.product_id}`);
+                }
 
-            const item = {
-                product_id: product.product_id,
-                quantity: product.quantity,
-                unit_price: product.finalPrice,
-                original_price: product.original_price,
-                product_discount: product.original_price - product.price,
-                extra_discount_percent: parseFloat(product.extraDiscountPercentage) || 0,
-                extra_discount_amount: (product.price - product.finalPrice) * product.quantity,
-                total_price: product.finalPrice * product.quantity
+                const item = {
+                    product_id: product.product_id,
+                    quantity: product.quantity,
+                    unit_price: product.finalPrice,
+                    original_price: product.original_price,
+                    product_discount: product.original_price - product.price,
+                    extra_discount_percent: parseFloat(product.extraDiscountPercentage) || 0,
+                    extra_discount_amount: (product.price - product.finalPrice) * product.quantity,
+                    total_price: product.finalPrice * product.quantity
+                };
+
+                if (product.model_id) {
+                    item.model_id = product.model_id;
+                }
+
+                if (product.color_id) {
+                    item.color_id = product.color_id;
+                }
+
+                return item;
+            });
+
+            const paymentStatus = paymentType === 'cod' ? 'pending' : 'paid';
+
+            const orderData = {
+                customer_id: selectedCustomer.id,
+                items: orderItems,
+                // Pricing breakdown
+                original_subtotal: originalSubtotal,
+                product_discount: productDiscount,
+                extra_discount: extraDiscount,
+                subtotal_excluding_gst: subtotalExcludingGST,
+                gst_amount: gst,
+                subtotal: subtotal,
+                delivery_charge: deliveryCharge,
+                total_amount: total,
+                // Discount and tax rates
+                discount_percent: 0, // This can be calculated if needed
+                tax_percent: 18, // Assuming 18% GST
+                // Order details
+                channel: 'offline',
+                payment_status: paymentStatus,
+                payment_type: paymentType,
+                delivery_method: 'shipping',
+                delivery_status: 'intransit',
+                fulfillment_status: false,
+                // Customer and address info
+                customer_details: {
+                    name: selectedCustomer.name,
+                    phone: selectedCustomer.phone,
+                    email: selectedCustomer.email || null
+                },
+                shipping_address: selectedAddress ? {
+                    address_line1: selectedAddress.address_line1,
+                    address_line2: selectedAddress.address_line2 || '',
+                    city: selectedAddress.city,
+                    state: selectedAddress.state_id ? getStateName(selectedAddress.state_id) : selectedAddress.state,
+                    state_id: selectedAddress.state_id || null,
+                    pincode: selectedAddress.pincode,
+                    country: selectedAddress.country || 'India'
+                } : null
             };
 
-            if (product.model_id) {
-                item.model_id = product.model_id;
-            }
+            console.log('Full Order Data:', JSON.stringify(orderData, null, 2));
 
-            if (product.color_id) {
-                item.color_id = product.color_id;
-            }
+            const response = await axios.post(
+                `${import.meta.env.VITE_SERVER_API}/orders`,
+                orderData,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    timeout: 10000
+                }
+            ).catch(error => {
+                if (error.response) {
+                    console.error('Server responded with error:', error.response.status, error.response.data);
+                } else if (error.request) {
+                    console.error('No response received:', error.request);
+                } else {
+                    console.error('Request setup error:', error.message);
+                }
+                throw error;
+            });
 
-            return item;
-        });
+            console.log('Order created:', response.data);
 
-        const paymentStatus = paymentType === 'cod' ? 'pending' : 'paid';
-
-        const orderData = {
-            customer_id: selectedCustomer.id,
-            items: orderItems,
-            // Pricing breakdown
-            original_subtotal: originalSubtotal,
-            product_discount: productDiscount,
-            extra_discount: extraDiscount,
-            subtotal_excluding_gst: subtotalExcludingGST,
-            gst_amount: gst,
-            subtotal: subtotal,
-            delivery_charge: deliveryCharge,
-            total_amount: total,
-            // Discount and tax rates
-            discount_percent: 0, // This can be calculated if needed
-            tax_percent: 18, // Assuming 18% GST
-            // Order details
-            channel: 'offline',
-            payment_status: paymentStatus,
-            payment_type: paymentType,
-            delivery_method: 'shipping',
-            delivery_status: 'intransit',
-            fulfillment_status: false,
-            // Customer and address info
-            customer_details: {
-                name: selectedCustomer.name,
-                phone: selectedCustomer.phone,
-                email: selectedCustomer.email || null
-            },
-            shipping_address: selectedAddress ? {
-                address_line1: selectedAddress.address_line1,
-                address_line2: selectedAddress.address_line2 || '',
-                city: selectedAddress.city,
-                state: selectedAddress.state_id ? getStateName(selectedAddress.state_id) : selectedAddress.state,
-                state_id: selectedAddress.state_id || null,
-                pincode: selectedAddress.pincode,
-                country: selectedAddress.country || 'India'
-            } : null
-        };
-
-        console.log('Full Order Data:', JSON.stringify(orderData, null, 2));
-
-        const response = await axios.post(
-            `${import.meta.env.VITE_SERVER_API}/orders`,
-            orderData,
-            {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                timeout: 10000
-            }
-        ).catch(error => {
-            if (error.response) {
-                console.error('Server responded with error:', error.response.status, error.response.data);
-            } else if (error.request) {
-                console.error('No response received:', error.request);
+            if (response.data?.order_id) {
+                showSuccessToast(`Order #${response.data.order_id} created successfully!`);
+                setSelectedProducts([]);
+                setSelectedCustomer(null);
+                setSelectedAddress(null);
+                setPaymentType('cod'); // Reset to default
             } else {
-                console.error('Request setup error:', error.message);
+                showErrorToast('Order created but no order ID returned');
             }
-            throw error;
-        });
+        } catch (error) {
+            console.error('Order creation failed:', error);
+            let errorMessage = 'Failed to create order';
 
-        console.log('Order created:', response.data);
+            if (error.code === 'ERR_NETWORK') {
+                errorMessage = 'Network error - please check your connection and server status';
+            } else if (error.response?.data) {
+                errorMessage = error.response.data.error ||
+                    error.response.data.message ||
+                    JSON.stringify(error.response.data);
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
 
-        if (response.data?.order_id) {
-            showSuccessToast(`Order #${response.data.order_id} created successfully!`);
-            setSelectedProducts([]);
-            setSelectedCustomer(null);
-            setSelectedAddress(null);
-            setPaymentType('cod'); // Reset to default
-        } else {
-            showErrorToast('Order created but no order ID returned');
+            showErrorToast(errorMessage);
         }
-    } catch (error) {
-        console.error('Order creation failed:', error);
-        let errorMessage = 'Failed to create order';
-
-        if (error.code === 'ERR_NETWORK') {
-            errorMessage = 'Network error - please check your connection and server status';
-        } else if (error.response?.data) {
-            errorMessage = error.response.data.error ||
-                error.response.data.message ||
-                JSON.stringify(error.response.data);
-        } else if (error.message) {
-            errorMessage = error.message;
-        }
-
-        showErrorToast(errorMessage);
-    }
-};
+    };
 
     const getImageUrl = (imagePath) => {
         if (!imagePath) return null;
@@ -321,25 +322,25 @@ const NewOrders = () => {
         return `${import.meta.env.VITE_SERVER_API}/static/${imagePath}`;
     };
 
-   const handleProductSelect = (product) => {
-    // For single products, check stock before selecting
-    if (product.product_type === 'single') {
-        const defaultColor = product.colors?.[0];
-        if (!defaultColor || defaultColor.stock_quantity <= 0) {
-            showErrorToast('This product is out of stock');
-            return;
+    const handleProductSelect = (product) => {
+        // For single products, check stock before selecting
+        if (product.product_type === 'single') {
+            const defaultColor = product.colors?.[0];
+            if (!defaultColor || defaultColor.stock_quantity <= 0) {
+                showErrorToast('This product is out of stock');
+                return;
+            }
         }
-    }
-    
-    setSelectedProduct(product);
-    if (product.product_type === 'single') {
-        setSelectionStep('single-products');
-        setSelectedSingleProducts([product]); // Start with the selected product
-    } else {
-        setSelectionStep('models');
-        setSelectedModels([]);
-    }
-};
+
+        setSelectedProduct(product);
+        if (product.product_type === 'single') {
+            setSelectionStep('single-products');
+            setSelectedSingleProducts([product]); // Start with the selected product
+        } else {
+            setSelectionStep('models');
+            setSelectedModels([]);
+        }
+    };
 
 
     const handleSingleProductToggle = (product) => {
@@ -676,6 +677,7 @@ const NewOrders = () => {
                 name: newCustomer.name,
                 mobile: newCustomer.phone,
                 email: newCustomer.email || '',
+                csp_code: newCustomer.csp_code || null,
                 address: {
                     name: newCustomer.name,
                     mobile: newCustomer.phone,
@@ -704,8 +706,8 @@ const NewOrders = () => {
             );
 
             // Check if address was saved but not serviceable
-            if (response.data.address && !response.data.address.is_available) {
-                showWarningToast('Customer added successfully');
+            if (response.data.address && response.data.address.is_available === false) {
+                showWarningToast('Customer added successfully, but delivery not available to this address');
             } else {
                 showSuccessToast('Customer added successfully!');
             }
@@ -714,6 +716,7 @@ const NewOrders = () => {
                 name: '',
                 phone: '',
                 email: '',
+                csp_code: '',
                 addresses: [{
                     address_line1: '',
                     address_line2: '',
@@ -1213,7 +1216,7 @@ const NewOrders = () => {
                     </div>
                 )}
 
-                
+
 
 
                 {isModalOpen && (
@@ -1453,6 +1456,17 @@ const NewOrders = () => {
                                                 value={newCustomer.email}
                                                 onChange={handleNewCustomerChange}
                                                 placeholder="Email (optional)"
+                                            />
+                                        </div>
+
+                                        <div className="form-group">
+                                            <label>CSP Code</label>
+                                            <input
+                                                type="text"
+                                                name="csp_code"
+                                                value={newCustomer.csp_code}
+                                                onChange={handleNewCustomerChange}
+                                                placeholder="CSP Code (optional)"
                                             />
                                         </div>
                                     </div>

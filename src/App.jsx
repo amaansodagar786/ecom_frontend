@@ -50,6 +50,7 @@ import OrderConfirm from './Components/OrderConfirm/OrderConfirm';
 // import AcceptReject from './Pages/Admin/OrderAccept/AcceptReject';
 import Device from './Pages/Admin/DeviceAdd/Device';
 import OrderDetails from './Pages/Admin/CompleteDetails/OrderDetails';
+import Offers from './Pages/Admin/Offers/Offers';
 // import Dummyorders from './Pages/Admin/Orders/Dummyorders';
 
 
@@ -107,6 +108,7 @@ function App() {
           <Route path="/orders/:orderId" element={<AdminRoute> <ShowOrders /> </AdminRoute> } />
           <Route path="/srnumbermanage" element={<AdminRoute> <Device /> </AdminRoute> } />
           <Route path="/orderdetails" element={<AdminRoute> <OrderDetails /> </AdminRoute> } />
+          <Route path="/offers" element={<AdminRoute> <Offers /> </AdminRoute> } />
           
 
 

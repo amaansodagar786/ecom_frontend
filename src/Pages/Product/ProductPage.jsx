@@ -44,6 +44,7 @@ const ProductPage = () => {
     const [showReviewsModal, setShowReviewsModal] = useState(false);
     const [reviewsLoading, setReviewsLoading] = useState(false);
     const [isCartOpen, setIsCartOpen] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
 
 
     const [cartStatus, setCartStatus] = useState({
@@ -53,6 +54,18 @@ const ProductPage = () => {
     });
     const [activeTab, setActiveTab] = useState('description');
     const [selectionsLoading, setSelectionsLoading] = useState(true);
+
+    const [showAddReviewModal, setShowAddReviewModal] = useState(false);
+    const [newReviewRating, setNewReviewRating] = useState(0);
+    const [newReviewText, setNewReviewText] = useState('');
+    const [reviewSubmitStatus, setReviewSubmitStatus] = useState({
+        loading: false,
+        error: null,
+        success: false
+    });
+
+    const [similarProducts, setSimilarProducts] = useState([]);
+    const [similarProductsLoading, setSimilarProductsLoading] = useState(false);
 
     const handleBuyNow = async () => {
         if (!product) {
@@ -130,8 +143,55 @@ const ProductPage = () => {
         }
     };
 
+    const handleSubmitReview = async () => {
+        if (!isAuthenticated) {
+            navigate('/login', { state: { from: location.pathname } });
+            return;
+        }
 
+        if (newReviewRating === 0) {
+            setReviewSubmitStatus({
+                error: 'Please select a rating',
+                success: false,
+                loading: false
+            });
+            return;
+        }
 
+        setReviewSubmitStatus({ loading: true, error: null, success: false });
+
+        try {
+            const response = await axios.post(
+                `${import.meta.env.VITE_SERVER_API}/review/simple`, // Updated endpoint
+                {
+                    product_id: product.product_id,
+                    rating: newReviewRating,
+                    description: newReviewText
+                },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                }
+            );
+
+            if (response.data.message) {
+                setReviewSubmitStatus({ loading: false, error: null, success: true });
+                setNewReviewRating(0);
+                setNewReviewText('');
+                fetchProductReviews(); // Refresh reviews
+                setTimeout(() => setShowAddReviewModal(false), 1500);
+            } else {
+                throw new Error(response.data.error || 'Failed to submit review');
+            }
+        } catch (err) {
+            setReviewSubmitStatus({
+                loading: false,
+                error: err.response?.data?.error || err.message || 'Failed to submit review',
+                success: false
+            });
+        }
+    };
 
 
     const fetchProductReviews = async () => {
@@ -150,7 +210,16 @@ const ProductPage = () => {
         }
     };
 
+    useEffect(() => {
+        const checkIfMobile = () => {
+            setIsMobile(window.innerWidth <= 768);
+        };
 
+        checkIfMobile();
+        window.addEventListener('resize', checkIfMobile);
+
+        return () => window.removeEventListener('resize', checkIfMobile);
+    }, []);
 
 
     useEffect(() => {
@@ -362,6 +431,7 @@ const ProductPage = () => {
 
             console.log("Complete Product Object:", product);
             fetchProductReviews();
+            fetchSimilarProducts();
         }
     }, [product]);
 
@@ -451,15 +521,21 @@ const ProductPage = () => {
         return null;
     };
 
-    // // Inside ProductPage component
-    // useMetaTags({
-    //     title: product?.name || "Product",
-    //     description: product?.description?.substring(0, 160) || "",
-    //     imageUrl: product?.images?.[0]
-    //         ? `${import.meta.env.VITE_SERVER_API}/static/${product.images[0].image_url}`
-    //         : 'https://yourdomain.com/default-product.jpg',
-    //     url: window.location.href
-    // });
+    const fetchSimilarProducts = async () => {
+        if (!product?.product_id) return;
+
+        try {
+            setSimilarProductsLoading(true);
+            const response = await axios.get(
+                `${import.meta.env.VITE_SERVER_API}/product/${product.product_id}/similar`
+            );
+            setSimilarProducts(response.data.similar_products || []);
+        } catch (err) {
+            console.error('Error fetching similar products:', err);
+        } finally {
+            setSimilarProductsLoading(false);
+        }
+    };
 
     const handleAddToCart = async () => {
         if (!product) {
@@ -598,7 +674,47 @@ const ProductPage = () => {
             setIsWishlisting(false);
         }
     };
+    const getProductInfo = (product) => {
+        let price = 0;
+        let original_price = null;
+        let inStock = false;
 
+        if (product.product_type === 'single' && product.colors) {
+            const validColors = product.colors.filter(c => c.price !== undefined && c.price !== null);
+            if (validColors.length > 0) {
+                const minPriceEntry = validColors.reduce((min, current) =>
+                    parseFloat(current.price) < parseFloat(min.price) ? current : min, validColors[0]);
+                price = parseFloat(minPriceEntry.price);
+                if (minPriceEntry.original_price) {
+                    original_price = parseFloat(minPriceEntry.original_price);
+                }
+                inStock = validColors.some(c => c.stock_quantity > 0);
+            }
+        } else if (product.product_type === 'variable' && product.models) {
+            const allColors = product.models.flatMap(model =>
+                (model.colors || [])
+                    .filter(color => color.price !== undefined && color.price !== null)
+                    .map(color => ({
+                        price: parseFloat(color.price),
+                        original_price: color.original_price ? parseFloat(color.original_price) : null,
+                        stock: color.stock_quantity > 0,
+                    }))
+            );
+            if (allColors.length > 0) {
+                const minPriceColor = allColors.reduce((min, current) =>
+                    current.price < min.price ? current : min, allColors[0]);
+                price = minPriceColor.price;
+                original_price = minPriceColor.original_price;
+                inStock = allColors.some(color => color.stock);
+            }
+        }
+
+        return {
+            price,
+            original_price,
+            inStock
+        };
+    };
 
     const incrementQuantity = () => setQuantity(prev => Math.min(currentStock, prev + 1));
     const decrementQuantity = () => setQuantity(prev => Math.max(1, prev - 1));
@@ -951,6 +1067,18 @@ const ProductPage = () => {
             {showReviewsModal && (
                 <div className="reviews-modal">
                     <div className="modal-content">
+                        <div className="modal-actions">
+                            <button
+                                className="add-review-btn"
+                                onClick={() => {
+                                    setShowReviewsModal(false);
+                                    setShowAddReviewModal(true);
+                                }}
+                                disabled={!isAuthenticated}
+                            >
+                                {isAuthenticated ? 'Add Your Review' : 'Login to Review'}
+                            </button>
+                        </div>
                         <button
                             className="close-modal"
                             onClick={() => setShowReviewsModal(false)}
@@ -1015,6 +1143,205 @@ const ProductPage = () => {
                                 ))}
                             </div>
                         )}
+                    </div>
+                </div>
+            )}
+
+            {showAddReviewModal && (
+                <div className="add-review-modal">
+                    <div className="modal-content">
+                        <button
+                            className="close-modal"
+                            onClick={() => {
+                                setShowAddReviewModal(false);
+                                setReviewSubmitStatus({ loading: false, error: null, success: false });
+                            }}
+                        >
+                            &times;
+                        </button>
+
+                        <h2>Add Your Review</h2>
+                        <p>For: {product.name}</p>
+
+                        <div className="rating-section">
+                            <h3>Your Rating</h3>
+                            <div className="stars">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                    <span
+                                        key={`new-review-star-${star}`}
+                                        className="star"
+                                        onClick={() => setNewReviewRating(star)}
+                                    >
+                                        {star <= newReviewRating ? '★' : '☆'}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="review-text">
+                            <h3>Your Review</h3>
+                            <textarea
+                                value={newReviewText}
+                                onChange={(e) => setNewReviewText(e.target.value)}
+                                placeholder="Share your experience with this product..."
+                                rows={5}
+                            />
+                        </div>
+
+                        {reviewSubmitStatus.error && (
+                            <div className="error-message">{reviewSubmitStatus.error}</div>
+                        )}
+                        {reviewSubmitStatus.success && (
+                            <div className="success-message">Review submitted successfully!</div>
+                        )}
+
+                        <div className="modal-actions">
+                            <button
+                                className="cancel-btn"
+                                onClick={() => setShowAddReviewModal(false)}
+                                disabled={reviewSubmitStatus.loading}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="submit-btn"
+                                onClick={handleSubmitReview}
+                                disabled={reviewSubmitStatus.loading || newReviewRating === 0}
+                            >
+                                {reviewSubmitStatus.loading ? 'Submitting...' : 'Submit Review'}
+                            </button>
+                        </div>
+                    </div>
+
+
+                </div>
+            )}
+
+            {similarProducts.length > 0 && (
+                <div className="similar-products-section">
+                    <div className="container">
+                        <div className="section-header">
+                            <h2 className="section-title">You May Also Like</h2>
+                            <p className="section-subtitle">Similar products you might enjoy</p>
+                        </div>
+
+                        <div className="product-grid">
+                            {similarProducts.slice(0, 8).map(similarProduct => {
+                                const { price, original_price, inStock } = getProductInfo(similarProduct);
+                                const isInWishlist = wishlistItems.some(item =>
+                                    item.product_id === similarProduct.product_id &&
+                                    item.model_id === null &&
+                                    item.color_id === null
+                                );
+
+                                const mainImage = similarProduct.images?.[0];
+                                const imageUrl = mainImage ? getImageUrl(mainImage) : null;
+                                const isVideo = mainImage?.is_video || (imageUrl && /\.(mp4)$/i.test(imageUrl));
+
+                                return (
+                                    <div
+                                        key={`similar-${similarProduct.product_id}`}
+                                        className="product-card"
+                                    >
+                                        <div className="product-badge">
+                                            {inStock ? 'In Stock' : 'Pre-Order'}
+                                        </div>
+                                        <div
+                                            className={`wishlist-icon ${isInWishlist ? 'active' : ''}`}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                toggleWishlistItem(similarProduct);
+                                            }}
+                                        >
+                                            <svg
+                                                width="24"
+                                                height="24"
+                                                viewBox="0 0 24 24"
+                                                fill={isInWishlist ? "#ff4757" : "none"}
+                                                stroke={isInWishlist ? "#ff4757" : "#111"}
+                                                strokeWidth="2"
+                                            >
+                                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                            </svg>
+                                        </div>
+
+                                        <div
+                                            className="product-image"
+                                            onClick={() => {
+                                                const slug = similarProduct.name.toLowerCase().replace(/\s+/g, '-');
+                                                navigate(`/products/${slug}`, {
+                                                    state: { product: similarProduct }
+                                                });
+                                                window.scrollTo(0, 0);
+                                            }}
+                                        >
+                                            {imageUrl ? (
+                                                isVideo ? (
+                                                    <video
+                                                        className="media"
+                                                        src={imageUrl}
+                                                        muted
+                                                        loop
+                                                        playsInline
+                                                        preload="metadata"
+                                                    />
+                                                ) : (
+                                                    <img
+                                                        className="media"
+                                                        src={imageUrl}
+                                                        alt={similarProduct.name}
+                                                        loading="lazy"
+                                                        onError={(e) => {
+                                                            e.target.src = '/path/to/fallback-image.jpg';
+                                                            console.error('Failed to load similar product image:', {
+                                                                product: similarProduct.name,
+                                                                imageUrl: imageUrl
+                                                            });
+                                                        }}
+                                                    />
+                                                )
+                                            ) : (
+                                                <div className="image-placeholder">
+                                                    <span>No Image</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="product-details">
+                                            <span className="product-category">
+                                                {similarProduct.category || 'Uncategorized'}
+                                            </span>
+                                            <h3 className="product-name">{similarProduct.name}</h3>
+                                            <div className="product-pricing">
+                                                <div className="price-wrapper">
+                                                    <span className="current-price">₹{price?.toFixed(2) || '--'}</span>
+                                                    {original_price && (
+                                                        <span className="original-price">₹{original_price.toFixed(2)}</span>
+                                                    )}
+                                                </div>
+                                                {original_price && (
+                                                    <span className="discount-percent">
+                                                        {Math.round((1 - price / original_price) * 100)}% OFF
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <button
+                                                className="add-to-cart"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    const slug = similarProduct.name.toLowerCase().replace(/\s+/g, '-');
+                                                    navigate(`/products/${slug}`, {
+                                                        state: { product: similarProduct }
+                                                    });
+                                                    window.scrollTo(0, 0);
+                                                }}
+                                            >
+                                                {isMobile ? 'View' : 'View Product'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
             )}

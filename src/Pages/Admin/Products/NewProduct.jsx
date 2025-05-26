@@ -22,17 +22,6 @@ const NewProduct = () => {
   const [coverImage, setCoverImage] = useState(null);
   const [newCoverImage, setNewCoverImage] = useState(null);
 
-  // const [formData, setFormData] = useState({
-  //   name: '',
-  //   description: '',
-  //   product_type: 'single',
-  //   category_id: '',
-  //   subcategory_id: '',
-  //   images: [],
-  //   colors: [],
-  //   models: [],
-  //   specifications: []
-  // });
   const [formData, setFormData] = useState({
     name: '',
     description: '',

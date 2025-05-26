@@ -29,6 +29,7 @@ const AdminSidebar = ({ isOpen, toggleSidebar, isMobile }) => {
     { path: '/adminorders', name: 'Orders', icon: <FiShoppingCart /> },            // shopping cart
     { path: '/srnumbermanage', name: 'SR Number Manage', icon: <FiFileText /> },   // document/serial
     { path: '/orderdetails', name: 'Order Details', icon: <FiCreditCard /> },      // credit card/payment
+    { path: '/offers', name: 'Product Offers ', icon: <FiLayers /> },      // credit card/payment
   ];
 
   const handleNavClick = (path) => {
