@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import Loader from "../../../Components/Loader/Loader";
 import { toast, ToastContainer } from 'react-toastify';
 import axios from 'axios';
+import AddressModal from '../../User/Address/AddressModal';
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
@@ -33,6 +34,9 @@ const Orders = () => {
   });
   const [isAWBModalOpen, setIsAWBModalOpen] = useState(false);
   const [awbNumber, setAwbNumber] = useState('');
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const [currentOrderForAddressChange, setCurrentOrderForAddressChange] = useState(null);
+  const [states, setStates] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -46,7 +50,7 @@ const Orders = () => {
   useEffect(() => {
     const isMobile = window.innerWidth <= 768;
     const body = document.body;
-    
+
     if (isMobile && (isModalOpen || isInvoiceModalOpen || isFilterModalOpen || isAWBModalOpen)) {
       body.classList.add('modal-open');
     } else {
@@ -57,6 +61,22 @@ const Orders = () => {
       body.classList.remove('modal-open');
     };
   }, [isModalOpen, isInvoiceModalOpen, isFilterModalOpen, isAWBModalOpen]);
+
+
+  useEffect(() => {
+    const fetchStates = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_SERVER_API}/states`);
+        const data = await response.json();
+        setStates(data.states || []);
+      } catch (error) {
+        console.error('Error fetching states:', error);
+      }
+    };
+
+    fetchStates();
+  }, []);
+
 
   const fetchOrders = async () => {
     try {
@@ -148,6 +168,80 @@ const Orders = () => {
     });
   };
 
+  const handleChangeAddressClick = (order) => {
+    setCurrentOrderForAddressChange(order);
+    setIsAddressModalOpen(true);
+  };
+
+  const handleAddressSave = async (formData) => {
+  if (!currentOrderForAddressChange) return;
+
+  try {
+    setIsProcessing(true);
+    const token = localStorage.getItem('token');
+
+    // Encode the order ID for the URL
+    const encodedOrderId = encodeURIComponent(currentOrderForAddressChange.order_id);
+
+    const response = await axios.post(
+      `${import.meta.env.VITE_SERVER_API}/orders/${encodedOrderId}/change-address`,
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    toast.success('Address updated successfully!');
+    
+    // Update the local state with the new address
+    setOrders(prevOrders => {
+      return prevOrders.map(order => {
+        if (order.order_id === currentOrderForAddressChange.order_id) {
+          // Update the address in the order
+          return {
+            ...order,
+            address: response.data.address // Assuming your API returns the updated address
+          };
+        }
+        return order;
+      });
+    });
+
+    // Also update filteredOrders to keep them in sync
+    setFilteredOrders(prevOrders => {
+      return prevOrders.map(order => {
+        if (order.order_id === currentOrderForAddressChange.order_id) {
+          return {
+            ...order,
+            address: response.data.address
+          };
+        }
+        return order;
+      });
+    });
+
+    // If the updated order is the currently selected one, update that too
+    if (selectedOrder?.order_id === currentOrderForAddressChange.order_id) {
+      setSelectedOrder(prev => ({
+        ...prev,
+        address: response.data.address
+      }));
+    }
+
+    setIsAddressModalOpen(false);
+    setCurrentOrderForAddressChange(null);
+  } catch (error) {
+    console.error('Error updating address:', error);
+    toast.error(error.response?.data?.message || 'Failed to update address');
+  } finally {
+    setIsProcessing(false);
+  }
+};
+
+
   const formatIST = (utcDate) => {
     const date = new Date(utcDate);
     return date.toLocaleString('en-IN', {
@@ -227,7 +321,7 @@ const Orders = () => {
     // Check if order is fulfilled and either Delhivery is not available OR Delhivery is available
     const isFulfilled = order.fulfillment_status === 1 || order.fulfillment_status === true;
     const isDelhiveryAvailable = String(order.address?.is_available).toLowerCase() === 'true';
-    
+
     if (isFulfilled) {
       setCurrentOrderId(order.order_id);
       setAwbNumber(order.awb_number || '');
@@ -393,6 +487,13 @@ const Orders = () => {
                   disabled={isProcessing}
                 >
                   {isProcessing ? 'Processing...' : 'Reject Order'}
+                </button>
+                <button
+                  className="change-address-btn"
+                  onClick={() => handleChangeAddressClick(selectedOrder)}
+                  disabled={isProcessing}
+                >
+                  Change Address
                 </button>
               </>
             )}
@@ -772,6 +873,22 @@ const Orders = () => {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {isAddressModalOpen && (
+        <div className="modal-overlay">
+          <AddressModal
+            isOpen={isAddressModalOpen}
+            onClose={() => {
+              setIsAddressModalOpen(false);
+              setCurrentOrderForAddressChange(null);
+            }}
+            onSave={handleAddressSave}
+            states={states} // You'll need to fetch states if not already available
+            initialData={currentOrderForAddressChange?.address}
+            isEditMode={false}
+          />
         </div>
       )}
 

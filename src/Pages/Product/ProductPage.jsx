@@ -1350,7 +1350,7 @@ const ProductPage = () => {
 
             <div className="whatsapp-float">
                 <a
-                    href="https://wa.me/message/YWM7XQZDBAECD1"
+                    href="https://wa.me/+917942541131"
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="Chat on WhatsApp"
