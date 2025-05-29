@@ -1,0 +1,365 @@
+// Variables
+$color-primary: #4361ee;
+$color-primary-light: #4895ef;
+$color-secondary: #3f37c9;
+$color-dark: #1b263b;
+$color-light: #f8f9fa;
+$color-gray: #adb5bd;
+$color-white: #ffffff;
+$color-success: #4cc9f0;
+$shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+$shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+$shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+$radius-sm: 4px;
+$radius-md: 8px;
+$radius-lg: 12px;
+$transition: all 0.3s ease;
+
+// Mixins
+@mixin flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+@mixin hover-effect {
+  transition: $transition;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: $shadow-lg;
+  }
+}
+
+// Base styles
+.drivers {
+  padding: 2rem 1rem;
+  max-width: 1400px;
+  margin: 80px auto;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: $color-dark;
+
+  &-loading,
+  &-empty {
+    @include flex-center;
+    height: 50vh;
+    font-size: 1.2rem;
+    color: $color-gray;
+  }
+
+  &-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding: 0 1rem;
+  }
+
+  &-heading {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: $color-dark;
+    background: linear-gradient(to right, $color-primary, $color-secondary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  &-description {
+    font-size: 1.1rem;
+    color: $color-gray;
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  &-filter-toggle {
+    display: none;
+    background: $color-primary;
+    color: $color-white;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: $radius-md;
+    margin: 1rem auto 2rem;
+    cursor: pointer;
+    font-weight: 600;
+    box-shadow: $shadow-md;
+    @include hover-effect;
+
+    @media (max-width: 768px) {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+  }
+
+  &-filter-icon {
+    font-size: 1.2rem;
+  }
+
+  &-content {
+    display: flex;
+    gap: 2rem;
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+    }
+  }
+
+  // Sidebar styles
+  &-sidebar {
+    width: 280px;
+    background: $color-white;
+    border-radius: $radius-md;
+    padding: 1.5rem;
+    box-shadow: $shadow-md;
+    height: fit-content;
+    position: sticky;
+    top: 1rem;
+
+    &.is-open {
+      @media (max-width: 768px) {
+        display: block;
+        width: 100%;
+        position: static;
+        margin-bottom: 1rem;
+      }
+    }
+
+    @media (max-width: 768px) {
+      display: none;
+    }
+  }
+
+  &-sidebar-title {
+    margin: 0 0 1rem 0;
+    color: $color-dark;
+    font-size: 1.2rem;
+    font-weight: 600;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba($color-gray, 0.3);
+  }
+
+  &-categories {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  &-category {
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    border-radius: $radius-sm;
+    cursor: pointer;
+    transition: $transition;
+    font-size: 0.95rem;
+    color: lighten($color-dark, 10%);
+
+    &:hover {
+      background: rgba($color-primary, 0.1);
+      color: $color-primary;
+    }
+
+    &.is-active {
+      background: $color-primary;
+      color: $color-white;
+      font-weight: 500;
+    }
+  }
+
+  &-apply-filters {
+    display: none;
+    width: 100%;
+    background: $color-primary;
+    color: $color-white;
+    border: none;
+    padding: 0.8rem;
+    border-radius: $radius-sm;
+    margin-top: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    @include hover-effect;
+
+    @media (max-width: 768px) {
+      display: block;
+    }
+  }
+
+  // Main content styles
+  &-main {
+    flex: 1;
+  }
+
+  &-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    padding: 0.5rem;
+  }
+
+  // Card styles
+  &-card {
+    background: $color-white;
+    border-radius: $radius-md;
+    overflow: hidden;
+    box-shadow: $shadow-md;
+    transition: $transition;
+    display: flex;
+    flex-direction: column;
+    @include hover-effect;
+  }
+
+  &-card-media {
+    height: 200px;
+    background: linear-gradient(135deg, $color-light, darken($color-light, 5%));
+    @include flex-center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  &-card-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 1.5rem;
+    transition: transform 0.5s ease;
+
+    .drivers-card:hover & {
+      transform: scale(1.05);
+    }
+  }
+
+  &-card-placeholder {
+    width: 100%;
+    height: 100%;
+    @include flex-center;
+    color: $color-gray;
+  }
+
+  &-card-icon {
+    width: 48px;
+    height: 48px;
+    fill: currentColor;
+    opacity: 0.5;
+  }
+
+  &-card-content {
+    padding: 1.5rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &-card-title {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    line-height: 1.4;
+    color: $color-dark;
+  }
+
+  &-card-category {
+    color: $color-primary;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin: 0 0 1rem 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  &-card-actions {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  &-download-btn {
+    width: 100%;
+    padding: 0.75rem;
+    background: $color-primary;
+    color: $color-white;
+    border: none;
+    border-radius: $radius-sm;
+    cursor: pointer;
+    font-weight: 500;
+    transition: $transition;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+
+    &:hover {
+      background: darken($color-primary, 8%);
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+
+  &-download-icon {
+    font-size: 1rem;
+  }
+
+  &-download-text {
+    font-size: 0.9rem;
+  }
+
+  // Responsive adjustments
+  @media (max-width: 1024px) {
+    &-grid {
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    }
+  }
+
+  @media (max-width: 480px) {
+    padding: 1.5rem 0.5rem;
+
+    &-heading {
+      font-size: 2rem;
+    }
+
+    &-description {
+      font-size: 1rem;
+    }
+
+    &-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+
+  &-back-button {
+    position: absolute;
+    top: 1.5rem;
+    left: 1.5rem;
+    background: none;
+    border: 1px solid $color-primary;
+    color: $color-primary;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.5rem 1rem;
+    border-radius: $radius-sm;
+    transition: $transition;
+
+    &:hover {
+      background: rgba($color-primary, 0.1);
+    }
+
+    @media (max-width: 768px) {
+      top: 1rem;
+      left: 1rem;
+    }
+  }
+
+  &-header {
+    position: relative;
+    padding-top: 3rem;
+    // ... rest of existing header styles ...
+  }
+
+}

@@ -1244,7 +1244,7 @@ const ProductPage = () => {
                                         className="product-card"
                                     >
                                         <div className="product-badge">
-                                            {inStock ? 'In Stock' : 'Pre-Order'}
+                                            {inStock ? 'In Stock' : 'Out of Stock'}
                                         </div>
                                         <div
                                             className={`wishlist-icon ${isInWishlist ? 'active' : ''}`}

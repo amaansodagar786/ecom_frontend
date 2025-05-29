@@ -85,7 +85,7 @@
     &-content {
       background: white;
       width: 100%;
-      max-width: 600px;
+      max-width: 700px;
       border-radius: 10px;
       box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
       overflow: hidden;
@@ -125,6 +125,94 @@
       padding: 1.5rem;
       max-height: 70vh;
       overflow-y: auto;
+
+      .upload-instructions {
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border-left: 4px solid #17a2b8;
+
+        h4 {
+          margin-top: 0;
+          margin-bottom: 1rem;
+          color: #17a2b8;
+        }
+
+        h5 {
+          margin-top: 1.5rem;
+          margin-bottom: 0.75rem;
+          font-size: 1rem;
+          color: #495057;
+        }
+
+        .requirements-grid {
+          display: grid;
+          grid-template-columns: 1fr 2fr;
+          gap: 0.75rem;
+          margin-bottom: 1rem;
+
+          .requirement-item {
+            display: flex;
+            flex-direction: column;
+
+            .requirement-label {
+              font-weight: 600;
+              color: #343a40;
+              font-size: 0.9rem;
+            }
+
+            .requirement-value {
+              color: #6c757d;
+              font-size: 0.9rem;
+            }
+          }
+        }
+
+        .csv-format {
+          margin-top: 1.5rem;
+
+          .format-table {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+
+            .format-header, .format-values {
+              display: contents;
+            }
+
+            span {
+              padding: 0.5rem;
+              text-align: center;
+              font-size: 0.85rem;
+              background: #f8f9fa;
+              border-bottom: 1px solid #dee2e6;
+            }
+
+            .format-values span {
+              background: white;
+              color: #495057;
+              font-weight: 500;
+            }
+          }
+        }
+
+        .note {
+          font-size: 0.85rem;
+          color: #6c757d;
+          padding: 0.5rem;
+          background: #fff3cd;
+          border-radius: 4px;
+          border-left: 3px solid #ffc107;
+
+          p {
+            margin: 0;
+          }
+        }
+      }
 
       .form-group {
         margin-bottom: 1.25rem;
@@ -258,6 +346,24 @@
         max-width: 95%;
       }
 
+      &-body {
+        .requirements-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .csv-format {
+          .format-table {
+            grid-template-columns: 1fr;
+            overflow-x: auto;
+            
+            span {
+              text-align: left;
+              padding: 0.5rem 0.75rem;
+            }
+          }
+        }
+      }
+
       &-footer {
         flex-direction: column;
 
@@ -267,4 +373,127 @@
       }
     }
   }
+}
+
+.device-management-container {
+  // ... existing styles ...
+
+  .device-input-group {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 1rem;
+    width: 100%;
+
+    .search-input {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      border: 1px solid #ced4da;
+      border-radius: 6px;
+      font-size: 1rem;
+
+      &:focus {
+        outline: none;
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.1);
+      }
+    }
+
+    .search-button {
+      padding: 0.75rem 1.5rem;
+      background: #6c757d;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 1rem;
+
+      &:hover {
+        background: #5a6268;
+      }
+
+      &:disabled {
+        background: #a0a4a8;
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  .device-info-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e9ecef;
+
+    h3 {
+      margin-top: 0;
+      margin-bottom: 1.5rem;
+      color: #343a40;
+      font-size: 1.3rem;
+      border-bottom: 1px solid #dee2e6;
+      padding-bottom: 0.75rem;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 1.5rem;
+
+      .info-item {
+        display: flex;
+        flex-direction: column;
+
+        &.full-width {
+          grid-column: 1 / -1;
+        }
+
+        .info-label {
+          font-weight: 600;
+          color: #495057;
+          font-size: 0.9rem;
+          margin-bottom: 0.25rem;
+        }
+
+        .info-value {
+          color: #212529;
+          font-size: 1rem;
+          word-break: break-word;
+        }
+
+        .status-badge {
+          display: inline-block;
+          padding: 0.25rem 0.5rem;
+          border-radius: 4px;
+          font-weight: 500;
+          font-size: 0.85rem;
+
+          &[data-status="IN_STOCK"] {
+            background: #d4edda;
+            color: #155724;
+          }
+
+          &[data-status="SOLD"] {
+            background: #fff3cd;
+            color: #856404;
+          }
+
+          &[data-status="RETURN"] {
+            background: #cce5ff;
+            color: #004085;
+          }
+
+          &[data-status="UNKNOWN"] {
+            background: #f8d7da;
+            color: #721c24;
+          }
+        }
+      }
+    }
+  }
+
+  // ... rest of your existing styles ...
 }

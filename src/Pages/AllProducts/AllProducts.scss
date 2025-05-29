@@ -1099,3 +1099,33 @@
   }
 
 }
+
+.product-offer-tag {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  background: #ff4757;
+  color: white;
+  padding: 6px 14px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  z-index: 2;
+  letter-spacing: 0.5px;
+  pointer-events: none;
+  border-radius: 0 4px 0 0;
+}
+
+// For mobile responsiveness
+@media (max-width: 768px) {
+  .product-offer-tag {
+    padding: 4px 10px;
+    font-size: 0.6rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .product-offer-tag {
+    padding: 3px 8px;
+    font-size: 0.55rem;
+  }
+}

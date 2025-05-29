@@ -174,72 +174,72 @@ const Orders = () => {
   };
 
   const handleAddressSave = async (formData) => {
-  if (!currentOrderForAddressChange) return;
+    if (!currentOrderForAddressChange) return;
 
-  try {
-    setIsProcessing(true);
-    const token = localStorage.getItem('token');
+    try {
+      setIsProcessing(true);
+      const token = localStorage.getItem('token');
 
-    // Encode the order ID for the URL
-    const encodedOrderId = encodeURIComponent(currentOrderForAddressChange.order_id);
+      // Encode the order ID for the URL
+      const encodedOrderId = encodeURIComponent(currentOrderForAddressChange.order_id);
 
-    const response = await axios.post(
-      `${import.meta.env.VITE_SERVER_API}/orders/${encodedOrderId}/change-address`,
-      formData,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      const response = await axios.post(
+        `${import.meta.env.VITE_SERVER_API}/orders/${encodedOrderId}/change-address`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
         }
+      );
+
+      toast.success('Address updated successfully!');
+
+      // Update the local state with the new address
+      setOrders(prevOrders => {
+        return prevOrders.map(order => {
+          if (order.order_id === currentOrderForAddressChange.order_id) {
+            // Update the address in the order
+            return {
+              ...order,
+              address: response.data.address // Assuming your API returns the updated address
+            };
+          }
+          return order;
+        });
+      });
+
+      // Also update filteredOrders to keep them in sync
+      setFilteredOrders(prevOrders => {
+        return prevOrders.map(order => {
+          if (order.order_id === currentOrderForAddressChange.order_id) {
+            return {
+              ...order,
+              address: response.data.address
+            };
+          }
+          return order;
+        });
+      });
+
+      // If the updated order is the currently selected one, update that too
+      if (selectedOrder?.order_id === currentOrderForAddressChange.order_id) {
+        setSelectedOrder(prev => ({
+          ...prev,
+          address: response.data.address
+        }));
       }
-    );
 
-    toast.success('Address updated successfully!');
-    
-    // Update the local state with the new address
-    setOrders(prevOrders => {
-      return prevOrders.map(order => {
-        if (order.order_id === currentOrderForAddressChange.order_id) {
-          // Update the address in the order
-          return {
-            ...order,
-            address: response.data.address // Assuming your API returns the updated address
-          };
-        }
-        return order;
-      });
-    });
-
-    // Also update filteredOrders to keep them in sync
-    setFilteredOrders(prevOrders => {
-      return prevOrders.map(order => {
-        if (order.order_id === currentOrderForAddressChange.order_id) {
-          return {
-            ...order,
-            address: response.data.address
-          };
-        }
-        return order;
-      });
-    });
-
-    // If the updated order is the currently selected one, update that too
-    if (selectedOrder?.order_id === currentOrderForAddressChange.order_id) {
-      setSelectedOrder(prev => ({
-        ...prev,
-        address: response.data.address
-      }));
+      setIsAddressModalOpen(false);
+      setCurrentOrderForAddressChange(null);
+    } catch (error) {
+      console.error('Error updating address:', error);
+      toast.error(error.response?.data?.message || 'Failed to update address');
+    } finally {
+      setIsProcessing(false);
     }
-
-    setIsAddressModalOpen(false);
-    setCurrentOrderForAddressChange(null);
-  } catch (error) {
-    console.error('Error updating address:', error);
-    toast.error(error.response?.data?.message || 'Failed to update address');
-  } finally {
-    setIsProcessing(false);
-  }
-};
+  };
 
 
   const formatIST = (utcDate) => {
@@ -498,22 +498,40 @@ const Orders = () => {
               </>
             )}
             {selectedOrder.order_status === 'APPROVED' && (
-              <button
-                className="reject-btn"
-                onClick={() => changeOrderStatus('REJECTED')}
-                disabled={isProcessing}
-              >
-                {isProcessing ? 'Processing...' : 'Reject Order'}
-              </button>
+              <>
+                <button
+                  className="reject-btn"
+                  onClick={() => changeOrderStatus('REJECTED')}
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? 'Processing...' : 'Reject Order'}
+                </button>
+                <button
+                  className="change-address-btn"
+                  onClick={() => handleChangeAddressClick(selectedOrder)}
+                  disabled={isProcessing}
+                >
+                  Change Address
+                </button>
+              </>
             )}
             {selectedOrder.order_status === 'REJECTED' && (
-              <button
-                className="approve-btn"
-                onClick={() => changeOrderStatus('APPROVED')}
-                disabled={isProcessing}
-              >
-                {isProcessing ? 'Processing...' : 'Approve Order'}
-              </button>
+              <>
+                <button
+                  className="approve-btn"
+                  onClick={() => changeOrderStatus('APPROVED')}
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? 'Processing...' : 'Approve Order'}
+                </button>
+                <button
+                  className="change-address-btn"
+                  onClick={() => handleChangeAddressClick(selectedOrder)}
+                  disabled={isProcessing}
+                >
+                  Change Address
+                </button>
+              </>
             )}
           </div>
         </div>

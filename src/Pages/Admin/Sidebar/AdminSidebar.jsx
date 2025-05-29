@@ -30,6 +30,7 @@ const AdminSidebar = ({ isOpen, toggleSidebar, isMobile }) => {
     { path: '/srnumbermanage', name: 'SR Number Manage', icon: <FiFileText /> },   // document/serial
     { path: '/orderdetails', name: 'Order Details', icon: <FiCreditCard /> },      // credit card/payment
     { path: '/offers', name: 'Product Offers ', icon: <FiLayers /> },      // credit card/payment
+    { path: '/updatedriver', name: 'Uplaod Driver ', icon: <FiLayers /> },     
   ];
 
   const handleNavClick = (path) => {

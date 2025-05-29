@@ -17,6 +17,7 @@ const Address = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [currentAddressId, setCurrentAddressId] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -62,6 +63,29 @@ const Address = () => {
 
     fetchData();
   }, []);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // useEffect(() => {
+  //   if (isOpen) {
+  //     document.body.classList.add('modal-open');
+  //   } else {
+  //     document.body.classList.remove('modal-open');
+  //   }
+
+  //   return () => {
+  //     document.body.classList.remove('modal-open');
+  //   };
+  // }, [isOpen]);
 
   const handleSaveAddress = async (formData) => {
     try {
@@ -266,6 +290,7 @@ const Address = () => {
 
 
         <AddressModal
+          isMobile={isMobile}
           isOpen={isModalOpen}
           onClose={() => {
             setIsModalOpen(false);

@@ -551,7 +551,7 @@ $transition: all 0.3s ease;
   .address-modal {
     max-width: 95%;
     margin: 0.5rem;
-    margin-top: 200px;
+    // margin-top: 200px;
     // z-index: 9999;
   }
 }
@@ -903,4 +903,98 @@ $transition: all 0.3s ease;
       }
     }
   }
+}
+
+
+// Add these styles to your existing SCSS
+
+@media (max-width: 768px) {
+  .address-modal-overlay {
+    align-items: flex-start; // Change from center to flex-start
+    padding-top: 0;
+  }
+
+  .address-modal {
+    margin: 0;
+    max-height: 100vh;
+    height: 100vh;
+    border-radius: 0;
+    max-width: 100%;
+    animation: none; // Remove animation for mobile
+    
+    .modal-header {
+      position: relative; // Change from sticky to relative
+    }
+  }
+
+  // Hide admin layout when modal is open
+  body.modal-open {
+    overflow: hidden;
+    
+    // Adjust these selectors based on your admin layout structure
+    .admin-sidebar,
+    .admin-header {
+      display: none;
+    }
+    
+    .main-content {
+      padding: 0;
+    }
+  }
+}
+
+// Remove the previous mobile styles that were setting margin-top
+// Delete or comment out this part:
+// .address-modal {
+//   margin-top: 200px;
+//   z-index: 9999;
+// }
+
+// When modal is open in mobile view
+body.modal-open {
+  overflow: hidden;
+  
+  // Hide admin layout components
+  .admin-sidebar,
+  .admin-header,
+  .admin-footer {
+    display: none !important;
+  }
+  
+  .main-content {
+    padding: 0 !important;
+  }
+}
+
+// Mobile-specific modal styles
+.address-modal-overlay.mobile-view {
+  align-items: flex-start;
+  padding: 0;
+  
+  .address-modal.mobile-view {
+    margin: 0;
+    max-height: 100vh;
+    height: 100vh;
+    width: 100vw;
+    border-radius: 0;
+    max-width: 100%;
+    
+    .modal-header {
+      position: sticky;
+      top: 0;
+      background: white;
+      z-index: 10;
+    }
+    
+    .address-form {
+      padding-bottom: 2rem;
+      overflow-y: auto;
+      max-height: calc(100vh - 60px); // Adjust based on header height
+    }
+  }
+}
+
+// Make sure the modal is above everything
+.address-modal-overlay {
+  z-index: 9999;
 }

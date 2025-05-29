@@ -209,3 +209,8 @@ $mobile-breakpoint: 768px;
   }
 }
 
+@media (max-width: 768px) {
+  .download-icon {
+    display: none;
+  }
+}

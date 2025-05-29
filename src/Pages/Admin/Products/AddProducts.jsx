@@ -34,9 +34,17 @@ const initialValues = {
       ]
     }
   ],
-  product_images: []
+  product_images: [],
+  product_files: [],
+  file_types: []
 };
 
+// Add this to your allowed file extensions
+const ALLOWED_FILE_EXTENSIONS = [
+  'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
+  'txt', 'csv', 'zip', 'rar', 'mp3', 'wav', 'avi',
+  'mov', 'flv', 'mkv', 'webm', 'ogg', 'exe'
+];
 const AddProducts = () => {
   const [categories, setCategories] = useState([]);
   const [hsnCodes, setHsnCodes] = useState([]);
@@ -126,7 +134,9 @@ const AddProducts = () => {
         then: (schema) => schema.max(1, 'Single product can only have one model'),
         otherwise: (schema) => schema.min(1, 'At least one model is required')
       }),
-    product_images: yup.array().min(1, 'At least one product image is required')
+    product_images: yup.array().min(1, 'At least one product image is required'),
+    product_files: yup.array(),
+    file_types: yup.array()
   });
 
   const scrollToFirstErrorField = (errors, values) => {
@@ -340,148 +350,157 @@ const AddProducts = () => {
     }
   };
 
- const handleSubmit = async (values, { setSubmitting, resetForm }) => {
-  setSubmissionAttempted(true);
+  const handleSubmit = async (values, { setSubmitting, resetForm }) => {
+    setSubmissionAttempted(true);
 
-  try {
-    const formData = new FormData();
+    try {
+      const formData = new FormData();
 
-    // Log the basic product data before adding to formData
-    console.log('Basic Product Data:', {
-      name: values.name,
-      description: values.description,
-      category_id: values.main_category_id,
-      subcategory_id: values.sub_category_id,
-      hsn_id: values.hsn_id || '',
-      product_type: values.product_type,
-      product_images: values.product_images
-    });
-
-    // Add basic product data
-    formData.append('name', values.name);
-    formData.append('description', values.description);
-    formData.append('category_id', values.main_category_id);
-    formData.append('subcategory_id', values.sub_category_id);
-    formData.append('hsn_id', values.hsn_id || '');
-    formData.append('product_type', values.product_type);
-
-    // Log and handle product images
-    console.log('Product Images:', values.product_images);
-    values.product_images.forEach((image) => {
-      formData.append('product_images', image);
-    });
-
-    // For single product
-    if (values.product_type === 'single') {
-      const model = values.models[0];
-
-      console.log('Single Product Model:', {
-        name: model.name,
-        description: model.description,
+      // Log the basic product data before adding to formData
+      console.log('Basic Product Data:', {
+        name: values.name,
+        description: values.description,
+        category_id: values.main_category_id,
+        subcategory_id: values.sub_category_id,
+        hsn_id: values.hsn_id || '',
+        product_type: values.product_type,
+        product_images: values.product_images,
+        Product_files: values.product_files
       });
 
-      // ✅ Append model name and description at top level
-      formData.append('model_name', model.name);
-      formData.append('model_description', model.description);
+      // Add basic product data
+      formData.append('name', values.name);
+      formData.append('description', values.description);
+      formData.append('category_id', values.main_category_id);
+      formData.append('subcategory_id', values.sub_category_id);
+      formData.append('hsn_id', values.hsn_id || '');
+      formData.append('product_type', values.product_type);
 
-      console.log('Single Product Model Specs & Colors:', {
-        specs_count: model.specifications.length,
-        colors_count: model.colors.length
+      // Log and handle product images
+      console.log('Product Images:', values.product_images);
+      values.product_images.forEach((image) => {
+        formData.append('product_images', image);
       });
 
-      // Handle specifications
-      model.specifications.forEach((spec, index) => {
-        console.log(`Spec ${index}:`, { key: spec.key, value: spec.value });
-        formData.append(`spec_key_${index}`, spec.key);
-        formData.append(`spec_value_${index}`, spec.value);
+      console.log('Product Files:', values.product_files);
+      values.product_files.forEach((file, index) => {
+        formData.append('product_files', file);
+        // Get the corresponding file type or default to 'document'
+        const fileType = values.file_types[index] || 'document';
+        formData.append('file_type', fileType);
       });
-      formData.append('specs_count', model.specifications.length);
 
-      // Handle colors
-      model.colors.forEach((color, index) => {
-        console.log(`Color ${index}:`, {
-          name: color.name,
-          price: color.price,
-          original_price: color.original_price,
-          stock: color.stock_quantity,
-          threshold: color.threshold
-        });
-        formData.append(`color_name_${index}`, 'DEFAULT');
-        formData.append(`color_price_${index}`, color.price);
-        formData.append(`color_original_price_${index}`, color.original_price || '');
-        formData.append(`color_stock_${index}`, color.stock_quantity);
-        formData.append(`threshold_${index}`, color.threshold || 10);
-      });
-      formData.append('colors_count', model.colors.length);
-    }
+      // For single product
+      if (values.product_type === 'single') {
+        const model = values.models[0];
 
-    // For variable products
-    else {
-      console.log('Variable Product Models:', {
-        models_count: values.models.length,
-        models: values.models.map(model => ({
+        console.log('Single Product Model:', {
           name: model.name,
           description: model.description,
+        });
+
+        // ✅ Append model name and description at top level
+        formData.append('model_name', model.name);
+        formData.append('model_description', model.description);
+
+        console.log('Single Product Model Specs & Colors:', {
           specs_count: model.specifications.length,
           colors_count: model.colors.length
-        }))
-      });
-
-      values.models.forEach((model, modelIndex) => {
-        formData.append(`model_name_${modelIndex}`, model.name);
-        formData.append(`model_description_${modelIndex}`, model.description);
-
-        console.log(`Model ${modelIndex} Specifications:`, model.specifications);
-        model.specifications.forEach((spec, specIndex) => {
-          formData.append(`model_${modelIndex}_spec_key_${specIndex}`, spec.key);
-          formData.append(`model_${modelIndex}_spec_value_${specIndex}`, spec.value);
         });
 
-        console.log(`Model ${modelIndex} Colors:`, model.colors);
-        model.colors.forEach((color, colorIndex) => {
-          formData.append(`model_${modelIndex}_color_name_${colorIndex}`, 'DEFAULT');
-          formData.append(`model_${modelIndex}_color_price_${colorIndex}`, color.price);
-          formData.append(`model_${modelIndex}_color_original_price_${colorIndex}`, color.original_price || '');
-          formData.append(`model_${modelIndex}_color_stock_${colorIndex}`, color.stock_quantity);
-          formData.append(`model_${modelIndex}_threshold_${colorIndex}`, color.threshold || 10);
+        // Handle specifications
+        model.specifications.forEach((spec, index) => {
+          console.log(`Spec ${index}:`, { key: spec.key, value: spec.value });
+          formData.append(`spec_key_${index}`, spec.key);
+          formData.append(`spec_value_${index}`, spec.value);
         });
+        formData.append('specs_count', model.specifications.length);
 
-        formData.append(`model_colors_count_${modelIndex}`, model.colors.length);
-        formData.append(`model_specs_count_${modelIndex}`, model.specifications.length);
-      });
-
-      formData.append('models_count', values.models.length);
-    }
-
-    // Log the complete FormData before sending
-    console.log('FormData being sent to backend:');
-    for (let [key, value] of formData.entries()) {
-      console.log(key, value);
-    }
-
-    const response = await axios.post(
-      `${import.meta.env.VITE_SERVER_API}/product/add`,
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+        // Handle colors
+        model.colors.forEach((color, index) => {
+          console.log(`Color ${index}:`, {
+            name: color.name,
+            price: color.price,
+            original_price: color.original_price,
+            stock: color.stock_quantity,
+            threshold: color.threshold
+          });
+          formData.append(`color_name_${index}`, 'DEFAULT');
+          formData.append(`color_price_${index}`, color.price);
+          formData.append(`color_original_price_${index}`, color.original_price || '');
+          formData.append(`color_stock_${index}`, color.stock_quantity);
+          formData.append(`threshold_${index}`, color.threshold || 10);
+        });
+        formData.append('colors_count', model.colors.length);
       }
-    );
 
-    console.log('Backend Response:', response.data);
-    toast.success('Product added successfully!');
-    resetForm();
-    setSubmissionAttempted(false);
-  } catch (error) {
-    console.error('Error adding product:', error);
-    console.log('Error Response:', error.response?.data);
-    toast.error(error.response?.data?.message || 'Failed to add product');
-  } finally {
-    setSubmitting(false);
-  }
-};
+      // For variable products
+      else {
+        console.log('Variable Product Models:', {
+          models_count: values.models.length,
+          models: values.models.map(model => ({
+            name: model.name,
+            description: model.description,
+            specs_count: model.specifications.length,
+            colors_count: model.colors.length
+          }))
+        });
+
+        values.models.forEach((model, modelIndex) => {
+          formData.append(`model_name_${modelIndex}`, model.name);
+          formData.append(`model_description_${modelIndex}`, model.description);
+
+          console.log(`Model ${modelIndex} Specifications:`, model.specifications);
+          model.specifications.forEach((spec, specIndex) => {
+            formData.append(`model_${modelIndex}_spec_key_${specIndex}`, spec.key);
+            formData.append(`model_${modelIndex}_spec_value_${specIndex}`, spec.value);
+          });
+
+          console.log(`Model ${modelIndex} Colors:`, model.colors);
+          model.colors.forEach((color, colorIndex) => {
+            formData.append(`model_${modelIndex}_color_name_${colorIndex}`, 'DEFAULT');
+            formData.append(`model_${modelIndex}_color_price_${colorIndex}`, color.price);
+            formData.append(`model_${modelIndex}_color_original_price_${colorIndex}`, color.original_price || '');
+            formData.append(`model_${modelIndex}_color_stock_${colorIndex}`, color.stock_quantity);
+            formData.append(`model_${modelIndex}_threshold_${colorIndex}`, color.threshold || 10);
+          });
+
+          formData.append(`model_colors_count_${modelIndex}`, model.colors.length);
+          formData.append(`model_specs_count_${modelIndex}`, model.specifications.length);
+        });
+
+        formData.append('models_count', values.models.length);
+      }
+
+      // Log the complete FormData before sending
+      console.log('FormData being sent to backend:');
+      for (let [key, value] of formData.entries()) {
+        console.log(key, value);
+      }
+
+      const response = await axios.post(
+        `${import.meta.env.VITE_SERVER_API}/product/add`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        }
+      );
+
+      console.log('Backend Response:', response.data);
+      toast.success('Product added successfully!');
+      resetForm();
+      setSubmissionAttempted(false);
+    } catch (error) {
+      console.error('Error adding product:', error);
+      console.log('Error Response:', error.response?.data);
+      toast.error(error.response?.data?.message || 'Failed to add product');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
 
   const getSubcategories = (mainCategoryId) => {
@@ -743,6 +762,90 @@ const AddProducts = () => {
                                   const updatedImages = [...values.product_images];
                                   updatedImages.splice(index, 1);
                                   setFieldValue('product_images', updatedImages);
+                                }}
+                              >
+                                <FaTrash />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* NEW: Product Files Section */}
+                  {/* Product Files Section */}
+                  <div className="form-section">
+                    <h3 className="section-title">Product Files (Optional)</h3>
+                    <div className="form-group">
+                      <div className="file-upload-container">
+                        <input
+                          type="file"
+                          id="product-files"
+                          multiple
+                          className="file-input"
+                          onChange={(e) => {
+                            const files = Array.from(e.target.files);
+                            // Filter files by allowed extensions
+                            const validFiles = files.filter(file => {
+                              const extension = file.name.split('.').pop().toLowerCase();
+                              return ALLOWED_FILE_EXTENSIONS.includes(extension);
+                            });
+
+                            if (validFiles.length !== files.length) {
+                              toast.warning('Some files were skipped due to unsupported formats');
+                            }
+
+                            setFieldValue('product_files', [
+                              ...values.product_files,
+                              ...validFiles
+                            ]);
+                            // Initialize file types for new files
+                            setFieldValue('file_types', [
+                              ...values.file_types,
+                              ...Array(validFiles.length).fill('document')
+                            ]);
+                          }}
+                        />
+                        <label htmlFor="product-files" className="upload-button">
+                          <FaUpload /> Upload Files
+                        </label>
+                        <p className="file-hint">
+                          Supports: {ALLOWED_FILE_EXTENSIONS.join(', ')}
+                        </p>
+                      </div>
+
+                      {values.product_files.length > 0 && (
+                        <div className="file-list">
+                          {values.product_files.map((file, index) => (
+                            <div key={index} className="file-item">
+                              <div className="file-info">
+                                <span className="file-name">
+                                  {typeof file === 'string' ? file : file.name}
+                                </span>
+                                <Field
+                                  as="select"
+                                  name={`file_types[${index}]`}
+                                  className="file-type-select"
+                                >
+                                  <option value="document">Document</option>
+                                  <option value="manual">Manual</option>
+                                  <option value="software">Software</option>
+                                  <option value="certificate">Certificate</option>
+                                  <option value="other">Other</option>
+                                </Field>
+                              </div>
+                              <button
+                                type="button"
+                                className="remove-file"
+                                onClick={() => {
+                                  const updatedFiles = [...values.product_files];
+                                  updatedFiles.splice(index, 1);
+                                  setFieldValue('product_files', updatedFiles);
+
+                                  const updatedTypes = [...values.file_types];
+                                  updatedTypes.splice(index, 1);
+                                  setFieldValue('file_types', updatedTypes);
                                 }}
                               >
                                 <FaTrash />

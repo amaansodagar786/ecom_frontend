@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { FiArrowLeft, FiSearch, FiFilter, FiChevronDown } from 'react-icons/fi';
+import { FiArrowLeft, FiSearch, FiChevronDown } from 'react-icons/fi';
 import './MainProducts.scss';
 import Loader from "../../Components/Loader/Loader";
-
 
 const MainProducts = () => {
   const { categoryId } = useParams();
@@ -15,9 +14,7 @@ const MainProducts = () => {
   const [error, setError] = useState(null);
   const [sortOption, setSortOption] = useState('default');
   const [colorFilter, setColorFilter] = useState('all');
-  const [showFilters, setShowFilters] = useState(false);
   const [availableColors, setAvailableColors] = useState([]);
-
 
   useEffect(() => {
     if (!categoryId) {
@@ -111,6 +108,7 @@ const MainProducts = () => {
 
     return null;
   };
+
   const handleProductClick = (product, e) => {
     console.log('Product clicked:', product.product_id);
     if (e) e.stopPropagation();
@@ -118,11 +116,11 @@ const MainProducts = () => {
     const productSlug = product.name.toLowerCase().replace(/\s+/g, '-');
     const productId = product.product_id;
 
-    // navigate(`/products/${productId}/${productSlug}`, {
     navigate(`/products/${productSlug}`, {
       state: { product },
     });
   };
+
   const filteredProducts = Array.isArray(products)
     ? products
       .filter((product) =>
@@ -156,7 +154,7 @@ const MainProducts = () => {
             <FiArrowLeft /> Back
           </button>
         </div>
-        <div>  <Loader/> </div>
+        <div>  <Loader /> </div>
       </div>
     );
   }
@@ -190,47 +188,21 @@ const MainProducts = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <button
-          className="filter-toggle"
-          onClick={() => setShowFilters(!showFilters)}
-        >
-          <FiFilter /> Filters <FiChevronDown className={`chevron ${showFilters ? 'open' : ''}`} />
-        </button>
-      </div>
-
-      {showFilters && (
-        <div className="filters-panel">
-          <div className="filter-group">
-            <label>Sort by:</label>
-            <select
-              value={sortOption}
-              onChange={(e) => setSortOption(e.target.value)}
-              className="filter-select"
-            >
-              <option value="default">Default</option>
-              <option value="price-asc">Price: Low to High</option>
-              <option value="price-desc">Price: High to Low</option>
-              <option value="name-asc">Name: A to Z</option>
-              <option value="name-desc">Name: Z to A</option>
-            </select>
-          </div>
-
-          {/* <div className="filter-group">
-            <label>Color:</label>
-            <select
-              value={colorFilter}
-              onChange={(e) => setColorFilter(e.target.value)}
-              className="filter-select"
-            >
-              {availableColors.map(color => (
-                <option key={color} value={color}>
-                  {color.charAt(0).toUpperCase() + color.slice(1)}
-                </option>
-              ))}
-            </select>
-          </div> */}
+        <div className="sort-container">
+          <label>Sort by:</label>
+          <select
+            value={sortOption}
+            onChange={(e) => setSortOption(e.target.value)}
+            className="sort-select"
+          >
+            <option value="default">Default</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+            <option value="name-asc">Name: A to Z</option>
+            <option value="name-desc">Name: Z to A</option>
+          </select>
         </div>
-      )}
+      </div>
 
       <h2 className="section-title">Products</h2>
       <div className="product-grid">
@@ -267,6 +239,12 @@ const MainProducts = () => {
                   )
                 ) : (
                   <div className="no-image">No Image Available</div>
+                )}
+
+                {product.offers && (
+                  <div className="product-offer-div">
+                    {product.offers}
+                  </div>
                 )}
                 <div className="product-details">
                   <h3>{product.name || 'Unnamed Product'}</h3>

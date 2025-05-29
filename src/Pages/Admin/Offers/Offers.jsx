@@ -11,8 +11,9 @@ const Offers = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [selectedProduct, setSelectedProduct] = useState(null);
-    const [offerValue, setOfferValue] = useState('');
+    const [offerText, setOfferText] = useState('');
     const [showModal, setShowModal] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -47,46 +48,42 @@ const Offers = () => {
         navigate(-1);
     };
 
-    const openOfferModal = (product) => {
+    const openOfferModal = (product, editing = false) => {
         setSelectedProduct(product);
-        setOfferValue(product.offers || '');
+        setOfferText(product.offers || '');
+        setIsEditing(editing);
         setShowModal(true);
     };
 
     const closeModal = () => {
         setShowModal(false);
         setSelectedProduct(null);
-        setOfferValue('');
+        setOfferText('');
+        setIsEditing(false);
     };
 
     const handleOfferChange = (e) => {
-        const value = e.target.value;
-        if (value === '' || (value >= 0 && value <= 100)) {
-            setOfferValue(value);
-        }
+        setOfferText(e.target.value);
     };
 
     const saveOffer = async () => {
-        if (!selectedProduct || offerValue === '') {
-            console.warn("Missing selectedProduct or offerValue");
+        if (!selectedProduct) {
+            console.warn("Missing selectedProduct");
             return;
         }
 
         try {
             const payload = {
                 product_id: selectedProduct.product_id,
-                offer_value: offerValue
+                offer_text: offerText.trim() || null
             };
-            console.log("Sending offer update payload:", payload); // ✅ Debug log
 
-            const response = await axios.post(`${import.meta.env.VITE_SERVER_API}/offers/update`, payload);
-
-            console.log("Offer update response:", response.data); // ✅ Debug log
+            const response = await axios.post(`${import.meta.env.VITE_SERVER_API}/offers`, payload);
 
             // Update local state
             const updatedProducts = products.map(product =>
                 product.product_id === selectedProduct.product_id
-                    ? { ...product, offers: offerValue }
+                    ? { ...product, offers: offerText.trim() || null }
                     : product
             );
 
@@ -94,40 +91,31 @@ const Offers = () => {
             setFilteredProducts(updatedProducts);
             closeModal();
         } catch (err) {
-            console.error("Error updating offer:", err); // ✅ Debug log
+            console.error("Error updating offer:", err);
             setError(err.message);
         }
     };
-
-
 
     const removeOffer = async (productId) => {
-        try {
-            const payload = {
-                product_id: productId,
-                offer_value: null
-            };
-            console.log("Sending remove offer payload:", payload); // ✅ Debug log
+        if (window.confirm("Are you sure you want to remove this offer?")) {
+            try {
+                await axios.delete(`${import.meta.env.VITE_SERVER_API}/offers/${productId}`);
 
-            const response = await axios.post(`${import.meta.env.VITE_SERVER_API}/offers/update`, payload);
+                // Update local state
+                const updatedProducts = products.map(product =>
+                    product.product_id === productId
+                        ? { ...product, offers: null }
+                        : product
+                );
 
-            console.log("Remove offer response:", response.data); // ✅ Debug log
-
-            // Update local state
-            const updatedProducts = products.map(product =>
-                product.product_id === productId
-                    ? { ...product, offers: null }
-                    : product
-            );
-
-            setProducts(updatedProducts);
-            setFilteredProducts(updatedProducts);
-        } catch (err) {
-            console.error("Error removing offer:", err); // ✅ Debug log
-            setError(err.message);
+                setProducts(updatedProducts);
+                setFilteredProducts(updatedProducts);
+            } catch (err) {
+                console.error("Error removing offer:", err);
+                setError(err.message);
+            }
         }
     };
-
 
     if (loading) {
         return (
@@ -183,8 +171,6 @@ const Offers = () => {
                                 ? `${baseUrl}${product.images[0].image_url}`
                                 : null;
 
-                            console.log(`Product: ${product.name}, Image URL: ${imageUrl || 'No Image'}`); // ✅ Fixed URL
-
                             return (
                                 <div key={product.product_id} className="product-card">
                                     <div className="product-image">
@@ -204,13 +190,21 @@ const Offers = () => {
                                         </div>
                                         {product.offers ? (
                                             <div className="offer-active">
-                                                <span className="offer-badge">{product.offers}% OFF</span>
-                                                <button
-                                                    onClick={() => removeOffer(product.product_id)}
-                                                    className="remove-offer"
-                                                >
-                                                    Remove Offer
-                                                </button>
+                                                <span className="offer-badge">{product.offers}</span>
+                                                <div className="offer-actions">
+                                                    <button
+                                                        onClick={() => openOfferModal(product, true)}
+                                                        className="edit-offer"
+                                                    >
+                                                        Edit
+                                                    </button>
+                                                    <button
+                                                        onClick={() => removeOffer(product.product_id)}
+                                                        className="remove-offer danger"
+                                                    >
+                                                        Remove
+                                                    </button>
+                                                </div>
                                             </div>
                                         ) : (
                                             <button
@@ -229,34 +223,33 @@ const Offers = () => {
                             <p>No products found matching your search.</p>
                         </div>
                     )}
-
-
                 </div>
 
                 {showModal && (
                     <div className="modal-overlay">
                         <div className="offer-modal">
-                            <h2>Add Offer for {selectedProduct?.name}</h2>
+                            <h2>{isEditing ? 'Edit' : 'Add'} Offer for {selectedProduct?.name}</h2>
                             <div className="modal-content">
                                 <div className="input-group">
-                                    <label htmlFor="offer">Discount Percentage:</label>
-                                    <input
-                                        type="number"
+                                    <label htmlFor="offer">Offer Text:</label>
+                                    <textarea
                                         id="offer"
-                                        min="0"
-                                        max="100"
-                                        value={offerValue}
+                                        value={offerText}
                                         onChange={handleOfferChange}
-                                        placeholder="Enter percentage (0-100)"
+                                        placeholder="Enter your offer text (e.g., 'Special discount', 'Limited time offer', etc.)"
+                                        rows={4}
                                     />
-                                    <span>%</span>
                                 </div>
                                 <div className="modal-actions">
                                     <button onClick={closeModal} className="cancel-button">
                                         Cancel
                                     </button>
-                                    <button onClick={saveOffer} className="save-button">
-                                        Save Offer
+                                    <button 
+                                        onClick={saveOffer} 
+                                        className="save-button"
+                                        disabled={!offerText.trim()}
+                                    >
+                                        {isEditing ? 'Update Offer' : 'Save Offer'}
                                     </button>
                                 </div>
                             </div>

@@ -133,10 +133,9 @@ const Checkout = () => {
         setActiveStep(2);
     };
 
-    const handlePlaceOrder = async (isPaymentCompleted = false) => {
+    const handlePlaceOrder = async () => {
         try {
-
-            setIsProcessingPayment(true); // Start loading
+            setIsProcessingPayment(true);
             const isBuyNowFlow = cartItems.length === 1 && location.state?.isBuyNowFlow;
 
             if (!selectedAddress) {
@@ -146,19 +145,9 @@ const Checkout = () => {
                 throw new Error('Please select a payment method');
             }
 
-            // For UPI/Bank, only proceed if payment is marked as completed
-            if ((paymentMethod === 'UPI' || paymentMethod === 'Bank Transfer') && !isPaymentCompleted) {
-                if (paymentMethod === 'UPI') {
-                    setIsUPIModalOpen(true);
-                } else {
-                    setIsBankModalOpen(true);
-                }
-                return;
-            }
-
             const baseOrderData = {
                 address_id: selectedAddress,
-                payment_method: paymentMethod, // Include payment method in the order data
+                payment_method: paymentMethod,
                 payment_type: paymentMethod === 'Cash on Delivery' ? 'cod' :
                     paymentMethod === 'UPI' ? 'upi' : 'bank_transfer',
                 payment_status: paymentMethod === 'Cash on Delivery' ? 'pending' : 'paid',
@@ -243,6 +232,8 @@ const Checkout = () => {
                     navigate('/login', { state: { from: location.pathname } });
                 }, 1500);
             }
+        } finally {
+            setIsProcessingPayment(false);
         }
     };
 
@@ -496,6 +487,43 @@ const Checkout = () => {
                         </button>
                     </div>
 
+                    {/* UPI Payment Details - shown when selected */}
+                    {paymentMethod === 'UPI' && (
+                        <div className="payment-details-container">
+                            <div className="payment-details">
+                                <div className="payment-qr-code">
+                                    <img src={qrcode} alt="UPI QR Code" />
+                                </div>
+                                <div className="payment-info">
+                                    <h3>UPI Payment Details</h3>
+                                    <p>Amount to pay: <strong>₹{total.toFixed(2)}</strong></p>
+                                    <p>UPI ID: <strong>maseehumtaskmanager@icici</strong></p>
+                                    <p>Please complete the payment using the QR code or UPI ID above</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Bank Transfer Details - shown when selected */}
+                    {paymentMethod === 'Bank Transfer' && (
+                        <div className="payment-details-container">
+                            <div className="payment-details">
+                                <div className="payment-qr-code">
+                                    <img src={bank} alt="Bank Logo" />
+                                </div>
+                                <div className="payment-info">
+                                    <h3>Bank Transfer Details</h3>
+                                    <p>Amount to pay: <strong>₹{total.toFixed(2)}</strong></p>
+                                    <p>Bank Name: <strong>ICICI</strong></p>
+                                    <p>Account Name: <strong>Maseehum Task Manager Pvt Ltd</strong></p>
+                                    <p>Account Number: <strong>418005000828</strong></p>
+                                    <p>IFSC Code: <strong>ICIC0004180</strong></p>
+                                    <p>Please complete the payment using the bank details above</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="final-order-summary">
                         <h3>Order Total: ₹{total.toFixed(2)}</h3>
                         <p>Including delivery charge: {deliveryCharge === 0 ? 'FREE' : `₹${deliveryCharge.toFixed(2)}`}</p>
@@ -506,7 +534,7 @@ const Checkout = () => {
                             </button>
                             <button
                                 className="place-order-btn"
-                                onClick={() => handlePlaceOrder(false)}
+                                onClick={() => handlePlaceOrder(true)}
                                 disabled={!paymentMethod || isProcessingPayment}
                             >
                                 {isProcessingPayment ? (
@@ -515,7 +543,7 @@ const Checkout = () => {
                                         Processing...
                                     </span>
                                 ) : (
-                                    paymentMethod === 'Cash on Delivery' ? 'Place Order' : 'Pay'
+                                    paymentMethod === 'Cash on Delivery' ? 'Place Order' : 'Place Order'
                                 )}
                             </button>
                         </div>
@@ -523,73 +551,8 @@ const Checkout = () => {
                 </div>
             )}
 
-            {/* UPI Payment Modal - remains the same */}
-            {isUPIModalOpen && (
-                <div className="upi-modal-overlay">
-                    <div className="upi-modal">
-                        <div className="upi-modal-header">
-                            <h3>Complete UPI Payment</h3>
-                            <button onClick={() => setIsUPIModalOpen(false)}>×</button>
-                        </div>
-                        <div className="upi-modal-content">
-                            <div className="upi-qr-code">
-                                <img src={qrcode} alt="UPI QR Code" />
-                                <p>Scan this QR code to pay</p>
-                            </div>
-                            <div className="upi-payment-details">
-                                <p>Amount to pay: <strong>₹{total.toFixed(2)}</strong></p>
-                                <p>UPI ID: <strong>maseehumtaskmanager@icici</strong></p>
-                                <p>Please complete the payment and then click the button below</p>
-                            </div>
-                            <button
-                                className="payment-done-btn"
-                                onClick={() => {
-                                    setIsUPIModalOpen(false);
-                                    handlePlaceOrder(true);
-                                }}
-                            >
-                                I've Completed the Payment
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
 
-            {/* New Bank Transfer Modal */}
-            {isBankModalOpen && (
-                <div className="upi-modal-overlay">
-                    <div className="upi-modal">
-                        <div className="upi-modal-header">
-                            <h3>Bank Transfer Details</h3>
-                            <button onClick={() => setIsBankModalOpen(false)}>×</button>
-                        </div>
-                        <div className="upi-modal-content">
-                            <div className="upi-qr-code">
-                                {/* You can add a bank logo here if needed */}
-                                <img src={bank} alt="Bank Logo" />
-                            </div>
-                            <div className="upi-payment-details">
-                                <p>Amount to pay: <strong>₹{total.toFixed(2)}</strong></p>
-                                <p>Bank Name: <strong>ICICI</strong></p>
-                                <p>Account Name: <strong>Maseehum Task Manager Pvt Ltd</strong></p>
-                                <p>Account Number: <strong>418005000828</strong></p>
-                                <p>IFSC Code: <strong>ICIC0004180</strong></p>
-                                <p>Please complete the payment and then click the button below</p>
-                                {/* <p className="note">Note: Please include your order ID in the payment reference</p> */}
-                            </div>
-                            <button
-                                className="payment-done-btn"
-                                onClick={() => {
-                                    setIsBankModalOpen(false);
-                                    handlePlaceOrder(true);
-                                }}
-                            >
-                                I've Completed the Payment
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+
             <ToastContainer
                 position="top-center"
                 autoClose={3000}

@@ -19,6 +19,46 @@ const Device = () => {
     in_out: 1
   });
   const [creatingDevice, setCreatingDevice] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState(null);
+  const [searching, setSearching] = useState(false);
+
+  const handleSearch = async () => {
+    if (!searchTerm.trim()) {
+      toast.error('Please enter a search term');
+      return;
+    }
+
+    setSearching(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_SERVER_API}/search-device`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ search_term: searchTerm.trim() })
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Search failed');
+      }
+
+      setSearchResults(data.data);
+      if (!data.data) {
+        toast.info('No device found with this SR number');
+      }
+    } catch (error) {
+      console.error('Search Error:', error);
+      toast.error(error.message || 'Failed to search device');
+      setSearchResults(null);
+    } finally {
+      setSearching(false);
+    }
+  };
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
@@ -31,6 +71,9 @@ const Device = () => {
       toast.error('Please select a file first.');
       return;
     }
+
+    setUploading(true);
+    setUploadStatus('Uploading...');
 
     const formData = new FormData();
     formData.append('file', file);
@@ -46,89 +89,73 @@ const Device = () => {
       });
 
       const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.message || 'Upload failed');
+        throw new Error(data.message || `Upload failed with status ${response.status}`);
       }
 
-      const successMessage = data.message || 'Upload successful!';
+      const successMessage = data.message || `Upload successful! Processed ${data.success_count || 0} rows`;
       setUploadStatus(successMessage);
       setFile(null);
       setShowUploadModal(false);
       toast.success(successMessage);
 
-    } catch (error) {
-      console.error('Upload Error:', error);
-      let errorMessage = 'Upload failed.';
-
-      if (error.response) {
-        errorMessage = error.response.data.message || errorMessage;
-      } else if (error.request) {
-        errorMessage = 'No response from server. Check your connection.';
+      if (data.failed_count > 0) {
+        toast.warning(`${data.failed_count} rows failed. Check console for details.`);
       }
 
-      setUploadStatus(errorMessage);
-      toast.error(errorMessage);
+    } catch (error) {
+      console.error('Upload Error:', error);
+      setUploadStatus(error.message || 'Upload failed.');
+      toast.error(error.message || 'Upload failed.');
+    } finally {
+      setUploading(false);
     }
   };
 
- const createNewDevice = async () => {
-  console.log('Attempting to create device with data:', newDeviceData);
-  
-  // Changed from device_name to model_name
-  if (!newDeviceData.device_srno || !newDeviceData.model_name) {
-    const errorMsg = `Validation failed: ${!newDeviceData.device_srno ? 'Device SR No required' : ''} ${!newDeviceData.model_name ? 'Model Name required' : ''}`;
-    console.error(errorMsg);
-    toast.error('Device SR No and Model Name are required');
-    return;
-  }
-
-  setCreatingDevice(true);
-  try {
-    console.log('Sending request to server...');
-    const response = await fetch(`${import.meta.env.VITE_SERVER_API}/add-device`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        ...newDeviceData,
-        in_out: parseInt(newDeviceData.in_out) || 1
-      })
-    });
-
-    console.log('Response received, status:', response.status);
-    const data = await response.json();
-    console.log('Response data:', data);
-
-    if (!response.ok) {
-      throw new Error(data.message || `Server responded with status ${response.status}`);
+  const createNewDevice = async () => {
+    if (!newDeviceData.device_srno || !newDeviceData.model_name) {
+      toast.error('Device SR No and Model Name are required');
+      return;
     }
 
-    toast.success('Device created successfully');
-    console.log('Device created successfully:', data);
-    setShowCreateModal(false);
-    setNewDeviceData({
-      device_srno: '',
-      model_name: '',
-      sku_id: '',
-      price: '',
-      remarks: '',
-      order_id: '',
-      in_out: 1
-    });
-  } catch (error) {
-    console.error('Error creating device:', {
-      error: error,
-      message: error.message,
-      stack: error.stack
-    });
-    toast.error(error.message || 'Failed to create device');
-  } finally {
-    console.log('Request completed');
-    setCreatingDevice(false);
-  }
-};
+    setCreatingDevice(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER_API}/add-device`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          ...newDeviceData,
+          in_out: parseInt(newDeviceData.in_out) || 1
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || `Server responded with status ${response.status}`);
+      }
+
+      toast.success('Device created successfully');
+      setShowCreateModal(false);
+      setNewDeviceData({
+        device_srno: '',
+        model_name: '',
+        sku_id: '',
+        price: '',
+        remarks: '',
+        order_id: '',
+        in_out: 1
+      });
+    } catch (error) {
+      console.error('Create Error:', error);
+      toast.error(error.message || 'Failed to create device');
+    } finally {
+      setCreatingDevice(false);
+    }
+  };
+
   return (
     <AdminLayout>
       <div className="device-management-container">
@@ -136,14 +163,24 @@ const Device = () => {
 
         <div className="device-input-section">
           <div className="device-input-group">
-            {/* <input
+            <input
               type="text"
-              placeholder="Enter Order ID"
-              value={newDeviceData.order_id}
-              onChange={(e) => setNewDeviceData({...newDeviceData, order_id: e.target.value})}
-              className="order-id-input"
-            /> */}
+              className="search-input"
+              placeholder="Search by SR Number"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            />
+            <button
+              className="search-button"
+              onClick={handleSearch}
+              disabled={searching}
+            >
+              {searching ? 'Searching...' : 'Search'}
+            </button>
+          </div>
 
+          <div className="device-input-group">
             <div className="device-action-buttons">
               <button
                 className="create-device-button"
@@ -151,7 +188,6 @@ const Device = () => {
               >
                 Create New Device
               </button>
-
               <button
                 className="import-device-button"
                 onClick={() => setShowUploadModal(true)}
@@ -161,6 +197,62 @@ const Device = () => {
             </div>
           </div>
         </div>
+
+        {/* Search Results */}
+        {searchResults && (
+          <div className="device-info-card">
+            <h3>Device Information</h3>
+            <div className="info-grid">
+              <div className="info-item">
+                <span className="info-label">SR Number:</span>
+                <span className="info-value">{searchResults.device_srno || 'N/A'}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Model Name:</span>
+                <span className="info-value">{searchResults.model_name || 'N/A'}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">SKU ID:</span>
+                <span className="info-value">{searchResults.sku_id || 'N/A'}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Status:</span>
+                <span className="info-value status-badge">{searchResults.status || 'N/A'}</span>
+              </div>
+              
+              {searchResults.status === 'SOLD' && (
+                <>
+                  <div className="info-item">
+                    <span className="info-label">Purchase Price:</span>
+                    <span className="info-value">₹{searchResults.in_price || 'N/A'}</span>
+                  </div>
+                  <div className="info-item">
+                    <span className="info-label">Selling Price:</span>
+                    <span className="info-value">₹{searchResults.out_price || 'N/A'}</span>
+                  </div>
+                  <div className="info-item">
+                    <span className="info-label">Profit:</span>
+                    <span className="info-value">₹{searchResults.profit || 'N/A'}</span>
+                  </div>
+                </>
+              )}
+              
+              {searchResults.status === 'IN_STOCK' && (
+                <div className="info-item">
+                  <span className="info-label">Purchase Price:</span>
+                  <span className="info-value">₹{searchResults.in_price || 'N/A'}</span>
+                </div>
+              )}
+              
+              {searchResults.message && (
+                <div className="info-item full-width">
+                  <span className="info-label">Details:</span>
+                  <span className="info-value">{searchResults.message}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Create Device Modal */}
         {showCreateModal && (
@@ -186,7 +278,7 @@ const Device = () => {
                   <label className="required">Model Name</label>
                   <input
                     type="text"
-                    value={newDeviceData.model_name}  // Changed from device_name
+                    value={newDeviceData.model_name}
                     onChange={(e) => setNewDeviceData({ ...newDeviceData, model_name: e.target.value })}
                     required
                   />
@@ -275,6 +367,48 @@ const Device = () => {
               </div>
 
               <div className="device-modal-body">
+                <div className="upload-instructions">
+                  <h4>CSV File Requirements</h4>
+                  <div className="requirements-grid">
+                    <div className="requirement-item">
+                      <span className="requirement-label">Mandatory Fields:</span>
+                      <span className="requirement-value">device_srno, model_name, in_out</span>
+                    </div>
+                    <div className="requirement-item">
+                      <span className="requirement-label">Optional Fields:</span>
+                      <span className="requirement-value">sku_id, order_id, price, remarks</span>
+                    </div>
+                  </div>
+                  
+                  <div className="csv-format">
+                    <h5>CSV Format:</h5>
+                    <div className="format-table">
+                      <div className="format-header">
+                        <span>Column 1</span>
+                        <span>Column 2</span>
+                        <span>Column 3</span>
+                        <span>Column 4</span>
+                        <span>Column 5</span>
+                        <span>Column 6</span>
+                        <span>Column 7</span>
+                      </div>
+                      <div className="format-values">
+                        <span>device_srno</span>
+                        <span>model_name</span>
+                        <span>sku_id</span>
+                        <span>order_id</span>
+                        <span>in_out</span>
+                        <span>price</span>
+                        <span>remarks</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="note">
+                    <p><strong>Note:</strong> Column names in your CSV can be anything, but the data must be in this exact order.</p>
+                  </div>
+                </div>
+
                 <div className="form-group">
                   <label>Select File (CSV or Excel)</label>
                   <input
@@ -304,9 +438,9 @@ const Device = () => {
                 <button
                   className="submit-button"
                   onClick={handleUpload}
-                  disabled={!file}
+                  disabled={!file || uploading}
                 >
-                  Upload
+                  {uploading ? 'Uploading...' : 'Upload'}
                 </button>
               </div>
             </div>

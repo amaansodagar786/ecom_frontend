@@ -57,10 +57,10 @@ const OrderConfirm = () => {
       <div className="order-card">
         <div className="animation-wrapper">
           {animationData ? (
-            <Lottie 
-              animationData={animationData} 
-              loop={true} 
-              className="lottie-animation" 
+            <Lottie
+              animationData={animationData}
+              loop={true}
+              className="lottie-animation"
             />
           ) : (
             <div className="loading-animation-placeholder">
@@ -72,7 +72,7 @@ const OrderConfirm = () => {
         <p className="confirmation-text">
           We're processing your order and will notify you once it's confirmed.
         </p>
-        
+
         {orderData && (
           <div className="order-details-section">
             <div className="order-info">
@@ -80,7 +80,7 @@ const OrderConfirm = () => {
               <p><strong>Order ID:</strong> {orderData.order?.order_id || 'N/A'}</p>
               <p><strong>Order Date:</strong> {new Date(orderData.order?.created_at).toLocaleString()}</p>
             </div>
-            
+
             <div className="shipping-info">
               <h3>Shipping Address</h3>
               <div className="address-block">
@@ -100,11 +100,15 @@ const OrderConfirm = () => {
             </div>
           </div>
         )}
-        
+        <div className="note-section">
+          <p>📞 <strong>Note</strong> - Please WhatsApp payment screenshot with Order ID or call us</p>
+          <p>📞 <strong>नोट</strong> - कृपया ऑर्डर आईडी के साथ भुगतान स्क्रीनशॉट व्हाट्सएप करें या हमें कॉल करें</p>
+        </div>
+
         <p className="countdown-text">
           Redirecting to home in {countdown} seconds...
         </p>
-        
+
         <button className="home-btn" onClick={() => navigate('/')}>
           Back to Home Now
         </button>

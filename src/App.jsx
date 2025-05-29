@@ -51,16 +51,26 @@ import OrderConfirm from './Components/OrderConfirm/OrderConfirm';
 import Device from './Pages/Admin/DeviceAdd/Device';
 import OrderDetails from './Pages/Admin/CompleteDetails/OrderDetails';
 import Offers from './Pages/Admin/Offers/Offers';
+import Drivers from './Pages/User/Drivers/Drivers';
+import UpdateDrivers from './Pages/Admin/UpdateDrivers/UpdateDrivers';
+import usePageTracking from './Components/Hooks/usePageTracking';
 // import Dummyorders from './Pages/Admin/Orders/Dummyorders';
 
 
-
+function PageTracker() {
+  usePageTracking();
+  return null;
+}
 
 function App() {
+
+  
+
   return (
     <AuthProvider>
       <Router basename="/">
       <ScrollToTop />
+      <PageTracker />
         <Navbar />
         <Routes>
           <Route path="/coming" element={<ComingSoon />} />
@@ -86,6 +96,7 @@ function App() {
           <Route path="/support" element={<Support />} />
           <Route path="/auth-callback" element={<AuthCallback />} />
           <Route path="/forgotpassword" element={<ForgotPassword />} />
+          <Route path="/drivers" element={<Drivers />} />
           {/* <Route path="/loader" element={<Loader />} /> */}
 
           {/* CHECKOUT  */}
@@ -109,6 +120,7 @@ function App() {
           <Route path="/srnumbermanage" element={<AdminRoute> <Device /> </AdminRoute> } />
           <Route path="/orderdetails" element={<AdminRoute> <OrderDetails /> </AdminRoute> } />
           <Route path="/offers" element={<AdminRoute> <Offers /> </AdminRoute> } />
+          <Route path="/updatedriver" element={<AdminRoute> <UpdateDrivers /> </AdminRoute> } />
           
 
 

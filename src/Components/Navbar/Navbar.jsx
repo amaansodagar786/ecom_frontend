@@ -8,7 +8,8 @@ import {
   FiUser,
   FiLogIn,
   FiLogOut,
-  FiGrid
+  FiGrid,
+  FiDownload
 } from 'react-icons/fi';
 import { FaHeart } from 'react-icons/fa';
 
@@ -36,6 +37,7 @@ const Navbar = () => {
   const handleCartClick = () => setIsCartOpen(true);
   const handleWishlistClick = () => navigate('/wishlist');
   const handleAllProductsClick = () => navigate('/products');
+  const handleDownloadsClick = () => navigate('/drivers');
 
   return (
     <>
@@ -63,8 +65,14 @@ const Navbar = () => {
             </ul>
 
             <div className="nav-icons">
+              <div className="nav-icon download-icon" onClick={handleDownloadsClick}>
+                <FiDownload className="icon" />
+                
+              </div>
+
               <div className="nav-icon" onClick={handleAllProductsClick}>
                 <FiGrid className="icon" />
+                
               </div>
 
               <div className="nav-icon" onClick={handleWishlistClick}>

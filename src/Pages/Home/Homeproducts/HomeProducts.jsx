@@ -23,6 +23,14 @@ const HomeProducts = () => {
 
 
   useEffect(() => {
+    const startTime = performance.now();
+
+    return () => {
+      const endTime = performance.now();
+      console.log(`Home Products  took ${endTime - startTime}ms to load`);
+    };
+  }, []);
+  useEffect(() => {
     const checkIfMobile = () => {
       setIsMobile(window.innerWidth <= 768);
     };
@@ -133,7 +141,7 @@ const HomeProducts = () => {
       inStock,
       mainImage
     };
-  };
+  }; 
 
   const handleWishlistClick = async (product, e) => {
     if (e) e.stopPropagation();
@@ -172,6 +180,11 @@ const HomeProducts = () => {
     const fetchProducts = async () => {
       try {
         const response = await axios.get(`${import.meta.env.VITE_SERVER_API}/products`);
+        console.log('Products with offers:', response.data.map(p => ({
+          id: p.product_id,
+          name: p.name,
+          offers: p.offers
+        })));
         setProducts(response.data);
         setLoading(false);
       } catch (error) {
@@ -179,7 +192,6 @@ const HomeProducts = () => {
         setLoading(false);
       }
     };
-
     fetchProducts();
   }, []);
 
@@ -226,14 +238,14 @@ const HomeProducts = () => {
               return (
                 <div className="product-card" key={product.product_id}>
                   {/* Add the offer badge if there's an offer */}
-                  {product.offers > 0 && (
-                    <div className="product-offer-badge">
-                      {product.offers}% OFF
+                  {/* {product.offers > 0 && (
+                    <div className="product-offer-tag">
+                      {product.offers}
                     </div>
-                  )}
+                  )} */}
 
                   <div className="product-badge">
-                    {inStock ? 'In Stock' : 'Pre-Order'}
+                    {inStock ? 'In Stock' : 'Out of Stock'}
                   </div>
                   <div
                     className={`wishlist-icon ${isInWishlist ? 'active' : ''}`}
@@ -274,9 +286,9 @@ const HomeProducts = () => {
                       )
                     )}
 
-                    {product.offers > 0 && (
+                    {product.offers && (
                       <div className="product-offer-tag">
-                        {product.offers}% OFF
+                        {product.offers}
                       </div>
                     )}
                     <button className="quick-view" onClick={(e) => handleProductClick(product, e)}>

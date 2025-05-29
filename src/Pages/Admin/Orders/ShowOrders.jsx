@@ -660,7 +660,7 @@ const OrderDetails = () => {
                   onClick={fulfillOrder}
                   disabled={isFulfillingOrder || order.fulfillment_status}
                 >
-                  {isFulfillingOrder ? 'Processing...' : 'Fulfill Order for Delivery'}
+                  {isFulfillingOrder ? 'Processing...' : 'Fulfill'}
                 </button>
                 {order.fulfillment_status && (
                   <div className="fulfillment-info">

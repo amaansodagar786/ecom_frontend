@@ -486,7 +486,7 @@ const AllProducts = () => {
                     >
 
                       <div className="product-badge">
-                        {inStock ? 'In Stock' : 'Pre-Order'}
+                        {inStock ? 'In Stock' : 'Out of Stock'}
                       </div>
                       <div
                         className={`wishlist-icon ${isInWishlist ? 'active' : ''}`}
@@ -531,6 +531,12 @@ const AllProducts = () => {
                         ) : (
                           <div className="no-image">No Image Available</div>
                         )}
+
+                        {product.offers && (
+                      <div className="product-offer-tag">
+                        {product.offers}
+                      </div>
+                    )}
                       </div>
                       <div className="product-details">
                         <span className="product-category">{product.category || 'Uncategorized'}</span>

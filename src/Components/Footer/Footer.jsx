@@ -40,6 +40,11 @@ const Footer = () => {
         navigate('/support', { state: { activeTab: 'topics' } });
     };
 
+    const handleDownloadClick = (e) => {
+        e.preventDefault();
+        navigate('/drivers');
+    };
+
 
     useEffect(() => {
         const socialBubbles = document.querySelectorAll('.social-bubble');
@@ -81,13 +86,15 @@ const Footer = () => {
                     </div> */}
                 </div>
 
-                <div className="footer-links hide-on-mobile">
-                    <h4>Shop</h4>
+                {/* <div className="footer-links hide-on-mobile"> */}
+                <div className="footer-links ">
+                    <h4>Pages</h4>
                     <ul>
 
                         <li><a href="" onClick={handleHomeClick}>Home</a></li>
                         <li><a href="" onClick={handleNewArrivalsClick}>New Arrivals</a></li>
                         <li><a href="" onClick={handleFeaturedProductsClick}>Featured Products</a></li>
+                        <li><a href="" onClick={handleDownloadClick}>Drivers</a></li>
 
                         {/* <li><a href="#">Gift Cards</a></li> */}
                     </ul>

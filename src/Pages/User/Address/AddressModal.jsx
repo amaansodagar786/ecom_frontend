@@ -1,13 +1,17 @@
 // AddressModal.js
-import React, { useState , useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import './Address.scss'; // We'll use the same styles
 
-const AddressModal = ({ 
-  isOpen, 
-  onClose, 
-  onSave, 
-  states, 
+
+
+
+
+const AddressModal = ({
+  isOpen,
+  onClose,
+  onSave,
+  states,
   initialData = null,
   isEditMode = false
 }) => {
@@ -63,6 +67,19 @@ const AddressModal = ({
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [locationStatus, setLocationStatus] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+   const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+
+    return () => {
+      document.body.classList.remove('modal-open');
+    };
+  }, [isOpen]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -75,7 +92,7 @@ const AddressModal = ({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validate required fields
     const requiredFields = ['name', 'mobile', 'pincode', 'locality', 'address_line', 'city', 'state_id'];
     for (const field of requiredFields) {
@@ -84,11 +101,11 @@ const AddressModal = ({
         return;
       }
     }
-  
+
     try {
       setIsLoading(true);
       const result = await onSave(formData);
-      
+
       if (result && result.address) {
         if (!result.address.is_available) {
           toast.warning('Address saved ');
@@ -96,7 +113,7 @@ const AddressModal = ({
           toast.success(isEditMode ? 'Address updated successfully!' : 'Address saved successfully!');
         }
       }
-      
+
       onClose();
     } catch (error) {
       console.error('Error saving address:', error);
@@ -178,8 +195,8 @@ const AddressModal = ({
 
   return (
     <>
-      <div className="address-modal-overlay">
-        <div className="address-modal">
+      <div className={`address-modal-overlay ${isMobile ? 'mobile-view' : ''}`}>
+        <div className={`address-modal ${isMobile ? 'mobile-view' : ''}`}>
           <div className="modal-header">
             <h3>{isEditMode ? 'Edit Address' : 'Add New Address'}</h3>
             <button
