@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AdminLayout from '../AdminPanel/AdminLayout';
 import axios from 'axios';
@@ -26,6 +26,7 @@ const OrderDetails = () => {
   const [showRemarksInput, setShowRemarksInput] = useState(false);
   const [remarks, setRemarks] = useState('');
   const [isSavingRemarks, setIsSavingRemarks] = useState(false);
+  const inputRefs = useRef([]);
 
   useEffect(() => {
     if (order?.address?.is_available && order?.fulfillment_status && order?.awb_number) {
@@ -190,38 +191,38 @@ const OrderDetails = () => {
   };
 
   const saveRemarks = async () => {
-  try {
-    setIsSavingRemarks(true);
-    const token = localStorage.getItem('token');
+    try {
+      setIsSavingRemarks(true);
+      const token = localStorage.getItem('token');
 
-    // Properly encode the order ID (handles the # character)
-    const encodedOrderId = encodeURIComponent(orderId);
+      // Properly encode the order ID (handles the # character)
+      const encodedOrderId = encodeURIComponent(orderId);
 
-    const response = await axios.put(
-      `${import.meta.env.VITE_SERVER_API}/orders/${encodedOrderId}/remarks`,
-      { remarks },
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      const response = await axios.put(
+        `${import.meta.env.VITE_SERVER_API}/orders/${encodedOrderId}/remarks`,
+        { remarks },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
         }
-      }
-    );
+      );
 
-    if (response.data.success) {
-      setOrder(prev => ({ ...prev, remarks }));
-      toast.success('Remarks saved successfully');
-      setShowRemarksInput(false);
-    } else {
-      throw new Error(response.data.error || 'Failed to save remarks');
+      if (response.data.success) {
+        setOrder(prev => ({ ...prev, remarks }));
+        toast.success('Remarks saved successfully');
+        setShowRemarksInput(false);
+      } else {
+        throw new Error(response.data.error || 'Failed to save remarks');
+      }
+    } catch (error) {
+      console.error('Error saving remarks:', error);
+      toast.error(error.response?.data?.error || error.message || 'Failed to save remarks');
+    } finally {
+      setIsSavingRemarks(false);
     }
-  } catch (error) {
-    console.error('Error saving remarks:', error);
-    toast.error(error.response?.data?.error || error.message || 'Failed to save remarks');
-  } finally {
-    setIsSavingRemarks(false);
-  }
-};
+  };
 
 
   const fulfillOrder = async () => {
@@ -717,8 +718,21 @@ const OrderDetails = () => {
                       <td>
                         <input
                           type="text"
+                          ref={(el) => (inputRefs.current[index] = el)} // Store ref
                           value={srNoInputs[detail.detail_id] || ''}
                           onChange={(e) => handleSrNoInputChange(detail.detail_id, e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              const nextIndex = index + 1;
+                              if (nextIndex < currentProduct.details.length) {
+                                inputRefs.current[nextIndex]?.focus();
+                              } else {
+                                // If last input, focus the submit button
+                                document.querySelector('.sr-assign-modal-footer .submit-button')?.focus();
+                              }
+                            }
+                          }}
                           placeholder="Enter SR Number"
                         />
                       </td>

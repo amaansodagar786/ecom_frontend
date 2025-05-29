@@ -15,12 +15,23 @@
     gtag('config', 'AW-843452285');
   </script>
 
-  <!-- Open Graph / Facebook -->
-  <!-- <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://mtm-store.com/" />
-  <meta property="og:title" content="MTM Store" />
-  <meta property="og:description" content="MTM store description" />
-  <meta property="og:image" content="/logo.jpg" /> -->
+  <!-- Google Ads Conversion Tracking -->
+  <script>
+    function gtag_report_conversion(url) {
+      var callback = function () {
+        if (typeof url !== 'undefined') {
+          window.location = url;
+        }
+      };
+      gtag('event', 'conversion', {
+        'send_to': 'AW-843452285/Dtf_CPHq8vUZEP2emJID',
+        'event_callback': callback
+      });
+      return false;
+    }
+  </script>
+
+
 
   <title>MTM - Store</title>
 </head>

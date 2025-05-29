@@ -217,9 +217,42 @@ const Device = () => {
               </div>
               <div className="info-item">
                 <span className="info-label">Status:</span>
-                <span className="info-value status-badge">{searchResults.status || 'N/A'}</span>
+                <span className="info-value status-badge" data-status={searchResults.status || 'UNKNOWN'}>
+                  {searchResults.status || 'N/A'}
+                </span>
               </div>
-              
+
+              {/* IN Transaction Details */}
+              {searchResults.in_date && (
+                <div className="info-item">
+                  <span className="info-label">IN Date:</span>
+                  <span className="info-value">
+                    {new Date(searchResults.in_date).toLocaleDateString()} at {new Date(searchResults.in_date).toLocaleTimeString()}
+                  </span>
+                </div>
+              )}
+
+              {/* OUT Transaction Details */}
+              {searchResults.out_date && (
+                <div className="info-item">
+                  <span className="info-label">OUT Date:</span>
+                  <span className="info-value">
+                    {console.log('OUT date:', searchResults.out_date, new Date(searchResults.out_date))}
+                    {new Date(searchResults.out_date).toLocaleDateString()} at {new Date(searchResults.out_date).toLocaleTimeString()}
+                  </span>
+                </div>
+              )}
+
+              {/* RETURN Transaction Details */}
+              {searchResults.return_details?.date && (
+                <div className="info-item">
+                  <span className="info-label">RETURN Date:</span>
+                  <span className="info-value">
+                    {new Date(searchResults.return_details.date).toLocaleDateString()} at {new Date(searchResults.return_details.date).toLocaleTimeString()}
+                  </span>
+                </div>
+              )}
+
               {searchResults.status === 'SOLD' && (
                 <>
                   <div className="info-item">
@@ -236,18 +269,26 @@ const Device = () => {
                   </div>
                 </>
               )}
-              
+
               {searchResults.status === 'IN_STOCK' && (
                 <div className="info-item">
                   <span className="info-label">Purchase Price:</span>
                   <span className="info-value">₹{searchResults.in_price || 'N/A'}</span>
                 </div>
               )}
-              
+
               {searchResults.message && (
                 <div className="info-item full-width">
                   <span className="info-label">Details:</span>
                   <span className="info-value">{searchResults.message}</span>
+                </div>
+              )}
+
+              {/* Return Remarks if available */}
+              {searchResults.return_details?.remarks && (
+                <div className="info-item full-width">
+                  <span className="info-label">Return Remarks:</span>
+                  <span className="info-value">{searchResults.return_details.remarks}</span>
                 </div>
               )}
             </div>
@@ -379,7 +420,7 @@ const Device = () => {
                       <span className="requirement-value">sku_id, order_id, price, remarks</span>
                     </div>
                   </div>
-                  
+
                   <div className="csv-format">
                     <h5>CSV Format:</h5>
                     <div className="format-table">
@@ -403,7 +444,7 @@ const Device = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="note">
                     <p><strong>Note:</strong> Column names in your CSV can be anything, but the data must be in this exact order.</p>
                   </div>
