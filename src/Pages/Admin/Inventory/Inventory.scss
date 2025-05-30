@@ -74,20 +74,10 @@ $breakpoint-xl: 1200px;
     box-shadow: $shadow-sm;
     align-items: center;
 
-    @media (max-width: $breakpoint-md) {
-      flex-wrap: nowrap;
-      padding: 0.75rem;
-    }
-
     .search-box {
       flex: 1;
       min-width: 250px;
       position: relative;
-
-      @media (max-width: $breakpoint-md) {
-        min-width: auto;
-        flex: 2; // Give more space to search
-      }
 
       .search-icon {
         position: absolute;
@@ -105,12 +95,6 @@ $breakpoint-xl: 1200px;
         font-size: 0.9rem;
         transition: border-color 0.2s ease;
 
-        // New: Adjust input for mobile
-        @media (max-width: $breakpoint-md) {
-          padding: 0.5rem 0.75rem 0.5rem 2rem;
-          font-size: 0.85rem;
-        }
-
         &:focus {
           outline: none;
           border-color: $primary-color;
@@ -120,21 +104,6 @@ $breakpoint-xl: 1200px;
 
     .mobile-filter-toggle {
       display: none;
-      background: $light-gray;
-      border: none;
-      padding: 0.75rem 1rem;
-      border-radius: $border-radius-md;
-      font-size: 0.9rem;
-      cursor: pointer;
-      align-items: center;
-      gap: 0.5rem;
-
-      @media (max-width: $breakpoint-md) {
-        display: flex;
-        padding: 0.5rem 0.75rem;
-        font-size: 0.85rem;
-        flex: 1; // Give equal space to filter button
-      }
     }
 
     .filter-options {
@@ -142,20 +111,6 @@ $breakpoint-xl: 1200px;
       align-items: center;
       gap: 1rem;
       flex-wrap: wrap;
-
-      @media (max-width: $breakpoint-md) {
-        display: none;
-        width: 100%;
-        flex-direction: column;
-        align-items: stretch;
-        gap: 1rem;
-        padding-top: 1rem;
-        border-top: 1px solid $border-color;
-
-        &.mobile-open {
-          display: flex;
-        }
-      }
 
       select {
         padding: 0.75rem 1rem;
@@ -190,18 +145,12 @@ $breakpoint-xl: 1200px;
         font-size: 0.85rem;
         color: $text-medium;
         margin-left: auto;
-
-        @media (max-width: $breakpoint-md) {
-          margin-left: 0;
-          text-align: center;
-        }
       }
     }
   }
 
   .inventory-content {
     display: grid;
-    // grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 1.5rem;
   }
@@ -266,12 +215,10 @@ $breakpoint-xl: 1200px;
         color: $text-dark;
         display: -webkit-box;
         -webkit-line-clamp: 2;
-        /* Limit to 2 lines */
         -webkit-box-orient: vertical;
         overflow: hidden;
         text-overflow: ellipsis;
         min-height: 2.8em;
-        /* Approximate height for 2 lines */
         line-height: 1.4em;
       }
 
@@ -341,62 +288,72 @@ $breakpoint-xl: 1200px;
         &:hover {
           background: darken($primary-color, 10%);
         }
-
-        @media (max-width: $breakpoint-md) {
-          span {
-            display: none;
-          }
-
-          &::after {
-            content: "Update";
-          }
-        }
-
       }
 
       .stock-edit {
         display: flex;
-        align-items: center;
-        gap: $spacing-sm;
+        flex-direction: column;
+        gap: 0.75rem;
 
-        button {
-          background: $light-gray;
-          border: none;
-          width: 30px;
-          height: 30px;
-          border-radius: $border-radius-circle;
+        .edit-group {
           display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: background $transition-fast;
+          flex-direction: column;
+          gap: 0.25rem;
 
-          &:hover {
-            background: darken($light-gray, 10%);
+          .number-input {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+
+            button {
+              background: $light-gray;
+              border: none;
+              width: 30px;
+              height: 30px;
+              border-radius: $border-radius-circle;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              cursor: pointer;
+              transition: background $transition-fast;
+
+              &:hover {
+                background: darken($light-gray, 10%);
+              }
+            }
+
+            input {
+              width: 100%;
+              text-align: center;
+              padding: $spacing-sm;
+              border: 1px solid $border-color;
+              border-radius: $border-radius-sm;
+            }
           }
         }
 
-        input {
-          width: 60px;
-          text-align: center;
-          padding: $spacing-sm;
-          border: 1px solid $border-color;
-          border-radius: $border-radius-sm;
-        }
+        .edit-buttons {
+          display: flex;
+          gap: 0.5rem;
+          margin-top: 0.5rem;
 
-        .save-btn {
-          background: $success-color;
-          color: white;
-          padding: $spacing-sm $spacing-md;
-          border-radius: $border-radius-sm;
-          margin-left: $spacing-sm;
-        }
+          button {
+            flex: 1;
+            padding: 0.5rem;
+            border-radius: $border-radius-sm;
+            cursor: pointer;
+            transition: all 0.2s ease;
 
-        .cancel-btn {
-          background: $light-gray;
-          color: $text-dark;
-          padding: $spacing-sm $spacing-md;
-          border-radius: $border-radius-sm;
+            &.save-btn {
+              background: $success-color;
+              color: white;
+            }
+
+            &.cancel-btn {
+              background: $light-gray;
+              color: $text-dark;
+            }
+          }
         }
       }
     }
@@ -437,44 +394,8 @@ $breakpoint-xl: 1200px;
   }
 }
 
-// Responsive adjustments
+/* ========== Mobile Responsive Styles ========== */
 @media (max-width: $breakpoint-md) {
-  .inventory-container {
-    padding: $spacing-md;
-
-    .inventory-content {
-      grid-template-columns: repeat(2, 1fr); // 2 columns on mobile
-      gap: 1rem;
-    }
-  }
-}
-
-@media (max-width: $breakpoint-sm) {
-  .inventory-content {
-    grid-template-columns: repeat(2, 1fr); // 2 columns on mobile
-  }
-
-  .product-card {
-    flex-direction: column;
-
-    .product-media {
-      height: 180px;
-    }
-  }
-}
-
-@media (max-width: $breakpoint-xs) {
-  .product-card {
-    .product-media {
-      height: 150px;
-    }
-  }
-}
-
-
-
-// Update the responsive section at the bottom 
-  @media (max-width: $breakpoint-md) {
   .inventory-container {
     padding: $spacing-md;
 
@@ -489,43 +410,110 @@ $breakpoint-xl: 1200px;
     }
 
     .filter-bar {
-      .search-box input {
-        font-size: 0.8rem;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      gap: 0.75rem;
+      padding: 0.75rem;
+
+      .search-box {
+        flex: 1;
+        min-width: 0;
+
+        input {
+          padding: 0.5rem 0.75rem 0.5rem 2rem;
+          font-size: 0.85rem;
+        }
       }
 
-      .mobile-filter-toggle {
-        font-size: 0.8rem;
+      .filter-options {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        gap: 0.5rem;
+
+        select {
+          flex: 1;
+          min-width: 0;
+          padding: 0.5rem;
+          font-size: 0.85rem;
+        }
+
+        .reset-filters,
+        .filter-results {
+          display: none;
+        }
       }
     }
-  }
 
-  .inventory-content {
-    grid-template-columns: 1fr;
-    /* Only 1 column on mobile */
-    gap: 1rem;
+    .inventory-content {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+
+    .product-card {
+      .product-details {
+        padding: $spacing-md;
+
+        h3 {
+          font-size: 1.1rem;
+        }
+
+        .product-meta {
+          font-size: 0.8rem;
+        }
+
+        .stock-info {
+          .stock-status {
+            span {
+              font-size: 0.8rem;
+            }
+          }
+
+          .edit-btn {
+            span {
+              display: none;
+            }
+
+            &::after {
+              content: "Update";
+            }
+          }
+        }
+      }
+    }
   }
 }
 
 @media (max-width: $breakpoint-sm) {
-  .product-card {
-    .product-details {
-      padding: $spacing-md;
-
-      h3 {
-        font-size: 1.1rem;
-      }
-
-      .product-meta {
-        font-size: 0.8rem;
-      }
-
-      .stock-info {
-        .stock-status {
-          span {
-            font-size: 0.8rem;
-          }
+  .inventory-container {
+    .filter-bar {
+      .filter-options {
+        select {
+          min-width: 120px;
         }
       }
+    }
+
+    .inventory-content {
+      grid-template-columns: 1fr;
+    }
+
+    .product-card {
+      .product-media {
+        height: 180px;
+      }
+
+      .edit-btn::after {
+        content: "Update Stock" !important;
+      }
+    }
+  }
+}
+
+@media (max-width: $breakpoint-xs) {
+  .product-card {
+    .product-media {
+      height: 150px;
     }
   }
 }

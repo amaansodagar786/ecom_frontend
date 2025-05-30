@@ -25,6 +25,7 @@ const NewOrders = () => {
         phone: '',
         email: '',
         csp_code: '',
+        gst_number: '',
         addresses: [{
             address_line1: '',
             address_line2: '',
@@ -43,6 +44,7 @@ const NewOrders = () => {
     const [selectedSingleProducts, setSelectedSingleProducts] = useState([]); // For multiple single product selection
     const [singleProductSearchTerm, setSingleProductSearchTerm] = useState('');
     const [paymentType, setPaymentType] = useState('cod'); // Default to 'cod'
+    const [isFreeDelivery, setIsFreeDelivery] = useState(false);
 
     // Fetch products from API
     useEffect(() => {
@@ -122,6 +124,7 @@ const NewOrders = () => {
                     name: backendCustomer.name,
                     phone: backendCustomer.mobile,
                     email: backendCustomer.email,
+                    gst_number: backendCustomer.gst_number || '',
                     addresses: addresses.map(addr => ({
                         id: addr.address_id,
                         address_line1: addr.address_line ? addr.address_line.split(',')[0].trim() : '',
@@ -192,7 +195,7 @@ const NewOrders = () => {
             const subtotalExcludingGST = calculateSubtotalExcludingGST();
             const gst = calculateGST();
             const subtotal = calculateSubtotal();
-            const deliveryCharge = calculateDeliveryCharge(subtotal);
+            const deliveryCharge = isFreeDelivery ? 0 : calculateDeliveryCharge(subtotal); // Update this line
             const total = subtotal + deliveryCharge;
 
             const orderItems = selectedProducts.map(product => {
@@ -234,7 +237,8 @@ const NewOrders = () => {
                 subtotal_excluding_gst: subtotalExcludingGST,
                 gst_amount: gst,
                 subtotal: subtotal,
-                delivery_charge: deliveryCharge,
+                delivery_charge: isFreeDelivery ? 0 : deliveryCharge,
+                is_free_delivery: isFreeDelivery,
                 total_amount: total,
                 // Discount and tax rates
                 discount_percent: 0, // This can be calculated if needed
@@ -678,6 +682,7 @@ const NewOrders = () => {
                 mobile: newCustomer.phone,
                 email: newCustomer.email || '',
                 csp_code: newCustomer.csp_code || null,
+                gst_number: newCustomer.gst_number || null,
                 address: {
                     name: newCustomer.name,
                     mobile: newCustomer.phone,
@@ -1108,6 +1113,14 @@ const NewOrders = () => {
                                             <span className="detail-value">{selectedCustomer.email}</span>
                                         </div>
                                     )}
+
+
+                                    {selectedCustomer.gst_number && (
+                                        <div className="detail-row">
+                                            <span className="detail-label">GST Number:</span>
+                                            <span className="detail-value">{selectedCustomer.gst_number}</span>
+                                        </div>
+                                    )}
                                 </>
                             )}
                             {selectedAddress && (
@@ -1130,38 +1143,25 @@ const NewOrders = () => {
                     <div className="payment-type-section">
                         <h3 className="section-title">Payment Method</h3>
                         <div className="payment-options">
-                            <div className="payment-option">
-                                <input
-                                    type="radio"
-                                    id="cod"
-                                    name="paymentType"
-                                    value="cod"
-                                    checked={paymentType === 'cod'}
-                                    onChange={() => setPaymentType('cod')}
-                                />
-                                <label htmlFor="cod">Cash on Delivery (COD)</label>
+                            <div className="payment-select-container">
+                                <select
+                                    className="payment-select"
+                                    value={paymentType}
+                                    onChange={(e) => setPaymentType(e.target.value)}
+                                >
+                                    <option value="">Select Payment Method</option>
+                                    <option value="upi">UPI Payment</option>
+                                    <option value="bank_transfer">Bank Transfer</option>
+                                </select>
                             </div>
-                            <div className="payment-option">
+                            <div className="free-delivery-option">
                                 <input
-                                    type="radio"
-                                    id="upi"
-                                    name="paymentType"
-                                    value="upi"
-                                    checked={paymentType === 'upi'}
-                                    onChange={() => setPaymentType('upi')}
+                                    type="checkbox"
+                                    id="freeDelivery"
+                                    checked={isFreeDelivery}
+                                    onChange={(e) => setIsFreeDelivery(e.target.checked)}
                                 />
-                                <label htmlFor="upi">UPI Payment</label>
-                            </div>
-                            <div className="payment-option">
-                                <input
-                                    type="radio"
-                                    id="bank_transfer"
-                                    name="paymentType"
-                                    value="bank_transfer"
-                                    checked={paymentType === 'bank_transfer'}
-                                    onChange={() => setPaymentType('bank_transfer')}
-                                />
-                                <label htmlFor="bank_transfer">Bank Transfer</label>
+                                <label htmlFor="freeDelivery">Free Delivery</label>
                             </div>
                         </div>
                     </div>
@@ -1198,12 +1198,22 @@ const NewOrders = () => {
 
                         <div className="summary-row">
                             <span>Delivery Charge:</span>
-                            <span>{calculateDeliveryCharge(calculateSubtotal()) === 0 ? 'FREE' : `₹${calculateDeliveryCharge(calculateSubtotal()).toFixed(2)}`}</span>
+                            <span>
+                                {isFreeDelivery || calculateDeliveryCharge(calculateSubtotal()) === 0
+                                    ? 'FREE'
+                                    : `₹${calculateDeliveryCharge(calculateSubtotal()).toFixed(2)}`
+                                }
+                            </span>
                         </div>
 
                         <div className="summary-row total-row">
                             <span>Total:</span>
-                            <span>₹{(calculateSubtotal() + calculateDeliveryCharge(calculateSubtotal())).toFixed(2)}</span>
+                            <span>
+                                ₹{(
+                                    calculateSubtotal() +
+                                    (isFreeDelivery ? 0 : calculateDeliveryCharge(calculateSubtotal()))
+                                ).toFixed(2)}
+                            </span>
                         </div>
 
                         <button
@@ -1467,6 +1477,16 @@ const NewOrders = () => {
                                                 value={newCustomer.csp_code}
                                                 onChange={handleNewCustomerChange}
                                                 placeholder="CSP Code (optional)"
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>GST Number</label>
+                                            <input
+                                                type="text"
+                                                name="gst_number"
+                                                value={newCustomer.gst_number}
+                                                onChange={handleNewCustomerChange}
+                                                placeholder="GST Number (optional)"
                                             />
                                         </div>
                                     </div>

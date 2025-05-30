@@ -1378,3 +1378,204 @@ body {
   overflow-x: hidden;
   width: 100%;
 }
+
+// Update the product form container for mobile
+.product-form-container {
+  @media (max-width: 768px) {
+    width: 100%;
+    padding: 0.5rem;
+    box-sizing: border-box;
+    overflow: hidden;
+    
+    .form-header {
+      position: sticky;
+      top: 0;
+      background: white;
+      z-index: 10;
+      padding: 0.5rem 0;
+      
+      h2 {
+        font-size: 1.2rem;
+        margin: 0.5rem 0;
+      }
+    }
+    
+    .product-form {
+      width: 100%;
+      overflow: visible;
+      
+      .form-group {
+        margin-bottom: 1rem;
+        width: 100%;
+        
+        label {
+          font-size: 0.9rem;
+        }
+        
+        input, select, textarea {
+          width: 100%;
+          box-sizing: border-box;
+          font-size: 0.9rem;
+          padding: 0.6rem;
+        }
+        
+        textarea {
+          min-height: 80px;
+        }
+      }
+      
+      // Adjust the variant details grid for mobile
+      .variant-details-grid {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+      }
+      
+      // Media preview adjustments
+      .media-preview-container {
+        .media-preview {
+          justify-content: flex-start;
+          
+          .media-thumbnail {
+            width: 80px;
+            height: 80px;
+          }
+        }
+      }
+      
+      // Specification items
+      .specification-item {
+        flex-direction: column;
+        gap: 0.5rem;
+        
+        .spec-input-group {
+          width: 100%;
+        }
+      }
+      
+      // Model sections
+      .product-model {
+        padding: 1rem;
+        
+        .model-details {
+          grid-template-columns: 1fr;
+        }
+        
+        .model-colors {
+          .product-variant {
+            padding: 0.5rem;
+          }
+        }
+      }
+      
+      // Form actions at bottom
+      .form-actions {
+        position: sticky;
+        bottom: 0;
+        background: white;
+        padding: 0.75rem 0;
+        border-top: 1px solid #eee;
+        z-index: 10;
+        
+        button {
+          width: 100%;
+          padding: 0.75rem;
+          font-size: 0.9rem;
+        }
+      }
+    }
+  }
+}
+
+// Ensure the parent container doesn't cause overflow
+.product-management {
+  @media (max-width: 768px) {
+    width: 100vw;
+    padding: 0;
+    margin: 0;
+    overflow-x: hidden;
+    
+    .content-area {
+      width: 100%;
+      padding: 0.5rem;
+      box-sizing: border-box;
+    }
+  }
+}
+
+// Fix for the cover image section
+.cover-image-preview {
+  @media (max-width: 768px) {
+    video, img {
+      max-width: 100%;
+      height: auto;
+    }
+    
+    .cover-image-actions {
+      .file-input {
+        width: 100%;
+      }
+      
+      label.btn-update-cover {
+        display: block;
+        width: 100%;
+        text-align: center;
+        padding: 0.5rem;
+      }
+    }
+  }
+}
+
+// Adjust the specification sections
+.spec-actions {
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 0.5rem;
+    
+    button {
+      width: 100%;
+    }
+  }
+}
+
+// Fix for color variant sections
+.product-variant {
+  @media (max-width: 768px) {
+    padding: 0.75rem;
+    
+    .form-field {
+      margin-bottom: 0.75rem;
+    }
+  }
+}
+
+// Make sure error messages don't cause overflow
+.error-message {
+  @media (max-width: 768px) {
+    word-break: break-word;
+    white-space: normal;
+  }
+}
+
+// Ensure all form elements stay within viewport
+.form-group {
+  @media (max-width: 768px) {
+    width: 100%;
+    box-sizing: border-box;
+    padding-right: 0.5rem;
+    padding-left: 0.5rem;
+  }
+}
+
+// Fix for the tabs container
+.tabs {
+  @media (max-width: 768px) {
+    overflow-x: auto;
+    white-space: nowrap;
+    padding-bottom: 0.5rem;
+    
+    button {
+      display: inline-block;
+      width: auto;
+    }
+  }
+}

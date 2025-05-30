@@ -227,7 +227,7 @@ const Device = () => {
                 <div className="info-item">
                   <span className="info-label">IN Date:</span>
                   <span className="info-value">
-                    {new Date(searchResults.in_date).toLocaleDateString()} at {new Date(searchResults.in_date).toLocaleTimeString()}
+                    {new Date(searchResults.in_date).toLocaleDateString()}
                   </span>
                 </div>
               )}
@@ -237,8 +237,7 @@ const Device = () => {
                 <div className="info-item">
                   <span className="info-label">OUT Date:</span>
                   <span className="info-value">
-                    {console.log('OUT date:', searchResults.out_date, new Date(searchResults.out_date))}
-                    {new Date(searchResults.out_date).toLocaleDateString()} at {new Date(searchResults.out_date).toLocaleTimeString()}
+                    {new Date(searchResults.out_date).toLocaleDateString()}
                   </span>
                 </div>
               )}
@@ -248,10 +247,11 @@ const Device = () => {
                 <div className="info-item">
                   <span className="info-label">RETURN Date:</span>
                   <span className="info-value">
-                    {new Date(searchResults.return_details.date).toLocaleDateString()} at {new Date(searchResults.return_details.date).toLocaleTimeString()}
+                    {new Date(searchResults.return_details.date).toLocaleDateString()}
                   </span>
                 </div>
               )}
+
 
               {searchResults.status === 'SOLD' && (
                 <>

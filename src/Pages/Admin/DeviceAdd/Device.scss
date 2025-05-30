@@ -329,7 +329,7 @@
     padding: 1rem;
 
     .device-input-group {
-      flex-direction: column;
+      flex-direction: row;
 
       .order-id-input {
         width: 100%;
@@ -337,7 +337,7 @@
 
       .device-action-buttons {
         width: 100%;
-        flex-direction: column;
+        flex-direction: row;
       }
     }
 
